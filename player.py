@@ -7,9 +7,9 @@ from knife import Knife
 import math
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, game, x=0, y=0):
         super().__init__()
-        # Size attributes
+        self.game = game
         self.width = 100
         self.height = 100
         
@@ -328,6 +328,8 @@ class Player(pygame.sprite.Sprite):
             
             # End any dodge
             self.is_dodging = False
+
+            self.game.freeze_and_shake(10, 10, 20)
     
     def check_projectile_collisions(self):
         """Check for collisions with enemy bullets"""

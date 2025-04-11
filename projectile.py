@@ -182,4 +182,3 @@ class Shard(Projectile):
         
         # Update position
         super().update()
-        print(self.velocity)

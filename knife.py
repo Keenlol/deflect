@@ -106,19 +106,11 @@ class Knife(pygame.sprite.Sprite):
             if not bullet.is_deflected:  # Only check non-deflected bullets
                 distance = (bullet.position - self.position).length()
                 if distance <= self.width/2:
-                    # print("deflected")
                     self.deflect_bullet(bullet)
     
     def deflect_bullet(self, bullet):
         """Deflect a bullet in the direction the knife is facing"""
-        print("deflected")
-        # Add freeze and shake effect on bullet deflection
-        if hasattr(self.player, 'game') and hasattr(self.player.game, 'freeze_and_shake'):
-            # Intensity scales with bullet size/speed
-            intensity = 5
-            if isinstance(bullet, Shard):
-                intensity = 8  # Bigger shake for Shard projectiles
-            self.player.game.freeze_and_shake(5, 7, intensity)
+        self.player.game.freeze_and_shake(5, 5, 8)
         
         error_deg = 10
         if isinstance(bullet, Shard): error_deg = 45
