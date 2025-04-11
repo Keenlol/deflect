@@ -28,7 +28,6 @@ class Game:
         self.freeze_timer = 0
         
         # Camera shake effect attributes
-        self.shake_active = False
         self.shake_duration = 0
         self.shake_timer = 0
         self.shake_intensity = 0
@@ -64,8 +63,10 @@ class Game:
             group.empty()
         
         # Create player
-        self.player = Player(C.WINDOW_WIDTH // 2, C.WINDOW_HEIGHT - C.FLOOR_HEIGHT)
-        self.player.game = self
+        self.player = Player(game=self, 
+                             x=C.WINDOW_WIDTH // 2, 
+                             y=C.WINDOW_HEIGHT - C.FLOOR_HEIGHT)
+        
         self.groups['players'].add(self.player)
         self.groups['all'].add(self.player)
         self.groups['all'].add(self.player.knife)
@@ -121,7 +122,7 @@ class Game:
                 if event.button == 1:  # Left click
                     self.player.mouse_clicked = True
     
-    def freeze_and_shake(self, freeze_duration=3, shake_duration=7, shake_intensity=5):
+    def freeze_and_shake(self, freeze_duration=3, shake_duration=7, shake_intensity=20):
         """Freeze the game and then apply camera shake
         
         Args:
@@ -129,8 +130,7 @@ class Game:
             shake_duration: Number of frames to shake the camera
             shake_intensity: Maximum pixel offset for the shake
         """
-        self.freeze_active = True
-        self.freeze_duration = freeze_duration
+        # self.freeze_active = True
         self.freeze_timer = freeze_duration
         
         # Set up shake to start after freeze ends
@@ -140,47 +140,31 @@ class Game:
     
     def update_camera_shake(self):
         """Update the camera shake effect"""
-        if self.shake_active:
-            # Decrease shake timer
+        if self.shake_timer > 0:
             self.shake_timer -= 1
-            
-            # Generate random offset based on intensity and remaining time
             # The shake gets weaker as the timer runs down
             remaining_intensity = self.shake_intensity * (self.shake_timer / self.shake_duration)
             self.camera_offset.x = random.uniform(-remaining_intensity, remaining_intensity)
             self.camera_offset.y = random.uniform(-remaining_intensity, remaining_intensity)
-            
-            # Turn off shake when timer runs out
-            if self.shake_timer <= 0:
-                self.shake_active = False
-                self.camera_offset = Vector2(0, 0)
-        else:
-            # Ensure camera offset is reset when not shaking
-            self.camera_offset = Vector2(0, 0)
+            print(self.shake_timer, self.camera_offset)
+        # else:
+            # self.camera_offset = Vector2(0, 0)
 
     def update(self):
         """Update game state"""
         # Handle freeze effect
-        if self.freeze_active:
+        if self.freeze_timer > 0:
             self.freeze_timer -= 1
             if self.freeze_timer <= 0:
-                self.freeze_active = False
-                # Start shake effect after freeze ends
-                self.shake_active = True
                 self.shake_timer = self.shake_duration
-            return  # Skip all updates while frozen
-        
-        # Update camera shake
+            return
+
         self.update_camera_shake()
-        
-        # Update all sprites
         self.groups['all'].update()
         
-        # Update enemies with player as target
         for enemy in self.groups['enemies']:
             enemy.update(self.player)
         
-        # Update UI elements
         self.groups['ui'].update()
         
         # Check for game over
@@ -203,15 +187,15 @@ class Game:
                 self.spawn_timer = 0
                 self.next_spawn_time = self.get_next_spawn_time()
             
-
     
     def draw(self):
         """Draw the game screen"""
         self.screen.fill(C.BLACK)
+        print('update', self.camera_offset)
         
         # Save the original positions of all sprites
         original_positions = {}
-        if self.shake_active:
+        if self.shake_timer > 0:
             for sprite in self.groups['all']:
                 if hasattr(sprite, 'rect') and hasattr(sprite, 'position'):
                     original_positions[sprite] = Vector2(sprite.rect.center)
@@ -227,7 +211,7 @@ class Game:
         # Draw E2 weapons with camera shake
         for enemy in self.groups['enemies']:
             if isinstance(enemy, E2):
-                if self.shake_active:
+                if self.shake_timer > 0:
                     # Apply shake to weapon drawing
                     original_pos = enemy.position
                     enemy.position += self.camera_offset
@@ -242,13 +226,13 @@ class Game:
             C.WINDOW_HEIGHT - C.FLOOR_HEIGHT + int(self.camera_offset.y), 
             C.WINDOW_WIDTH, 
             C.FLOOR_HEIGHT
-        ) if self.shake_active else (
+        ) if self.shake_timer > 0 else (
             0, C.WINDOW_HEIGHT - C.FLOOR_HEIGHT, C.WINDOW_WIDTH, C.FLOOR_HEIGHT
         )
         pg.draw.rect(self.screen, C.GRAY, floor_rect)
         
         # Restore original positions
-        if self.shake_active:
+        if self.shake_timer > 0:
             for sprite, pos in original_positions.items():
                 sprite.rect.center = (pos.x, pos.y)
         
@@ -282,7 +266,6 @@ class Game:
     def run(self):
         """Main game loop"""
         while self.running:
-            print(self.player.facing_right, self.player.is_deflecting)
             self.handle_events()
             self.update()
             self.draw()
