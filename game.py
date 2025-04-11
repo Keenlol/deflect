@@ -81,22 +81,47 @@ class Game:
         """Get random time for next enemy spawn"""
         return random.randint(200, 600)  # 10-20 seconds at 60 FPS
     
-    def get_valid_spawn_position(self):
+    def get_valid_spawn_position(self, enemy_type=1):
         """Get random position for enemy spawn, away from player"""
-        while True:
-            x = random.randint(100, C.WINDOW_WIDTH - 100)
-            y = random.randint(100, C.WINDOW_HEIGHT - C.FLOOR_HEIGHT - 100)
-            spawn_pos = Vector2(x, y)
+        # Spawning logic for E1 (floating enemy)
+        if enemy_type == 1:
+            while True:
+                x = random.randint(100, C.WINDOW_WIDTH - 100)
+                y = random.randint(100, C.WINDOW_HEIGHT - C.FLOOR_HEIGHT - 100)
+                spawn_pos = Vector2(x, y)
+                
+                # Check distance from player
+                if (spawn_pos - self.player.position).length() >= self.MIN_SPAWN_DISTANCE:
+                    return spawn_pos
+        
+        # Spawning logic for E2 (ground enemy)
+        elif enemy_type == 2:
+            # Decide whether to spawn left or right of player
+            spawn_right = random.choice([True, False])
             
-            # Check distance from player
-            if (spawn_pos - self.player.position).length() >= self.MIN_SPAWN_DISTANCE:
-                return spawn_pos
+            if spawn_right:
+                x = self.player.position.x + random.randint(250, 600)
+                x = max(100, x)
+            else:
+                x = self.player.position.x - random.randint(250, 600)
+                x = min(C.WINDOW_WIDTH - 100, x)
+            
+            # E2 always spawns on the ground
+            y = C.WINDOW_HEIGHT - C.FLOOR_HEIGHT - 50  # 50 pixels above the floor
+            
+            return Vector2(x, y)
     
     def spawn_enemy(self):
         """Spawn an enemy at a valid position"""
         if not self.game_over:
-            spawn_pos = self.get_valid_spawn_position()
-            enemy = random.choice([E2(spawn_pos.x, spawn_pos.y, self), E1(spawn_pos.x, spawn_pos.y, self)])
+            enemy_type = random.choice([1, 2])  # 1 for E1, 2 for E2
+            spawn_pos = self.get_valid_spawn_position(enemy_type)
+
+            if enemy_type == 1:
+                enemy = E1(spawn_pos.x, spawn_pos.y, self)
+            elif enemy_type == 2:
+                enemy = E2(spawn_pos.x, spawn_pos.y, self)
+                
             self.groups['enemies'].add(enemy)
             self.groups['all'].add(enemy)
 
