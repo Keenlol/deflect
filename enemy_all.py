@@ -69,14 +69,16 @@ class Enemy(pygame.sprite.Sprite):
     def take_damage(self, amount):
         """Handle enemy taking damage"""
         self.health -= amount
-        if self.health <= 0:
-            self.health = 0
-            self.is_alive = False
-            self.anim.change_state("death")
-        else:
-            self.is_hurt = True
-            self.hurt_timer = self.HURT_DURATION
-            self.anim.change_state("hurt")
+        self.game.freeze_and_shake(0, 3, 5)
+        if self.is_alive:
+            if self.health <= 0:
+                self.health = 0
+                self.is_alive = False
+                self.anim.change_state("death")
+            else:
+                self.is_hurt = True
+                self.hurt_timer = self.HURT_DURATION
+                self.anim.change_state("hurt")
         
     def attack(self, target):
         """Base attack method to be overridden by child classes"""
@@ -154,7 +156,7 @@ class Enemy(pygame.sprite.Sprite):
         if not self.is_alive:
             self.update_animation()
             if self.anim.current_state == "death" and self.anim.animation_finished:
-                self.kill()            
+                self.kill()
             return
             
         # Handle hurt state
