@@ -135,7 +135,7 @@ class Shard(Projectile):
         self.base = random.randint(20, 30)
         self.height = random.randint(20, 45)
 
-        super().__init__(position, velocity, 1.0, [5, 30], 0, damage, 
+        super().__init__(position, velocity, 1.0, [0, 30], 0, damage, 
                          radius=(self.base + self.height) / 4, 
                          surfacesize=int(max(self.base, self.height) * 2),
                          deflected=deflected)

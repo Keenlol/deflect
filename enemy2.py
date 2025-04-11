@@ -35,6 +35,11 @@ class E2(Enemy):
         self.dash_timer = 0
         self.charge_timer = 0
         
+        # Shard rain attack
+        self.is_shard_raining = False
+        self.rain_timer = 0
+        self.rain_index = 0
+        
         self.attack_infos = {'slash': {'speed':10, 'dash dur':30, 'charge dur':30},
                             'shard': {'count':10, 'delay': 30, 'radius': 100, 'height': 100}}
         # Weapon sprite
@@ -148,8 +153,66 @@ class E2(Enemy):
                 self.is_shard_attacking = False
                 self.wait_timer = self.get_random(self.WAIT_DURATION)
     
+    def start_shard_rain(self, target):
+        """Initialize shard rain attack"""
+        self.is_shard_raining = True
+        self.rain_timer = 0
+        self.rain_shards = []
+        self.rain_index = 0
+        self.RAIN_SPAWN_DELAY = 3  # Frames between each shard spawn
+        self.RAIN_COUNT = 15  # Total shards to spawn
+        self.RAIN_HEIGHT = 300  # Height above player
+        self.RAIN_WIDTH = 600  # Total width of the line of shards
+        
+        # Determine spawn direction (left-to-right or right-to-left)
+        self.rain_left_to_right = self.position.x > target.position.x
+        
+        # Calculate positions for all shards
+        self.rain_positions = []
+        shard_spacing = self.RAIN_WIDTH / (self.RAIN_COUNT - 1) if self.RAIN_COUNT > 1 else 0
+        
+        start_x = target.position.x - self.RAIN_WIDTH / 2
+        for i in range(self.RAIN_COUNT):
+            pos_x = start_x + i * shard_spacing
+            pos_y = target.position.y - self.RAIN_HEIGHT
+            self.rain_positions.append(Vector2(pos_x, pos_y))
+        
+        # Reverse positions if needed based on enemy position
+        if not self.rain_left_to_right:
+            self.rain_positions.reverse()
+        
+        # Start animation
+        self.anim.change_state("attack1")
+    
+    def update_shard_rain(self, target):
+        """Update shard rain attack state"""
+        # Increment timer
+        self.rain_timer += 1
+        
+        # Spawn new shard when delay timer is reached
+        if self.rain_timer >= self.RAIN_SPAWN_DELAY and self.rain_index < self.RAIN_COUNT:
+            # Get next position
+            spawn_pos = self.rain_positions[self.rain_index]
+            
+            # Create shard with downward velocity
+            shard = Shard(spawn_pos, Vector2(0, -2), 33)
+            shard.GRAVITY = 0.2
+            
+            # Add to game
+            self.game.groups['bullets'].add(shard)
+            self.game.groups['all'].add(shard)
+            
+            # Increment index and reset timer
+            self.rain_index += 1
+            self.rain_timer = 0
+        
+        # End attack when all shards have been spawned
+        if self.rain_index >= self.RAIN_COUNT and self.rain_timer >= 60:  # Wait a bit after last shard
+            self.is_shard_raining = False
+            self.wait_timer = self.get_random(self.WAIT_DURATION)
+    
     def ai_logic(self, target):
-        """Updated movement with both attacks"""
+        """Updated movement with all attacks"""
         # Handle attacks
         if not self.is_hurt:
             if self.is_dashing:
@@ -158,6 +221,9 @@ class E2(Enemy):
                 return
             elif self.is_shard_attacking:
                 self.update_shard_attack(target)
+                return
+            elif self.is_shard_raining:
+                self.update_shard_rain(target)
                 return
             
         # Normal movement
@@ -196,13 +262,31 @@ class E2(Enemy):
                 self.velocity.x = rdm.randrange(self.MOVE_SPEED[0], self.MOVE_SPEED[1]) * self.direction
             self.anim.change_state("move")
             
-            # When movement is over, check if we should attack
+            # When movement is over, choose an attack based on distance
             if self.move_timer <= 0:
                 distance_to_player = target.position.x - self.position.x
+                
+                # Randomly choose between attacks with different probabilities based on distance
                 if abs(distance_to_player) < 450:
-                    self.start_dash_attack(target)
-                else :
-                    self.start_shard_attack(target)
+                    # Close range - prefer dash attack (60% chance)
+                    attack_choice = rdm.random()
+                    if attack_choice < 0.6:
+                        self.start_dash_attack(target)
+                    elif attack_choice < 0.8:
+                        self.start_shard_attack(target)
+                    else:
+                        self.start_shard_rain(target)
+                else:
+                    # Long range - prefer projectile attacks (80% chance)
+                    attack_choice = rdm.random()
+                    if attack_choice < 0.5:
+                        self.start_shard_attack(target)
+                    elif attack_choice < 0.8:
+                        self.start_shard_rain(target)
+                    else:
+                        # Move closer to player
+                        self.direction = 1 if distance_to_player > 0 else -1
+                        self.move_timer = self.get_random(self.MOVE_DURATION)
     
     def update(self, target=None):
         self.weapon_anim.update()
