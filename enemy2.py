@@ -41,7 +41,8 @@ class E2(Enemy):
         self.rain_index = 0
         
         self.attack_infos = {'slash': {'speed':10, 'dash dur':30, 'charge dur':30},
-                            'shard': {'count':10, 'delay': 30, 'radius': 100, 'height': 100}}
+                            'shard': {'count':10, 'delay': 30, 'radius': 100, 'height': 100},
+                            'rain': {'count':15, 'delay':3, 'height':300, 'width': 600}}
         # Weapon sprite
         self.weapon_anim = Animation(self, "sprites/enemies/e2_slash", {
             "charge": False,
@@ -157,24 +158,19 @@ class E2(Enemy):
         """Initialize shard rain attack"""
         self.is_shard_raining = True
         self.rain_timer = 0
-        self.rain_shards = []
         self.rain_index = 0
-        self.RAIN_SPAWN_DELAY = 3  # Frames between each shard spawn
-        self.RAIN_COUNT = 15  # Total shards to spawn
-        self.RAIN_HEIGHT = 300  # Height above player
-        self.RAIN_WIDTH = 600  # Total width of the line of shards
-        
+
         # Determine spawn direction (left-to-right or right-to-left)
         self.rain_left_to_right = self.position.x > target.position.x
         
         # Calculate positions for all shards
         self.rain_positions = []
-        shard_spacing = self.RAIN_WIDTH / (self.RAIN_COUNT - 1) if self.RAIN_COUNT > 1 else 0
+        shard_spacing = self.attack_infos['rain']['width'] / (self.attack_infos['rain']['count'] - 1) if self.attack_infos['rain']['count'] > 1 else 0
         
-        start_x = target.position.x - self.RAIN_WIDTH / 2
-        for i in range(self.RAIN_COUNT):
+        start_x = target.position.x - self.attack_infos['rain']['width'] / 2
+        for i in range(self.attack_infos['rain']['count']):
             pos_x = start_x + i * shard_spacing
-            pos_y = target.position.y - self.RAIN_HEIGHT
+            pos_y = target.position.y - self.attack_infos['rain']['height']
             self.rain_positions.append(Vector2(pos_x, pos_y))
         
         # Reverse positions if needed based on enemy position
@@ -190,7 +186,7 @@ class E2(Enemy):
         self.rain_timer += 1
         
         # Spawn new shard when delay timer is reached
-        if self.rain_timer >= self.RAIN_SPAWN_DELAY and self.rain_index < self.RAIN_COUNT:
+        if self.rain_timer >= self.attack_infos['rain']['delay'] and self.rain_index < self.attack_infos['rain']['count']:
             # Get next position
             spawn_pos = self.rain_positions[self.rain_index]
             
@@ -207,7 +203,7 @@ class E2(Enemy):
             self.rain_timer = 0
         
         # End attack when all shards have been spawned
-        if self.rain_index >= self.RAIN_COUNT and self.rain_timer >= 60:  # Wait a bit after last shard
+        if self.rain_index >= self.attack_infos['rain']['count'] and self.rain_timer >= 60:  # Wait a bit after last shard
             self.is_shard_raining = False
             self.wait_timer = self.get_random(self.WAIT_DURATION)
     
