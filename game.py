@@ -4,6 +4,7 @@ from player import Player
 from enemy_all import *
 from enemy1 import E1
 from enemy2 import E2
+from enemy3 import E3
 from ui import HealthBar
 from pygame.math import Vector2
 import random
@@ -84,7 +85,7 @@ class Game:
     def get_valid_spawn_position(self, enemy_type=1):
         """Get random position for enemy spawn, away from player"""
         # Spawning logic for E1 (floating enemy)
-        if enemy_type == 1:
+        if enemy_type == 1 or enemy_type == 3:
             while True:
                 x = random.randint(100, C.WINDOW_WIDTH - 100)
                 y = random.randint(100, C.WINDOW_HEIGHT - C.FLOOR_HEIGHT - 100)
@@ -96,7 +97,6 @@ class Game:
         
         # Spawning logic for E2 (ground enemy)
         elif enemy_type == 2:
-            # Decide whether to spawn left or right of player
             spawn_right = random.choice([True, False])
             
             if spawn_right:
@@ -114,13 +114,15 @@ class Game:
     def spawn_enemy(self):
         """Spawn an enemy at a valid position"""
         if not self.game_over:
-            enemy_type = random.choice([1, 2])  # 1 for E1, 2 for E2
+            enemy_type = random.choice([3])  # 1 for E1, 2 for E2
             spawn_pos = self.get_valid_spawn_position(enemy_type)
 
             if enemy_type == 1:
                 enemy = E1(spawn_pos.x, spawn_pos.y, self)
             elif enemy_type == 2:
                 enemy = E2(spawn_pos.x, spawn_pos.y, self)
+            elif enemy_type == 3:
+                enemy = E3(spawn_pos.x, spawn_pos.y, self)
                 
             self.groups['enemies'].add(enemy)
             self.groups['all'].add(enemy)

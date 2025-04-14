@@ -51,7 +51,7 @@ class E3(Enemy):
         
         # Laser attack attributes
         self.attack_infos = {
-            'bounce': {'speed': 20, 'bounce_limit': 5, 'damage': 20, 'size': 20}
+            'bounce': {'speed': 20, 'bounce_limit': 5, 'damage': 20, 'size': 8}
         }
 
     def ai_logic(self, target):
