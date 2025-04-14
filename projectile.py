@@ -76,7 +76,6 @@ class Projectile(pygame.sprite.Sprite):
 
 class P_Ball(Projectile):
     def __init__(self, position, velocity, speed_multiplier, damage):
-
         # Stretch and squash parameters
         self.STRETCH_THRESHOLD = 8  # Speed at which stretching begins
         self.MAX_STRETCH_RATIO = 2.5  # Maximum stretching ratio
@@ -87,7 +86,6 @@ class P_Ball(Projectile):
                          radius=radius, surfacesize=int(radius * 2 * self.MAX_STRETCH_RATIO))
         self.color = (255, 0, 0)  # Default red color
     
-        
         self.draw()
     
     def draw(self):
@@ -127,8 +125,6 @@ class P_Ball(Projectile):
     def update(self):
         """Update projectile position and check bounds"""
         super().update()
-
-    
 
 class Shard(Projectile):
     def __init__(self, position, velocity, damage, deflected=False):
@@ -181,4 +177,107 @@ class Shard(Projectile):
             self.spin_speed = self.DEFLECTED_SPIN
         
         # Update position
+        super().update()
+
+class Laser(Projectile):
+    def __init__(self, position, velocity, damage, size=20, bounce_limit=0):
+        # Laser-specific attributes
+        self.size = size
+        self.color = (255, 0, 0)  # Red color for enemy laser
+        self.bounce_limit = bounce_limit
+        self.bounces = bounce_limit + 1
+        
+        # Call parent constructor with appropriate parameters
+        # Lasers don't have gravity, speed multiplier, or speed range
+        super().__init__(position, velocity, 1.0, [0, math.inf], 0, damage, 
+                         radius=size/2, surfacesize=size*2)
+        
+        # Set up the surface for drawing
+        self.draw()
+    
+    def draw(self):
+        """Draw the laser as a square that stretches based on velocity"""
+        # Clear the surface
+        self.image.fill((0, 0, 0, 0))
+        center = (self.surface_size // 2, self.surface_size // 2)
+        speed = self.velocity.length()
+        
+        # Stretch and squash based on velocity, similar to P_Ball
+        if speed > 5 and speed > 0.1:
+            stretch_factor = min(1.0 + (speed - 5) / 10.0, 2.5)
+            squash_factor = max(1.0 / stretch_factor, 0.85)
+            
+            angle_rad = math.atan2(self.velocity.y, self.velocity.x)
+            angle_deg = math.degrees(angle_rad)
+            
+            a = self.size/2 * stretch_factor
+            b = self.size/2 * squash_factor
+            
+            # Create a rectangle surface
+            rect_surface = pygame.Surface((self.surface_size, self.surface_size), pygame.SRCALPHA)
+            rect = pygame.Rect(
+                center[0] - a,
+                center[1] - b,
+                a * 2,
+                b * 2
+            )
+            
+            # Draw the rectangle
+            pygame.draw.rect(rect_surface, self.color, rect)
+            
+            # Rotate the rectangle
+            rotated_surface = pygame.transform.rotate(rect_surface, -angle_deg)
+            rotated_rect = rotated_surface.get_rect(center=center)
+            self.image.blit(rotated_surface, rotated_rect)
+        else:
+            # Draw a simple square if not moving fast enough
+            pygame.draw.rect(self.image, self.color, 
+                           (center[0] - self.size/2, center[1] - self.size/2, 
+                            self.size, self.size))
+    
+    def check_bounds(self):
+        """Check if projectile is out of bounds or hit ground"""
+        # Check if out of screen bounds
+        if (self.position.x < -100 or 
+            self.position.x > C.WINDOW_WIDTH + 100 or
+            self.position.y < -100 or
+            self.position.y > C.WINDOW_HEIGHT + 100):
+            self.kill()
+            return True
+            
+        # Handle bouncing off screen edges and ground
+        if self.bounce_limit > 0:
+            # Bounce off left edge
+            if self.position.x <= 0:
+                self.position.x = 0
+                self.velocity.x = abs(self.velocity.x)  # Bounce right
+                self.bounces -= 1
+                
+            # Bounce off right edge
+            elif self.position.x >= C.WINDOW_WIDTH:
+                self.position.x = C.WINDOW_WIDTH
+                self.velocity.x = -abs(self.velocity.x)  # Bounce left
+                self.bounces -= 1
+                
+            # Bounce off top edge
+            elif self.position.y <= 0:
+                self.position.y = 0
+                self.velocity.y = abs(self.velocity.y)  # Bounce down
+                self.bounces -= 1
+                
+            # Bounce off ground
+            elif self.position.y >= C.WINDOW_HEIGHT - C.FLOOR_HEIGHT:
+                self.position.y = C.WINDOW_HEIGHT - C.FLOOR_HEIGHT
+                self.velocity.y = -abs(self.velocity.y)  # Bounce up
+                self.bounces -= 1
+                
+            # Check if max bounces reached
+            if self.bounces <= 0:
+                self.kill()
+                return True
+                
+        return False
+    
+    def update(self):
+        """Update laser position and check bounds"""
         super().update()
