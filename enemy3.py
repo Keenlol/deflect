@@ -49,9 +49,34 @@ class E3(Enemy):
         self.is_aiming = False
         self.aim_angle = 0  # Angle to aim at player
         
-        # Laser attack attributes
+        # Attack attributes
         self.attack_infos = {
-            'bounce': {'speed': 20, 'bounce_limit': 5, 'damage': 20, 'size': 8}
+            'bounce': {
+                'speed': 20, 
+                'bounce_limit': 5, 
+                'damage': 20, 
+                'size': 8
+            },
+            'bomb': {
+                'initial_speed': 15,
+                'speed_mul': 0.95,  # Slows down over time
+                'explosion_threshold': 2.0,  # Speed threshold for explosion
+                'explosion_count': 12,  # Number of lasers in explosion
+                'explosion_speed': 10,
+                'explosion_speed_mul': 0.97,
+                'initial_damage': 15,
+                'explosion_damage': 10,
+                'initial_size': 12,
+                'explosion_size': 6
+            },
+            'homing': {
+                'count': 3,  # Number of homing lasers to fire
+                'delay': 0.3,  # Delay between shots in seconds
+                'speed': 8,
+                'turn_rate': 3.0,  # Degrees per frame
+                'damage': 25,
+                'size': 8
+            }
         }
 
     def ai_logic(self, target):
@@ -77,7 +102,9 @@ class E3(Enemy):
                 self.is_aiming = False
                 self.is_attacking = True
                 self.anim.change_state("attack")
-                self.fire_laser(target)
+                # Randomly choose between the three attacks
+                attack_func = random.choice([self.fire_laser, self.fire_bomb, self.fire_homing])
+                attack_func(target)
         elif self.is_attacking:
             # Stay still during attack
             self.current_speed = 0
@@ -137,6 +164,162 @@ class E3(Enemy):
         # Update rect position using the final calculated position
         self.rect.center = self.position
     
+    def fire_bomb(self, target):
+        """Fire a bomb that explodes into multiple lasers"""
+        # Calculate direction to target
+        to_target = target.position - self.position
+        direction = to_target.normalize()
+        
+        # Get bomb properties
+        bomb_info = self.attack_infos['bomb']
+        
+        # Create initial bomb projectile
+        gun_position = Vector2(self.position.x + (self.width/2 if self.facing_right else -self.width/2), 
+                             self.position.y)
+        
+        # Create the bomb with a callback for explosion
+        def on_slow_callback(bomb):
+            # Create explosion lasers in all directions
+            for i in range(bomb_info['explosion_count']):
+                angle = (360 / bomb_info['explosion_count']) * i
+                rad_angle = math.radians(angle)
+                explosion_dir = Vector2(math.cos(rad_angle), math.sin(rad_angle))
+                
+                # Create explosion laser
+                explosion_laser = Laser(
+                    Vector2(bomb.position),  # Use bomb's position
+                    explosion_dir * bomb_info['explosion_speed'],
+                    bomb_info['explosion_damage'],
+                    bomb_info['explosion_size']
+                )
+                # If the bomb was deflected, all explosion lasers should be deflected too
+                explosion_laser.is_deflected = bomb.is_deflected
+                explosion_laser.SPEED_MULTIPLIER = bomb_info['explosion_speed_mul']
+                
+                # Add to game groups
+                self.game.groups['bullets'].add(explosion_laser)
+                self.game.groups['all'].add(explosion_laser)
+            
+            # Remove the original bomb
+            bomb.kill()
+
+        # Create initial bomb laser
+        bomb = Laser(gun_position, direction * bomb_info['initial_speed'],
+                    bomb_info['initial_damage'], bomb_info['initial_size'])
+        bomb.SPEED_MULTIPLIER = bomb_info['speed_mul']
+        bomb.explosion_threshold = bomb_info['explosion_threshold']
+        bomb.update = lambda: self._update_bomb(bomb, on_slow_callback)
+        
+        # Add to game groups
+        self.game.groups['bullets'].add(bomb)
+        self.game.groups['all'].add(bomb)
+        
+        return True  # Attack is complete after firing
+
+    def _update_bomb(self, bomb, on_slow_callback):
+        """Custom update method for bomb projectiles"""
+        # Apply normal physics
+        bomb.apply_physics()
+        
+        # Check if speed is below threshold
+        if bomb.velocity.length() < bomb.explosion_threshold:
+            on_slow_callback(bomb)
+            return
+        
+        # Normal bounds check and draw
+        bomb.check_bounds()
+        bomb.draw()
+
+    def fire_homing(self, target):
+        """Fire multiple homing lasers with delay"""
+        if not hasattr(self, '_homing_state'):
+            self._homing_state = {
+                'shots_fired': 0,
+                'delay': 0
+            }
+        
+        homing_info = self.attack_infos['homing']
+        
+        # Check if we need to wait
+        if self._homing_state['delay'] > 0:
+            self._homing_state['delay'] -= 1/C.FPS
+            return False
+        
+        if self._homing_state['shots_fired'] >= homing_info['count']:
+            # Reset for next use
+            self._homing_state = {
+                'shots_fired': 0,
+                'delay': 0
+            }
+            return True
+        
+        # Calculate initial direction
+        to_target = target.position - self.position
+        direction = to_target.normalize()
+        
+        # Create homing laser
+        gun_position = Vector2(self.position.x + (self.width/2 if self.facing_right else -self.width/2), 
+                             self.position.y)
+        
+        laser = Laser(gun_position, direction * homing_info['speed'],
+                     homing_info['damage'], homing_info['size'])
+        
+        # Add homing behavior
+        laser.target = target
+        laser.original_target = target  # Keep track of original target for deflection logic
+        laser.turn_rate = homing_info['turn_rate']
+        laser.update = lambda: self._update_homing_laser(laser)
+        
+        # Add to game groups
+        self.game.groups['bullets'].add(laser)
+        self.game.groups['all'].add(laser)
+        
+        # Update firing state
+        self._homing_state['shots_fired'] += 1
+        self._homing_state['delay'] = homing_info['delay']
+        
+        return False
+
+    def _update_homing_laser(self, laser):
+        """Custom update method for homing lasers"""
+        if not laser.alive:
+            return
+            
+        # If deflected, switch target to a random enemy
+        if laser.is_deflected and (not hasattr(laser, 'deflected_retargeted') or not laser.deflected_retargeted):
+            # Get all enemies
+            enemies = [sprite for sprite in self.game.groups['enemies'] 
+                      if sprite.alive and sprite != laser.original_target]
+            if enemies:
+                laser.target = random.choice(enemies)
+                laser.deflected_retargeted = True
+            
+        if not laser.target or not laser.target.alive:
+            # If target is dead/none, just continue in current direction
+            laser.apply_physics()
+            laser.check_bounds()
+            laser.draw()
+            return
+            
+        # Calculate angle to target
+        to_target = laser.target.position - laser.position
+        target_angle = math.degrees(math.atan2(to_target.y, to_target.x))
+        current_angle = math.degrees(math.atan2(laser.velocity.y, laser.velocity.x))
+        
+        # Calculate angle difference and clamp to turn rate
+        angle_diff = (target_angle - current_angle + 180) % 360 - 180
+        turn_amount = max(-laser.turn_rate, min(laser.turn_rate, angle_diff))
+        
+        # Update velocity direction
+        new_angle = math.radians(current_angle + turn_amount)
+        speed = laser.velocity.length()
+        laser.velocity = Vector2(math.cos(new_angle), math.sin(new_angle)) * speed
+        
+        # Normal physics and checks
+        laser.apply_physics()
+        laser.check_bounds()
+        laser.draw()
+
     def fire_laser(self, target):
         """Fire a laser at the target"""
         # Calculate direction to target
