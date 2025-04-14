@@ -42,7 +42,8 @@ class E2(Enemy):
         
         self.attack_infos = {'slash': {'speed':10, 'dash dur':30, 'charge dur':30},
                             'shard': {'count':10, 'delay': 30, 'radius': 100, 'height': 100},
-                            'rain': {'count':15, 'delay':3, 'height':300, 'width': 600}}
+                            'rain': {'count':15, 'delay':3, 'height':300, 'width': 600},
+                            'damage': 30}
         # Weapon sprite
         self.weapon_anim = Animation(self, "sprites/enemies/e2_slash", {
             "charge": False,
@@ -125,7 +126,7 @@ class E2(Enemy):
                 self.position.y - height + rdm.uniform(-radius, radius)
             )
             # Initialize with zero velocity
-            shard = Shard(spawn_pos, Vector2(0, 0), 33)
+            shard = Shard(spawn_pos, Vector2(0, 0), self.attack_infos['damage'])
             self.shards.append(shard)
             self.game.groups['bullets'].add(shard)
             self.game.groups['all'].add(shard)
@@ -191,7 +192,7 @@ class E2(Enemy):
             spawn_pos = self.rain_positions[self.rain_index]
             
             # Create shard with downward velocity
-            shard = Shard(spawn_pos, Vector2(0, -2), 33)
+            shard = Shard(spawn_pos, Vector2(0, -2), self.attack_infos['damage'])
             shard.GRAVITY = 0.2
             
             # Add to game
@@ -308,7 +309,7 @@ class E2(Enemy):
         for _ in range(self.attack_infos['shard']['count']):
             angle_rad = math.radians(random.uniform(0,360))
             velocity = Vector2(math.cos(angle_rad), math.sin(angle_rad)) * rdm.uniform(15, 25)
-            shard = Shard(midpoint + Vector2(0, -0), velocity, 33, deflected=True)
+            shard = Shard(midpoint + Vector2(0, -0), velocity, self.attack_infos['damage'], deflected=True)
             self.game.groups['bullets'].add(shard)
             self.game.groups['all'].add(shard)
 
