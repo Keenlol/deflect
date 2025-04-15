@@ -16,6 +16,8 @@ class Projectile(pygame.sprite.Sprite):
         self.DEFLECTED_VELOCITY = self.velocity * 1.1
         self.SPEED_RANGE = speed_range
         self.is_deflected = deflected
+        self.COLOR_SET = {'red': (255, 0, 0), 'blue': (0, 100, 255)}
+        self.color = self.COLOR_SET['blue'] if self.is_deflected else self.COLOR_SET['red']
 
         # Physics attributes
         self.GRAVITY = gravity
@@ -49,7 +51,8 @@ class Projectile(pygame.sprite.Sprite):
     
     def draw(self):
         """Draw projectile, override by child class"""
-        pass
+        self.color = self.COLOR_SET['blue'] if self.is_deflected else self.COLOR_SET['red']
+
 
     def apply_physics(self):
         self.velocity *= self.SPEED_MULTIPLIER
@@ -91,6 +94,8 @@ class P_Ball(Projectile):
     def draw(self):
         """Draw the ball with current color, stretching based on velocity"""
         # Clear the surface
+        super().draw()
+
         self.image.fill((0, 0, 0, 0))
         center = (self.surface_size // 2, self.surface_size // 2)
         speed = self.velocity.length()
@@ -145,6 +150,8 @@ class Shard(Projectile):
         self.draw()
     
     def draw(self):
+        super().draw()
+
         self.image.fill((0, 0, 0, 0))
         center = (self.surface_size/2, self.surface_size/2)
         angle_rad = math.radians(self.angle)
@@ -180,22 +187,25 @@ class Shard(Projectile):
         super().update()
 
 class Laser(Projectile):
-    def __init__(self, position, velocity, damage, radius, bounce_limit=0):
+    def __init__(self, position, velocity, damage, radius, bounce_limit=0, speed_multiplier=1, deflected=False):
         # Laser-specific attributes
         self.STRETCH_THRESHOLD = 5
-        self.color = (255, 0, 0)  # Red color for enemy laser
         self.bounces = bounce_limit + 1
         
         # Call parent constructor with appropriate parameters
         # Lasers don't have gravity, speed multiplier, or speed range
-        super().__init__(position, velocity, 1.0, [0, math.inf], 0, damage, 
-                         radius=radius, surfacesize=int(radius * 20))
+        super().__init__(position, velocity, speed_multiplier, [0, math.inf], 0, damage, 
+                         radius=radius, surfacesize=int(radius * 20),
+                         deflected=deflected)
         
         # Set up the surface for drawing
         self.draw()
     
     def draw(self):
         """Draw the laser as a square that stretches based on velocity"""
+        super().draw()
+
+        
         # Clear the surface
         self.image.fill((0, 0, 0, 0))
         center = (self.surface_size // 2, self.surface_size // 2)
@@ -226,11 +236,6 @@ class Laser(Projectile):
         rotated_surface = pygame.transform.rotate(rect_surface, -angle_deg)
         rotated_rect = rotated_surface.get_rect(center=center)
         self.image.blit(rotated_surface, rotated_rect)
-        # else:
-        #     # Draw a simple square if not moving fast enough
-        #     pygame.draw.rect(self.image, self.color, 
-        #                    (center[0] - self.radius, center[1] - self.radius, 
-        #                     self.radius*2, self.radius*2))
     
     def check_bounds(self):
         """Check if projectile is out of bounds or hit ground"""
