@@ -38,6 +38,7 @@ class E3(Enemy):
         self.bobbing_timer = 0.0
 
         # Attack attributes
+        self.shots_fired = 0
         self.attack_timer = 0
         self.attack_phase = 0
         self.is_attacking = False
@@ -58,16 +59,16 @@ class E3(Enemy):
                 'size': 8
             },
             'bomb': {
-                'initial_speed': 15,
-                'speed_mul': 0.95,  # Slows down over time
-                'explosion_threshold': 2.0,  # Speed threshold for explosion
+                'initial_speed': 30,
+                'speed_mul': 0.9,  # Slows down over time
+                'explosion_threshold': 1.5,  # Speed threshold for explosion
                 'explosion_count': 12,  # Number of lasers in explosion
                 'explosion_speed': 10,
                 'explosion_speed_mul': 0.97,
                 'initial_damage': 15,
                 'explosion_damage': 10,
                 'initial_size': 12,
-                'explosion_size': 6
+                'explosion_size': 8
             },
             'homing': {
                 'count': 3,  # Number of homing lasers to fire
@@ -102,18 +103,26 @@ class E3(Enemy):
                 self.is_aiming = False
                 self.is_attacking = True
                 self.anim.change_state("attack")
+                # Reset shots_fired before selecting an attack
+                self.shots_fired = 0
+                self.attack_timer = 0
                 # Randomly choose between the three attacks
-                attack_func = random.choice([self.fire_laser, self.fire_bomb, self.fire_homing])
-                attack_func(target)
+                self.current_attack = random.choice([self.fire_laser, self.fire_bomb, self.fire_homing])
+                self.current_attack(target)
         elif self.is_attacking:
             # Stay still during attack
             self.current_speed = 0
             self.velocity = Vector2(0, 0)
             
+            # If we have a current attack that returns false, continue it
+            if self.current_attack and not self.current_attack(target):
+                return
+                
             # Attack animation will play and then return to idle
             if self.anim.animation_finished:
                 self.is_attacking = False
                 self.aim_cooldown_timer = 0
+                self.current_attack = None
         else:
             # Normal movement when not aiming or attacking
             to_player = target.position - self.base_position
@@ -166,6 +175,10 @@ class E3(Enemy):
     
     def fire_bomb(self, target):
         """Fire a bomb that explodes into multiple lasers"""
+        # Only fire if we haven't fired yet
+        if self.shots_fired > 0:
+            return True
+            
         # Calculate direction to target
         to_target = target.position - self.position
         direction = to_target.normalize()
@@ -214,7 +227,10 @@ class E3(Enemy):
         self.game.groups['bullets'].add(bomb)
         self.game.groups['all'].add(bomb)
         
-        return True  # Attack is complete after firing
+        # Mark as fired
+        self.shots_fired = 1
+        
+        return True  # We're done after firing once
 
     def _update_bomb(self, bomb, on_slow_callback):
         """Custom update method for bomb projectiles"""
@@ -232,25 +248,17 @@ class E3(Enemy):
 
     def fire_homing(self, target):
         """Fire multiple homing lasers with delay"""
-        if not hasattr(self, '_homing_state'):
-            self._homing_state = {
-                'shots_fired': 0,
-                'delay': 0
-            }
-        
         homing_info = self.attack_infos['homing']
         
-        # Check if we need to wait
-        if self._homing_state['delay'] > 0:
-            self._homing_state['delay'] -= 1/C.FPS
+        # Check if we need to wait for the timer
+        if self.attack_timer > 0:
+            self.attack_timer -= 1/C.FPS
             return False
         
-        if self._homing_state['shots_fired'] >= homing_info['count']:
+        # Check if we've fired all shots
+        if self.shots_fired >= homing_info['count']:
             # Reset for next use
-            self._homing_state = {
-                'shots_fired': 0,
-                'delay': 0
-            }
+            self.shots_fired = 0
             return True
         
         # Calculate initial direction
@@ -275,8 +283,8 @@ class E3(Enemy):
         self.game.groups['all'].add(laser)
         
         # Update firing state
-        self._homing_state['shots_fired'] += 1
-        self._homing_state['delay'] = homing_info['delay']
+        self.shots_fired += 1
+        self.attack_timer = homing_info['delay']
         
         return False
 
@@ -322,6 +330,10 @@ class E3(Enemy):
 
     def fire_laser(self, target):
         """Fire a laser at the target"""
+        # Only fire if we haven't fired yet
+        if self.shots_fired > 0:
+            return True
+            
         # Calculate direction to target
         to_target = target.position - self.position
         direction = to_target.normalize()
@@ -343,3 +355,8 @@ class E3(Enemy):
         # Add to game groups
         self.game.groups['bullets'].add(laser)
         self.game.groups['all'].add(laser)
+        
+        # Mark as fired
+        self.shots_fired = 1
+        
+        return True  # We're done after firing once
