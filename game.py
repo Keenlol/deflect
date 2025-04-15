@@ -113,19 +113,18 @@ class Game:
     
     def spawn_enemy(self):
         """Spawn an enemy at a valid position"""
-        if not self.game_over:
-            enemy_type = random.choice([3])  # 1 for E1, 2 for E2
-            spawn_pos = self.get_valid_spawn_position(enemy_type)
+        enemy_type = random.choice([3])  # 1 for E1, 2 for E2
+        spawn_pos = self.get_valid_spawn_position(enemy_type)
 
-            if enemy_type == 1:
-                enemy = E1(spawn_pos.x, spawn_pos.y, self)
-            elif enemy_type == 2:
-                enemy = E2(spawn_pos.x, spawn_pos.y, self)
-            elif enemy_type == 3:
-                enemy = E3(spawn_pos.x, spawn_pos.y, self)
-                
-            self.groups['enemies'].add(enemy)
-            self.groups['all'].add(enemy)
+        if enemy_type == 1:
+            enemy = E1(spawn_pos.x, spawn_pos.y, self)
+        elif enemy_type == 2:
+            enemy = E2(spawn_pos.x, spawn_pos.y, self)
+        elif enemy_type == 3:
+            enemy = E3(spawn_pos.x, spawn_pos.y, self)
+            
+        self.groups['enemies'].add(enemy)
+        self.groups['all'].add(enemy)
 
     
     def add_score(self, amount):
@@ -218,7 +217,6 @@ class Game:
     def draw(self):
         """Draw the game screen"""
         self.screen.fill(C.BLACK)
-        print('update', self.camera_offset)
         
         # Save the original positions of all sprites
         original_positions = {}
