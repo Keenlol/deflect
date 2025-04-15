@@ -27,12 +27,12 @@ class E3(Enemy):
         # Movement attributes
         self.TARGET_DST = random.randint(300,500)
         self.DST_TOLERANCE = 75
-        self.ACCELERATION = random.uniform(0.01, 0.2)  # How quickly speed increases
+        self.ACCELERATION = random.uniform(0.01, 0.1)  # How quickly speed increases
         self.DECELERATION = 0.05 # Multiplier for speed reduction
         self.current_speed = 0  # Track current speed for smooth acceleration
         
         # Bobbing attributes
-        self.BOB_FREQUENCY = 0.5  # How many cycles per second
+        self.BOB_FREQUENCY = 0.2  # How many cycles per second
         self.BOB_AMPLITUDE = 20   # How many pixels up/down
         self.bobbing_timer = 0.0
         self.bob_offset = 0  # Current bobbing offset
@@ -44,11 +44,10 @@ class E3(Enemy):
         self.is_attacking = False
         self.current_attack = None
         self.aim_timer = 0
-        self.aim_duration = 2.0  # Fixed aim duration
+        self.aim_duration = 1.5  # Fixed aim duration
         self.aim_cooldown = random.uniform(3.0, 5.0)  # Random cooldown between aims
         self.aim_cooldown_timer = 0
         self.is_aiming = False
-        self.aim_angle = 0  # Angle to aim at player
         
         # Attack attributes
         self.attack_infos = {
@@ -80,22 +79,27 @@ class E3(Enemy):
             }
         }
 
+    def update_animation(self):
+        super().update_animation()
+
+        if self.is_alive:
+            self.bobbing_timer += 1 / C.FPS
+            self.bob_offset = self.BOB_AMPLITUDE * math.sin(self.bobbing_timer * self.BOB_FREQUENCY * 2 * math.pi)
+            
+            # Apply bobbing to position only for rendering, not physics
+            self.rect.center = (self.position.x, self.position.y + self.bob_offset)
+
     def ai_logic(self, target):
         """Main AI logic for E3"""
-        # Calculate direction to player for aiming
-        
-        to_player = target.position - self.position
-        self.aim_angle = math.atan2(to_player.y, to_player.x)
-        
-        # Always face the player based on aim angle
-        self.facing_right = math.cos(self.aim_angle) > 0
+        self.facing_right = True if target.position.x > self.position.x else False
         
         # Handle aiming and attacking
         if self.is_aiming:
             # Stop movement while aiming
             self.current_speed = 0
             self.velocity = Vector2(0, 0)
-            
+            self.anim.change_state("aim")
+
             # Update aim timer
             self.aim_timer += 1/C.FPS
             
@@ -159,16 +163,8 @@ class E3(Enemy):
             if self.aim_cooldown_timer >= self.aim_cooldown:
                 self.is_aiming = True
                 self.aim_timer = 0
-                self.anim.change_state("aim")
                 # Randomize next aim cooldown
                 self.aim_cooldown = random.uniform(3.0, 5.0)
-
-        # Update bobbing timer
-        self.bobbing_timer += 1 / C.FPS
-        self.bob_offset = self.BOB_AMPLITUDE * math.sin(self.bobbing_timer * self.BOB_FREQUENCY * 2 * math.pi)
-        
-        # Apply bobbing to position only for rendering, not physics
-        self.rect.center = (self.position.x, self.position.y + self.bob_offset)
 
     def fire_bomb(self, target):
         """Fire a bomb that explodes into multiple lasers"""
@@ -204,8 +200,6 @@ class E3(Enemy):
                     speed_multiplier=bomb_info['explosion_speed_mul'],
                     deflected=bomb.is_deflected)
                 
-                print(explosion_laser.is_deflected)
-
                 self.game.groups['bullets'].add(explosion_laser)
                 self.game.groups['all'].add(explosion_laser)
             
