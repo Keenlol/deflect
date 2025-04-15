@@ -165,11 +165,8 @@ class Shard(Projectile):
              center[1] + math.sin(angle_rad) * self.base/2)
         ]
         
-        # points = [(int(x), int(y)) for x, y in points]
-        color = (0, 0, 255) if self.is_deflected else (255, 0, 0)
         shard_surface = pygame.Surface((self.surface_size, self.surface_size), pygame.SRCALPHA)
-
-        pygame.draw.polygon(self.image, color, points)
+        pygame.draw.polygon(self.image, self.color, points)
         rotated_surface = pygame.transform.rotate(shard_surface, -angle_rad)
         rotated_rect = rotated_surface.get_rect(center=center)
         self.image.blit(rotated_surface, rotated_rect)
