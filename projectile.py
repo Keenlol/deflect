@@ -269,3 +269,5 @@ class Laser(Projectile):
     def update(self):
         """Update laser position and check bounds"""
         super().update()
+        if self.velocity.length() <= 1:
+            self.kill()
