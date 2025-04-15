@@ -59,7 +59,7 @@ class Enemy(pygame.sprite.Sprite):
     def get_random(value_range:tuple):
         if isinstance(value_range[0], int):
             return random.randint(value_range[0], value_range[1])
-        return value_range[0] + random.random() * (value_range[1] - value_range[0])
+        return random.uniform(value_range[0], value_range[1])
 
     def update_animation(self):
         """Update the current animation frame"""
