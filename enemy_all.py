@@ -171,8 +171,8 @@ class Enemy(pygame.sprite.Sprite):
         # Update knockback before applying regular physics
         self.update_knockback()
         self.apply_physics()
-        self.update_animation()
         self.check_projectile_collisions()
+        self.update_animation()
 
     def kill(self):
         """Override kill method to add score"""
