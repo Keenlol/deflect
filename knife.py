@@ -32,7 +32,6 @@ class Knife(pygame.sprite.Sprite):
         # Deflection attributes
         self.active = False
         self.angle = 0
-        self.deflected_color = (0, 100, 255)
         self.DEFLECTED_SPEED_MUL = 2
         # Add to game's sprite group
         # self.player.game.all_sprites.add(self)
@@ -120,5 +119,4 @@ class Knife(pygame.sprite.Sprite):
         bullet.SPEED_RANGE[0] *= self.DEFLECTED_SPEED_MUL
         bullet.SPEED_RANGE[1] *= self.DEFLECTED_SPEED_MUL
         bullet.velocity = Vector2(math.cos(angle_rad), -math.sin(angle_rad)) * (bullet.velocity.length() * self.DEFLECTED_SPEED_MUL)
-        bullet.color = self.deflected_color
         bullet.draw()
