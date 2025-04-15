@@ -32,10 +32,10 @@ class E3(Enemy):
         self.current_speed = 0  # Track current speed for smooth acceleration
         
         # Bobbing attributes
-        self.base_position = Vector2(x, y)  # Center point for horizontal movement and bobbing
         self.BOB_FREQUENCY = 0.5  # How many cycles per second
         self.BOB_AMPLITUDE = 20   # How many pixels up/down
         self.bobbing_timer = 0.0
+        self.bob_offset = 0  # Current bobbing offset
 
         # Attack attributes
         self.shots_fired = 0
@@ -83,7 +83,8 @@ class E3(Enemy):
     def ai_logic(self, target):
         """Main AI logic for E3"""
         # Calculate direction to player for aiming
-        to_player = target.position - self.base_position
+        
+        to_player = target.position - self.position
         self.aim_angle = math.atan2(to_player.y, to_player.x)
         
         # Always face the player based on aim angle
@@ -125,7 +126,7 @@ class E3(Enemy):
                 self.current_attack = None
         else:
             # Normal movement when not aiming or attacking
-            to_player = target.position - self.base_position
+            to_player = target.position - self.position
             current_distance = to_player.length()
             
             # Handle horizontal movement based on distance
@@ -138,7 +139,7 @@ class E3(Enemy):
                 self.current_speed = min(self.current_speed + self.ACCELERATION, self.MOVE_SPEED)
                 
                 self.velocity = direction * self.current_speed
-                self.base_position += self.velocity
+                self.position += self.velocity
                 
                 self.anim.change_state("idle")
             else:
@@ -149,7 +150,7 @@ class E3(Enemy):
                     self.velocity = Vector2(0, 0)
                 else:
                     self.velocity = self.velocity.normalize() * self.current_speed
-                    self.base_position += self.velocity
+                    self.position += self.velocity
                     
                 self.anim.change_state("idle")
             
@@ -161,18 +162,14 @@ class E3(Enemy):
                 self.anim.change_state("aim")
                 # Randomize next aim cooldown
                 self.aim_cooldown = random.uniform(3.0, 5.0)
-        
-        # Update bobbing
+
+        # Update bobbing timer
         self.bobbing_timer += 1 / C.FPS
-        bob_offset = self.BOB_AMPLITUDE * math.sin(self.bobbing_timer * self.BOB_FREQUENCY * 2 * math.pi)
+        self.bob_offset = self.BOB_AMPLITUDE * math.sin(self.bobbing_timer * self.BOB_FREQUENCY * 2 * math.pi)
         
-        # Update final position including bobbing
-        self.position.x = self.base_position.x
-        self.position.y = self.base_position.y + bob_offset
-        
-        # Update rect position using the final calculated position
-        self.rect.center = self.position
-    
+        # Apply bobbing to position only for rendering, not physics
+        self.rect.center = (self.position.x, self.position.y + self.bob_offset)
+
     def fire_bomb(self, target):
         """Fire a bomb that explodes into multiple lasers"""
         # Only fire if we haven't fired yet
