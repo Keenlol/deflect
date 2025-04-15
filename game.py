@@ -172,9 +172,6 @@ class Game:
             remaining_intensity = self.shake_intensity * (self.shake_timer / self.shake_duration)
             self.camera_offset.x = random.uniform(-remaining_intensity, remaining_intensity)
             self.camera_offset.y = random.uniform(-remaining_intensity, remaining_intensity)
-            print(self.shake_timer, self.camera_offset)
-        # else:
-            # self.camera_offset = Vector2(0, 0)
 
     def update(self):
         """Update game state"""
