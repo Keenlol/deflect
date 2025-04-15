@@ -8,7 +8,7 @@ class E3(Enemy):
         # Animation setup
         loops = {
             "idle": True,
-            "aim": False,
+            "aim": True,
             "attack": False,
             "hurt": False,
             "death": False
@@ -59,7 +59,7 @@ class E3(Enemy):
                 'size': 8
             },
             'bomb': {
-                'initial_speed': 30,
+                'initial_speed': 40,
                 'speed_mul': 0.9,  # Slows down over time
                 'explosion_threshold': 1.5,  # Speed threshold for explosion
                 'explosion_count': 12,  # Number of lasers in explosion
@@ -71,10 +71,10 @@ class E3(Enemy):
                 'explosion_size': 8
             },
             'homing': {
-                'count': 3,  # Number of homing lasers to fire
-                'delay': 0.3,  # Delay between shots in seconds
+                'count': 5,  # Number of homing lasers to fire
+                'delay': 0.1,  # Delay between shots in seconds
                 'speed': 8,
-                'turn_rate': 3.0,  # Degrees per frame
+                'turn_rate': (0.5, 4.0),  # Degrees per frame
                 'damage': 25,
                 'size': 8
             }
@@ -200,27 +200,26 @@ class E3(Enemy):
                 
                 # Create explosion laser
                 explosion_laser = Laser(
-                    Vector2(bomb.position),  # Use bomb's position
-                    explosion_dir * bomb_info['explosion_speed'],
-                    bomb_info['explosion_damage'],
-                    bomb_info['explosion_size']
-                )
-                # If the bomb was deflected, all explosion lasers should be deflected too
-                explosion_laser.is_deflected = bomb.is_deflected
-                explosion_laser.SPEED_MULTIPLIER = bomb_info['explosion_speed_mul']
+                    position=Vector2(bomb.position),  # Use bomb's position
+                    velocity=explosion_dir * bomb_info['explosion_speed'],
+                    damage=bomb_info['explosion_damage'],
+                    radius=bomb_info['explosion_size'],
+                    speed_multiplier=bomb_info['explosion_speed_mul'],
+                    deflected=bomb.is_deflected)
                 
-                # Add to game groups
+                print(explosion_laser.is_deflected)
+
                 self.game.groups['bullets'].add(explosion_laser)
                 self.game.groups['all'].add(explosion_laser)
             
-            # Remove the original bomb
             bomb.kill()
 
         # Create initial bomb laser
-        bomb = Laser(gun_position, direction * bomb_info['initial_speed'],
-                    bomb_info['initial_damage'], bomb_info['initial_size'])
-        bomb.SPEED_MULTIPLIER = bomb_info['speed_mul']
-        bomb.explosion_threshold = bomb_info['explosion_threshold']
+        bomb = Laser(position=gun_position, 
+                     velocity=direction * bomb_info['initial_speed'],
+                     damage=bomb_info['initial_damage'], 
+                     radius=bomb_info['initial_size'],
+                     speed_multiplier=bomb_info['speed_mul'])
         bomb.update = lambda: self._update_bomb(bomb, on_slow_callback)
         
         # Add to game groups
@@ -238,7 +237,7 @@ class E3(Enemy):
         bomb.apply_physics()
         
         # Check if speed is below threshold
-        if bomb.velocity.length() < bomb.explosion_threshold:
+        if bomb.velocity.length() < self.attack_infos['bomb']['explosion_threshold']:
             on_slow_callback(bomb)
             return
         
@@ -275,7 +274,7 @@ class E3(Enemy):
         # Add homing behavior
         laser.target = target
         laser.original_target = target  # Keep track of original target for deflection logic
-        laser.turn_rate = homing_info['turn_rate']
+        laser.turn_rate = self.get_random(homing_info['turn_rate'])
         laser.update = lambda: self._update_homing_laser(laser)
         
         # Add to game groups
