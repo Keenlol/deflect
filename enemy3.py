@@ -62,8 +62,8 @@ class E3(Enemy):
                 'speed_mul': 0.9,  # Slows down over time
                 'explosion_threshold': 1.5,  # Speed threshold for explosion
                 'explosion_count': 18,  # Number of lasers in explosion
-                'explosion_speed': 10,
-                'explosion_speed_mul': 0.97,
+                'explosion_speed': 15,
+                'explosion_speed_mul': 0.95,
                 'initial_damage': 15,
                 'explosion_damage': 10,
                 'initial_size': 12,
