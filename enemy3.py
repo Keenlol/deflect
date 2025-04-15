@@ -22,7 +22,7 @@ class E3(Enemy):
 
         super().__init__(x, y, game, width=100, 
                          height=100, gravity=0.0, movespeed=random.uniform(0.5, 2.0), 
-                         maxhp=80, anim=anim_info)
+                         maxhp=40, anim=anim_info)
 
         # Movement attributes
         self.TARGET_DST = random.randint(300,500)

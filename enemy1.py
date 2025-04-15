@@ -17,7 +17,7 @@ class E1(Enemy):
 
         super().__init__(x, y, game, width=100, 
                          height=100, gravity=0.0, movespeed=0.1, 
-                         maxhp=80, anim=anim_info)
+                         maxhp=40, anim=anim_info)
 
         # Movement attributes
         self.start_pos = Vector2(x, y)
