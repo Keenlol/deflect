@@ -1,4 +1,5 @@
 from enemy_all import *
+from timer import Timer
 
 class E1(Enemy):
     def __init__(self, x, y, game):
@@ -22,27 +23,42 @@ class E1(Enemy):
         # Movement attributes
         self.start_pos = Vector2(x, y)
         self.target_pos = Vector2(x, y)
-        self.move_timer = 0
         self.move_duration = 3.0  # seconds to reach target
-        self.wait_timer = 0
+        
+        # Setup timers
         self.WAIT_TIME_MIN = 1.0
         self.WAIT_TIME_MAX = 5.0
+        
+        # Timer for movement - starts paused
+        self.move_timer = Timer(duration=self.move_duration, owner=self, paused=True)
+        
+        # Timer for waiting between movements - starts paused
+        self.wait_timer = Timer(
+            duration=random.uniform(self.WAIT_TIME_MIN, self.WAIT_TIME_MAX), 
+            owner=self, 
+            paused=True
+        )
+        
+        # Timer for attack cooldowns - starts paused
+        self.attack_timer = Timer(duration=0, owner=self, paused=True)
+        
         self.needs_new_target = True
         
         # Remove acceleration/deceleration as we'll use easing instead
 
-        self.attack_info = {'radial': {'speed': 8, 'speed_mul': 1, 'delay': 5},
-                                'burst': {'speed': 20, 'speed_mul': 0.95, 'delay': 10, 'spread':20},
-                                'follow': {'speed': 0.1, 'speed_mul': 1.05, 'delay': 5},
+        self.attack_info = {'radial': {'speed': 8, 'speed_mul': 1, 'delay': 5/60},
+                                'burst': {'speed': 20, 'speed_mul': 0.95, 'delay': 10/60, 'spread':20},
+                                'follow': {'speed': 0.1, 'speed_mul': 1.05, 'delay': 5/60},
                                 'damage': 33,
                                 'radius': 10}
         
         # Attack pattern attributes
-        self.attack_timer = 0
         self.attack_phase = 0
         self.is_attacking = False
         self.current_attack = None
         self.shots_fired = 0
+
+        self.wait_timer.start()
 
     def ease_in_out_sine(self, t):
         """Sine easing function for smooth movement"""
@@ -98,12 +114,12 @@ class E1(Enemy):
             # First round
             shoot_radial_layer(15, 0)
             self.attack_phase = 1
-            self.attack_timer = pr['delay']
+            self.attack_timer.duration = pr['delay']
+            self.attack_timer.start()
             return False
             
         elif self.attack_phase == 1:
-            if self.attack_timer > 0:
-                self.attack_timer -= 1
+            if not self.attack_timer.is_completed:
                 return False
             shoot_radial_layer(15, 7.5)
             
@@ -114,8 +130,7 @@ class E1(Enemy):
         if self.shots_fired >= 3:
             return True
             
-        if self.attack_timer > 0:
-            self.attack_timer -= 1
+        if not self.attack_timer.is_completed:
             return False
             
         # Calculate base direction to target
@@ -132,7 +147,8 @@ class E1(Enemy):
             self.game.groups['all'].add(projectile)
         
         self.shots_fired += 1
-        self.attack_timer = pb['delay']
+        self.attack_timer.duration = pb['delay']
+        self.attack_timer.start()
         return False
     
     def shoot_follow(self, target):
@@ -140,8 +156,7 @@ class E1(Enemy):
         if self.shots_fired >= 10:
             return True
             
-        if self.attack_timer > 0:
-            self.attack_timer -= 1
+        if not self.attack_timer.is_completed:
             return False
             
         # Calculate direction to target's current position
@@ -156,14 +171,15 @@ class E1(Enemy):
             self.game.groups['all'].add(projectile)
         
         self.shots_fired += 1
-        self.attack_timer = pf['delay']
+        self.attack_timer.duration = pf['delay']
+        self.attack_timer.start()
         return False
     
     def start_attack(self):
         """Initialize a random attack pattern"""
         self.is_attacking = True
         self.attack_phase = 0
-        self.attack_timer = 0
+        self.attack_timer.reset()
         self.shots_fired = 0
         self.current_attack = random.choice([self.shoot_radial, self.shoot_burst, self.shoot_follow])
         self.anim.change_state("attack")
@@ -171,19 +187,20 @@ class E1(Enemy):
     def ai_logic(self, target):
         """Move towards target position with easing"""
         # Always face the player
+        print('move timer',self.move_timer.progress, '| wait timer',self.wait_timer.progress, '| attack timer',self.attack_timer.progress)
         self.facing_right = target.position.x > self.position.x
         
         # Handle attacking state
         if self.is_attacking:
             if self.current_attack(target):
                 self.is_attacking = False
-                self.wait_timer = random.uniform(self.WAIT_TIME_MIN, self.WAIT_TIME_MAX)
+                self.wait_timer.duration = random.uniform(self.WAIT_TIME_MIN, self.WAIT_TIME_MAX)
+                self.wait_timer.start()
                 self.needs_new_target = True
             return
         
         # Handle waiting
-        if self.wait_timer > 0:
-            self.wait_timer -= 1/C.FPS
+        if not self.wait_timer.is_completed:
             self.anim.change_state("idle")
             return
         
@@ -191,27 +208,22 @@ class E1(Enemy):
         if self.needs_new_target:
             self.pick_new_position(target)
             self.start_pos = Vector2(self.position)
-            self.move_timer = 0
+            self.move_timer.duration = self.move_duration
+            self.move_timer.start()
             self.needs_new_target = False
             
         # Update movement
-        if self.move_timer < self.move_duration:
-            # Calculate progress with sine easing
-            t = self.move_timer / self.move_duration
+        if not self.move_timer.is_completed:
+            t = self.move_timer.progress
             eased_t = self.ease_in_out_sine(t)
-            
-            # Interpolate position
             self.position = self.start_pos.lerp(self.target_pos, eased_t)
-            
-            # Calculate velocity for animation purposes
             self.velocity = (self.target_pos - self.start_pos).normalize() * self.MOVE_SPEED
-            
-            self.move_timer += 1/C.FPS
             self.anim.change_state("move")
             
-            # Check if we've reached the target
-            if self.move_timer >= self.move_duration:
-                self.start_attack()
+        # Check if we've reached the target
+        if self.move_timer.is_completed and not self.is_attacking:
+            self.start_attack()
         
         # Update rect position
         self.rect.center = self.position
+

@@ -360,5 +360,3 @@ class Player(pygame.sprite.Sprite):
             self.check_enemy_collisions()
             
         self.update_animation()
-
-        print('dodging ',self.is_dodging,'| can deflect',self.can_deflect, '| deflecting',self.is_deflecting)

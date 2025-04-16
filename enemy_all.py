@@ -4,6 +4,7 @@ from pygame.math import Vector2
 from config import Config as C
 from projectile import *
 from animation import Animation
+from timer import Timer
 
 import random
 import math
@@ -12,7 +13,7 @@ import copy
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y, game, anim={"path":"", "loops": {}, "speed": 0.2}, 
                  width=100, height=100, maxhp=100, movespeed=3, 
-                 gravity=0.8, maxfallspeed=15, hurtduration = 10, bodydamage = 30):
+                 gravity=0.8, maxfallspeed=15, hurtduration=1/6, bodydamage = 30):
         super().__init__()
         # Size attributes (can be overridden by child classes)
         self.width = width
@@ -29,8 +30,7 @@ class Enemy(pygame.sprite.Sprite):
         self.MAX_HEALTH = maxhp
         self.health = self.MAX_HEALTH
         self.is_hurt = False
-        self.HURT_DURATION = hurtduration
-        self.hurt_timer = 0
+        self.hurt_timer = Timer(duration=hurtduration, owner=self, paused=True)
         self.BODY_DAMAGE = bodydamage
         self.attack_timer = 0
         self.is_attacking = False
@@ -77,7 +77,7 @@ class Enemy(pygame.sprite.Sprite):
                 self.anim.change_state("death")
             else:
                 self.is_hurt = True
-                self.hurt_timer = self.HURT_DURATION
+                self.hurt_timer.start()
                 self.anim.change_state("hurt")
         
     def attack(self, target):
@@ -151,7 +151,7 @@ class Enemy(pygame.sprite.Sprite):
                 self.knockback_velocity = Vector2(0, 0)
                 self.is_knocked_back = False
         
-    def update(self, target=None):
+    def update(self):
         """Update enemy state"""
         if not self.is_alive:
             self.update_animation()
@@ -160,13 +160,11 @@ class Enemy(pygame.sprite.Sprite):
             return
             
         # Handle hurt state
-        if self.is_hurt:
-            self.hurt_timer -= 1
-            if self.hurt_timer <= 0:
-                self.is_hurt = False
+        if self.is_hurt and self.hurt_timer.is_completed:
+            self.is_hurt = False
         
-        if target and not self.is_hurt:  # Only ai_logic/attack if not hurt
-            self.ai_logic(target)
+        if self.target and not self.is_hurt:  # Only ai_logic/attack if not hurt
+            self.ai_logic(self.target)
         
         # Update knockback before applying regular physics
         self.update_knockback()
