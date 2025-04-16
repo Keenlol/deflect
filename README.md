@@ -7,14 +7,14 @@ By Chetphisuth Tongpa (ID: 6710545491)
 
 _Deflect_ is a fast-paced 2D side-scrolling survival game where players can't directly attack — instead, they must **deflect** enemy attacks to damage them. Inspired by Genji from Overwatch, players must time their defenses to survive increasingly difficult enemy waves.
 
-## 🕹️ Core Mechanics
+## ⚙️ Core Mechanics
 
 - **Side-scrolling movement**: Move left/right and jump like a Mario-style platformer.
 - **Double Jump & Dash**: Perform agile maneuvers to avoid attacks.
 - **Deflection System**: Use precise timing to reflect projectiles and melee attacks back at enemies.
 - **Endless Loop Gameplay**: Survive as long as possible.
 
-## 🎯 Controls
+## 🕹️ Controls
 
 | Action        | Key/Mouse         |
 |---------------|-------------------|
@@ -62,12 +62,12 @@ The game window should now open and you can start playing.
 - [x] Enemy 2
 - [x] Enemy 3
 - [x] Implement the new timer system for Player and Game.
-- [] Implement the new timer system for enemy.
-- [] Improve the code for everything.
-- [] Balance Enemy and Players, refine spawning and scoring.
-- [] Statistic tracking and visualization.
-- [] Sound effects.
-- [] Main menu and extra UIs.
+- [ ] Implement the new timer system for enemy.
+- [ ] Improve the code for everything.
+- [ ] Balance Enemy and Players, refine spawning and scoring.
+- [ ] Statistic tracking and visualization.
+- [ ] Sound effects.
+- [ ] Main menu and extra UIs.
 
 
 ## 📎 Links
