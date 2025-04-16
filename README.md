@@ -5,7 +5,7 @@ By Chetphisuth Tongpa (ID: 6710545491)
 
 ## 🎮 Game Overview
 
-_Deflect_ is a fast-paced 2D side-scrolling survival game where players can't directly attack — instead, they must **deflect** enemy attacks to damage them. Inspired by Genji from Overwatch, players must time their defenses to survive increasingly difficult enemy waves.
+_Deflect_ is a fast-paced 2D side-scrolling survival game where players can't directly attack — instead, they must **deflect** enemy attacks to damage them.
 
 ![Gameplay screenshot](screenshots/gameplay/gameplay1.png)
 
