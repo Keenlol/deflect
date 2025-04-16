@@ -11,10 +11,10 @@ _Deflect_ is a fast-paced 2D side-scrolling survival game where players can't di
 
 ## ⚙️ Core Mechanics
 
-- **Side-scrolling movement**: Move left/right and jump like a Mario-style platformer.
-- **Double Jump & Dash**: Perform agile maneuvers to avoid attacks.
-- **Deflection System**: Use precise timing to reflect projectiles and melee attacks back at enemies.
-- **Endless Loop Gameplay**: Survive as long as possible.
+- **Deflect**: Return the enemies's attack by slashing them.
+- **Dodge**: Dash forward and avoid every attacks in the way.
+- **Double Jump**: Perform a jump once in the air.
+- **Endless**: Survive for as long as you can!
 
 ## 🕹️ Controls
 
@@ -23,8 +23,8 @@ _Deflect_ is a fast-paced 2D side-scrolling survival game where players can't di
 | Move Left     | `A`               |
 | Move Right    | `D`               |
 | Jump / Double Jump | `W` or `SPACE` |
-| Dodge (Dash)  | `SHIFT`           |
-| Deflect       | `Left Mouse Click`|
+| Dodge (Aim with mouse) | `SHIFT`           |
+| Deflect (Aim with mouse) | `Left Mouse Click`|
 
 ## 🔧 Installation
 
@@ -38,8 +38,8 @@ Follow these steps to set up and run the game locally:
 2.  **Clone the Repository:**
     Clone the project repository to your local machine:
     ```bash
-    git clone <your-repository-url>
-    cd <repository-directory-name>
+    git clone https://github.com/Keenlol/deflect.git
+    cd deflect
     ```
 
 3.  **Install Dependencies:**
@@ -58,11 +58,16 @@ The game window should now open and you can start playing.
 
 ## 🎯 To-do list
 
-- [x] Player controls
-- [x] Enemy 1
+- [x] Implement basic Pygame setup.
+- [x] Player assets.
+- [x] Player controls.
+- [x] Enemy 1 assets.
+- [x] Enemy 1 mechanics.
 - [x] Deflection mechanics
-- [x] Enemy 2
-- [x] Enemy 3
+- [x] Enemy 2 assets.
+- [x] Enemy 2 mechanics.
+- [x] Enemy 3 assets.
+- [x] Enemy 3 mechanics.
 - [x] Implement the new timer system for Player and Game.
 - [ ] Implement the new timer system for enemy.
 - [ ] Improve the code for everything.
