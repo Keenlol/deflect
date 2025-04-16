@@ -24,13 +24,34 @@ _Deflect_ is a fast-paced 2D side-scrolling survival game where players can't di
 | Dodge (Dash)  | `SHIFT`           |
 | Deflect       | `Left Mouse Click`|
 
-## 🛠️ Development
+## Installation
 
-- Built using **Python + Pygame**.
-- Uses **OOP** principles (Player, Enemies, Projectiles, UI, etc.).
-- Event-driven input system & rule-based mechanics.
+Follow these steps to set up and run the game locally:
 
+1.  **Prerequisites:**
+    *   Ensure you have Python 3.7 or later installed. You can download it from [python.org](https://www.python.org/).
+    *   Ensure you have `pip` (Python's package installer) available. It usually comes with Python.
 
+2.  **Clone the Repository:**
+    Clone the project repository to your local machine:
+    ```bash
+    git clone <your-repository-url>
+    cd <repository-directory-name>
+    ```
+
+3.  **Install Dependencies:**
+    Install the required Python libraries using pip and the `requirements.txt` file:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Run the Game:**
+    Execute the main game script:
+    ```bash
+    python game.py
+    ```
+
+The game window should now open and you can start playing. To exit the virtual environment when you're done, simply type `deactivate` in your terminal.
 
 ## 📎 Links
 
