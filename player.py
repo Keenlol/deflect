@@ -334,17 +334,17 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         """Update the player's state"""
         # Check for timer completions
-        if self.dodge_timer.is_complete and self.is_dodging:
+        if self.dodge_timer.is_completed and self.is_dodging:
             self.is_dodging = False
             self.velocity.y *= 0.5
             
-        if self.dodge_cooldown_timer.is_complete and self.on_ground and not self.can_dodge:
+        if self.dodge_cooldown_timer.is_completed and self.on_ground and not self.can_dodge:
             self.can_dodge = True
             
-        if self.deflect_cooldown_timer.is_complete and not self.can_deflect:
+        if self.deflect_cooldown_timer.is_completed and not self.can_deflect:
             self.can_deflect = True
             
-        if self.invincible_timer.is_complete and self.is_invincible:
+        if self.invincible_timer.is_completed and self.is_invincible:
             self.is_invincible = False
             
         # Only handle input if not hurt/dead

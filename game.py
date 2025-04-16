@@ -164,7 +164,7 @@ class Game:
     
     def update_camera_shake(self, dt):
         """Update the camera shake effect"""
-        if not self.shake_timer.is_complete and not self.shake_timer.is_paused:
+        if not self.shake_timer.is_completed and not self.shake_timer.is_paused:
             # The shake gets weaker as the timer progresses
             remaining_ratio = 1.0 - self.shake_timer.progress
             self.camera_offset.x = random.uniform(-self.shake_intensity, self.shake_intensity) * remaining_ratio
@@ -181,7 +181,7 @@ class Game:
         Timer.update_all(dt)
         
         # Handle freeze effect
-        if not self.freeze_timer.is_complete:
+        if not self.freeze_timer.is_completed:
             return
         
         # Start shake after freeze ends
@@ -189,7 +189,7 @@ class Game:
             self.shake_timer.start()
 
         # Handle enemy spawn timer
-        if self.spawn_timer.just_completed and not self.game_over:
+        if self.spawn_timer.is_completed and not self.game_over:
             self.spawn_enemy()
             self.spawn_timer.duration = self.get_next_spawn_time()
             self.spawn_timer.start()
@@ -221,7 +221,7 @@ class Game:
         
         # Save the original positions of all sprites
         original_positions = {}
-        if not self.shake_timer.is_complete:
+        if not self.shake_timer.is_completed:
             for sprite in self.groups['all']:
                 if hasattr(sprite, 'rect') and hasattr(sprite, 'position'):
                     original_positions[sprite] = Vector2(sprite.rect.center)
@@ -237,7 +237,7 @@ class Game:
         # Draw E2 weapons with camera shake
         for enemy in self.groups['enemies']:
             if isinstance(enemy, E2):
-                if not self.shake_timer.is_complete:
+                if not self.shake_timer.is_completed:
                     # Apply shake to weapon drawing
                     original_pos = enemy.position
                     enemy.position += self.camera_offset
@@ -252,13 +252,13 @@ class Game:
             C.WINDOW_HEIGHT - C.FLOOR_HEIGHT + int(self.camera_offset.y), 
             C.WINDOW_WIDTH, 
             C.FLOOR_HEIGHT
-        ) if not self.shake_timer.is_complete else (
+        ) if not self.shake_timer.is_completed else (
             0, C.WINDOW_HEIGHT - C.FLOOR_HEIGHT, C.WINDOW_WIDTH, C.FLOOR_HEIGHT
         )
         pg.draw.rect(self.screen, C.GRAY, floor_rect)
         
         # Restore original positions
-        if not self.shake_timer.is_complete:
+        if not self.shake_timer.is_completed:
             for sprite, pos in original_positions.items():
                 sprite.rect.center = (pos.x, pos.y)
         
@@ -266,7 +266,7 @@ class Game:
         self.groups['ui'].draw(self.screen)
         
         # Draw game over screen
-        if self.game_over and self.game_over_timer.is_complete:
+        if self.game_over and self.game_over_timer.is_completed:
             # Create dark overlay
             overlay = pg.Surface((C.WINDOW_WIDTH, C.WINDOW_HEIGHT))
             overlay.fill((0, 0, 0))

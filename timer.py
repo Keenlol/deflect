@@ -124,20 +124,20 @@ class Timer:
     @property
     def is_active(self):
         """Check if the timer is active (not paused and not complete)."""
-        return not self.__paused and not self.is_complete
+        return not self.__paused and not self.is_completed
 
     @property
     def is_paused(self):
         """Check if the timer is puased"""
 
     @property
-    def is_complete(self):
+    def is_completed(self):
         """Check if the timer has completed (current time is 0)."""
         return self.__current == 0
     
     @property
     def just_completed(self):
-        """just like is_complete() but only trigger once."""
+        """just like is_completed() but only trigger once."""
         return self.__just_completed
 
     # Class methods to manage all timers
