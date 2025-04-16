@@ -67,14 +67,18 @@ class Timer:
                 
         return False
     
-    def reset(self):
+    def reset(self, duration=None):
         """Reset the timer to its initial duration."""
+        if duration is not None:
+            self.duration = duration
         self.__current = self.duration
         return self
     
-    def start(self):
+    def start(self, duration=None):
         """Start or restart the timer from full duration."""
         self.__paused = False
+        if duration is not None:
+            self.duration = duration
         self.__current = self.duration
         return self
     
