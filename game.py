@@ -8,6 +8,7 @@ from enemy3 import E3
 from ui import HealthBar
 from pygame.math import Vector2
 import random
+from timer import Timer
 
 class Game:
     def __init__(self):
@@ -20,24 +21,15 @@ class Game:
         # Game state
         self.score = 0
         self.game_over = False
-        self.game_over_timer = 0
-        self.GAME_OVER_DELAY = 60  # 1 second at 60 FPS
-        
-        # Freeze effect attributes
-        self.freeze_active = False
-        self.freeze_duration = 0
-        self.freeze_timer = 0
-        
-        # Camera shake effect attributes
-        self.shake_duration = 0
-        self.shake_timer = 0
+        self.game_over_timer = Timer(duration=1.0, owner=self)
+        self.freeze_timer = Timer(duration=0, owner=self)
+        self.shake_timer = Timer(duration=0, owner=self)
         self.shake_intensity = 0
         self.camera_offset = Vector2(0, 0)
         
         # Enemy spawn system
-        self.spawn_timer = 0
-        self.next_spawn_time = self.get_next_spawn_time()
-        self.MIN_SPAWN_DISTANCE = 200
+        self.spawn_timer = Timer(duration=self.get_next_spawn_time(), owner=self)
+        self.MIN_SPAWN_DISTANCE = 200  # Minimum distance from player for spawning enemies
         
         self.setup_game()
 
@@ -46,9 +38,11 @@ class Game:
         # Reset game state
         self.score = 0
         self.game_over = False
-        self.game_over_timer = 0
-        self.spawn_timer = 0
-        self.next_spawn_time = self.get_next_spawn_time()
+        self.game_over_timer.reset()
+        
+        # Reset spawn timer
+        self.spawn_timer.duration = self.get_next_spawn_time()
+        self.spawn_timer.start()
         
         # Organized sprite groups
         self.groups = {
@@ -80,7 +74,7 @@ class Game:
     
     def get_next_spawn_time(self):
         """Get random time for next enemy spawn"""
-        return random.randint(200, 600)  # 10-20 seconds at 60 FPS
+        return random.uniform(3.0, 10.0)  # 10-20 seconds at 60 FPS
     
     def get_valid_spawn_position(self, enemy_type=1):
         """Get random position for enemy spawn, away from player"""
@@ -113,7 +107,7 @@ class Game:
     
     def spawn_enemy(self):
         """Spawn an enemy at a valid position"""
-        enemy_type = random.choice([1,2,3])  # 1 for E1, 2 for E2
+        enemy_type = random.choice([1,2,3])  # 1 for E1, 2 for E2, 3 for E3
         spawn_pos = self.get_valid_spawn_position(enemy_type)
 
         if enemy_type == 1:
@@ -125,7 +119,6 @@ class Game:
             
         self.groups['enemies'].add(enemy)
         self.groups['all'].add(enemy)
-
     
     def add_score(self, amount):
         """Add to the player's score"""
@@ -156,33 +149,52 @@ class Game:
             shake_duration: Number of frames to shake the camera
             shake_intensity: Maximum pixel offset for the shake
         """
-        # self.freeze_active = True
-        self.freeze_timer = freeze_duration
+        # Convert frames to seconds
+        freeze_sec = freeze_duration / C.FPS
+        shake_sec = shake_duration / C.FPS
         
-        # Set up shake to start after freeze ends
-        self.shake_duration = shake_duration
+        # Set freeze timer
+        self.freeze_timer.duration = freeze_sec
+        self.freeze_timer.start()
+        
+        # Set up shake timer
+        self.shake_timer.duration = shake_sec
         self.shake_intensity = shake_intensity
-        self.shake_timer = 0  # Will be set to shake_duration when freeze ends
+        # Shake timer will start after freeze ends
     
-    def update_camera_shake(self):
+    def update_camera_shake(self, dt):
         """Update the camera shake effect"""
-        if self.shake_timer > 0:
-            self.shake_timer -= 1
-            # The shake gets weaker as the timer runs down
-            remaining_intensity = self.shake_intensity * (self.shake_timer / self.shake_duration)
-            self.camera_offset.x = random.uniform(-remaining_intensity, remaining_intensity)
-            self.camera_offset.y = random.uniform(-remaining_intensity, remaining_intensity)
+        if not self.shake_timer.is_complete and not self.shake_timer.is_paused:
+            # The shake gets weaker as the timer progresses
+            remaining_ratio = 1.0 - self.shake_timer.progress
+            self.camera_offset.x = random.uniform(-self.shake_intensity, self.shake_intensity) * remaining_ratio
+            self.camera_offset.y = random.uniform(-self.shake_intensity, self.shake_intensity) * remaining_ratio
+        else:
+            # Reset camera offset when shake is complete
+            self.camera_offset = Vector2(0, 0)
 
     def update(self):
         """Update game state"""
+        dt = 1 / C.FPS
+        
+        # Update all timers
+        Timer.update_all(dt)
+        
         # Handle freeze effect
-        if self.freeze_timer > 0:
-            self.freeze_timer -= 1
-            if self.freeze_timer <= 0:
-                self.shake_timer = self.shake_duration
+        if not self.freeze_timer.is_complete:
             return
+        
+        # Start shake after freeze ends
+        if self.freeze_timer.just_completed:
+            self.shake_timer.start()
 
-        self.update_camera_shake()
+        # Handle enemy spawn timer
+        if self.spawn_timer.just_completed and not self.game_over:
+            self.spawn_enemy()
+            self.spawn_timer.duration = self.get_next_spawn_time()
+            self.spawn_timer.start()
+        
+        self.update_camera_shake(dt)
         self.groups['all'].update()
         
         for enemy in self.groups['enemies']:
@@ -193,23 +205,15 @@ class Game:
         # Check for game over
         if not self.game_over and self.player.health <= 0:
             self.game_over = True
-            self.game_over_timer = self.GAME_OVER_DELAY
+            self.game_over_timer.start()
         
         # Handle game over timer
         if self.game_over:
-            if self.game_over_timer > 0:
-                self.game_over_timer -= 1
+            # Game over state is handled by the timer
+            pass
         else:
-            # Only update score and spawn enemies if game is not over
+            # Only update score if game is not over
             self.score += 1  # Score for surviving
-            
-            # Enemy spawn system
-            self.spawn_timer += 1
-            if self.spawn_timer >= self.next_spawn_time:
-                self.spawn_enemy()
-                self.spawn_timer = 0
-                self.next_spawn_time = self.get_next_spawn_time()
-            
     
     def draw(self):
         """Draw the game screen"""
@@ -217,7 +221,7 @@ class Game:
         
         # Save the original positions of all sprites
         original_positions = {}
-        if self.shake_timer > 0:
+        if not self.shake_timer.is_complete:
             for sprite in self.groups['all']:
                 if hasattr(sprite, 'rect') and hasattr(sprite, 'position'):
                     original_positions[sprite] = Vector2(sprite.rect.center)
@@ -233,7 +237,7 @@ class Game:
         # Draw E2 weapons with camera shake
         for enemy in self.groups['enemies']:
             if isinstance(enemy, E2):
-                if self.shake_timer > 0:
+                if not self.shake_timer.is_complete:
                     # Apply shake to weapon drawing
                     original_pos = enemy.position
                     enemy.position += self.camera_offset
@@ -248,13 +252,13 @@ class Game:
             C.WINDOW_HEIGHT - C.FLOOR_HEIGHT + int(self.camera_offset.y), 
             C.WINDOW_WIDTH, 
             C.FLOOR_HEIGHT
-        ) if self.shake_timer > 0 else (
+        ) if not self.shake_timer.is_complete else (
             0, C.WINDOW_HEIGHT - C.FLOOR_HEIGHT, C.WINDOW_WIDTH, C.FLOOR_HEIGHT
         )
         pg.draw.rect(self.screen, C.GRAY, floor_rect)
         
         # Restore original positions
-        if self.shake_timer > 0:
+        if not self.shake_timer.is_complete:
             for sprite, pos in original_positions.items():
                 sprite.rect.center = (pos.x, pos.y)
         
@@ -262,7 +266,7 @@ class Game:
         self.groups['ui'].draw(self.screen)
         
         # Draw game over screen
-        if self.game_over and self.game_over_timer <= 0:
+        if self.game_over and self.game_over_timer.is_complete:
             # Create dark overlay
             overlay = pg.Surface((C.WINDOW_WIDTH, C.WINDOW_HEIGHT))
             overlay.fill((0, 0, 0))

@@ -5,6 +5,7 @@ from config import Config as C
 from animation import Animation
 from knife import Knife
 import math
+from timer import Timer
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, game, x=0, y=0):
@@ -53,20 +54,20 @@ class Player(pygame.sprite.Sprite):
         
         # Dodge attributes
         self.DODGE_SPEED = 25
-        self.DODGE_DURATION = 8
-        self.dodge_timer = 0
+        self.DODGE_DURATION = 8 / C.FPS  # Convert frames to seconds
+        self.dodge_timer = Timer(duration=self.DODGE_DURATION, owner=self)
         self.is_dodging = False
         self.can_dodge = True
-        self.DODGE_COOLDOWN = 20
-        self.dodge_cooldown_timer = 0
+        self.DODGE_COOLDOWN = 20 / C.FPS  # Convert frames to seconds
+        self.dodge_cooldown_timer = Timer(duration=self.DODGE_COOLDOWN, owner=self, paused=True)
         
         # Double jump attributes
         self.can_double_jump = True
         self.DOUBLE_JUMP_FORCE = -12
         
         # Deflect attributes
-        self.DEFLECT_COOLDOWN = 25
-        self.deflect_cooldown_timer = 0
+        self.DEFLECT_COOLDOWN = 25 / C.FPS  # Convert frames to seconds
+        self.deflect_cooldown_timer = Timer(duration=self.DEFLECT_COOLDOWN, owner=self, paused=True)
         self.can_deflect = True
         self.is_deflecting = False
         self.deflect_direction = True
@@ -75,8 +76,8 @@ class Player(pygame.sprite.Sprite):
         self.MAX_HEALTH = 100
         self.health = self.MAX_HEALTH
         self.is_invincible = False
-        self.invincible_timer = 0
-        self.INVINCIBLE_DURATION = 180  # 3 seconds at 60 FPS
+        self.INVINCIBLE_DURATION = 3.0  # 3 seconds (was 180 frames)
+        self.invincible_timer = Timer(duration=self.INVINCIBLE_DURATION, owner=self, paused=True)
         
         # Knockback attributes
         self.is_hurt = False
@@ -92,7 +93,8 @@ class Player(pygame.sprite.Sprite):
         if self.can_dodge and not self.is_dodging:
             self.is_dodging = True
             self.can_dodge = False
-            self.dodge_timer = self.DODGE_DURATION
+            self.dodge_timer.start()
+            self.dodge_cooldown_timer.start()
             self.on_ground = False
             
             mouse_pos = pygame.mouse.get_pos()
@@ -114,21 +116,6 @@ class Player(pygame.sprite.Sprite):
             
             self.anim.change_state("dodge")
     
-    def update_dodge(self):
-        """Update dodge state and cooldown"""
-        if self.is_dodging:
-            self.is_deflecting = False
-            self.dodge_timer -= 1
-            if self.dodge_timer <= 0:
-                self.is_dodging = False
-                self.velocity.y *= 0.5
-
-        if not self.can_dodge:
-            self.dodge_cooldown_timer -= 1
-            if self.dodge_cooldown_timer <= 0 and self.on_ground:
-                self.can_dodge = True
-                self.dodge_cooldown_timer = self.DODGE_COOLDOWN
-    
     def handle_input(self):
         """Handle player input for movement and actions"""
         # Don't handle input if hurt or dead
@@ -147,7 +134,7 @@ class Player(pygame.sprite.Sprite):
             self.deflect_direction = mouse_pos[0] > self.position.x
             # Start cooldown
             self.can_deflect = False
-            self.deflect_cooldown_timer = self.DEFLECT_COOLDOWN
+            self.deflect_cooldown_timer.start()
         if self.mouse_clicked:
             self.mouse_clicked = False
         
@@ -231,11 +218,6 @@ class Player(pygame.sprite.Sprite):
             
         # Update rect position
         self.rect.center = self.position
-
-        # Update dodge state only if not hurt
-        if not self.is_hurt and not self.is_dead:
-            self.update_dodge()
-
     
     def update_animation(self):
         """Update the current animation frame based on player state"""
@@ -283,18 +265,12 @@ class Player(pygame.sprite.Sprite):
         
         self.image = self.anim.get_current_frame(self.facing_right)
         
-        # Update deflect cooldown
-        if not self.can_deflect:
-            self.deflect_cooldown_timer -= 1
-            if self.deflect_cooldown_timer <= 0:
-                self.can_deflect = True
-        
         # Reset deflecting state when animation ends
         if self.anim.current_state != "deflect":
             self.is_deflecting = False
         
         # Make player blink during invincibility
-        if self.is_invincible and (self.invincible_timer // 3) % 2:  # Blink every 4 frames
+        if self.is_invincible and int(self.invincible_timer.progress * 10) % 2:  # Blink effect
             self.image.set_alpha(128)
         else:
             self.image.set_alpha(255)
@@ -304,7 +280,7 @@ class Player(pygame.sprite.Sprite):
         if not self.is_invincible and not self.is_hurt and not self.is_dead:
             self.health -= amount
             self.is_invincible = True
-            self.invincible_timer = self.INVINCIBLE_DURATION
+            self.invincible_timer.start()
             self.is_hurt = True
             
             # Apply knockback
@@ -328,6 +304,7 @@ class Player(pygame.sprite.Sprite):
             
             # End any dodge
             self.is_dodging = False
+            self.dodge_timer.stop()
 
             self.game.freeze_and_shake(10, 10, 20)
     
@@ -356,11 +333,20 @@ class Player(pygame.sprite.Sprite):
     
     def update(self):
         """Update the player's state"""
-        if self.is_invincible:
-            self.invincible_timer -= 1
-            if self.invincible_timer <= 0:
-                self.is_invincible = False
-        
+        # Check for timer completions
+        if self.dodge_timer.is_complete and self.is_dodging:
+            self.is_dodging = False
+            self.velocity.y *= 0.5
+            
+        if self.dodge_cooldown_timer.is_complete and self.on_ground and not self.can_dodge:
+            self.can_dodge = True
+            
+        if self.deflect_cooldown_timer.is_complete and not self.can_deflect:
+            self.can_deflect = True
+            
+        if self.invincible_timer.is_complete and self.is_invincible:
+            self.is_invincible = False
+            
         # Only handle input if not hurt/dead
         if not self.is_hurt and not self.is_dead:
             self.handle_input()
@@ -374,3 +360,5 @@ class Player(pygame.sprite.Sprite):
             self.check_enemy_collisions()
             
         self.update_animation()
+
+        print('dodging ',self.is_dodging,'| can deflect',self.can_deflect, '| deflecting',self.is_deflecting)
