@@ -187,7 +187,6 @@ class E1(Enemy):
     def ai_logic(self, target):
         """Move towards target position with easing"""
         # Always face the player
-        print('move timer',self.move_timer.progress, '| wait timer',self.wait_timer.progress, '| attack timer',self.attack_timer.progress)
         self.facing_right = target.position.x > self.position.x
         
         # Handle attacking state

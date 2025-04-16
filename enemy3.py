@@ -71,7 +71,7 @@ class E3(Enemy):
             },
             'homing': {
                 'count': 5,  # Number of homing lasers to fire
-                'delay': 0.1,  # Delay between shots in seconds
+                'delay': 0.2,  # Delay between shots in seconds
                 'speed': 8,
                 'turn_rate': (0.5, 4.0),  # Degrees per frame
                 'damage': 25,

@@ -40,9 +40,20 @@ class E2(Enemy):
         self.rain_timer = 0
         self.rain_index = 0
         
-        self.attack_infos = {'slash': {'speed':10, 'dash dur':30, 'charge dur':30},
-                            'shard': {'count':10, 'delay': 30, 'radius': 100, 'height': 100},
-                            'rain': {'count':15, 'delay':3, 'height':300, 'width': 600},
+        self.attack_infos = {'slash': {
+                                'speed':10, 
+                                'dash dur':60, 
+                                'charge dur':60},
+                            'shard': {
+                                'count':10, 
+                                'delay': 30, 
+                                'radius': 100, 
+                                'height': 100},
+                            'rain': {
+                                'count':15, 
+                                'delay':3, 
+                                'height':300, 
+                                'width': 600},
                             'damage': 30}
         # Weapon sprite
         self.weapon_anim = Animation(self, "sprites/enemies/e2_slash", {
@@ -288,7 +299,7 @@ class E2(Enemy):
     def update(self, target=None):
         self.weapon_anim.update()
         self.check_deflect_collision(self.target)
-        super().update(target)
+        super().update()
 
     def check_deflect_collision(self, player:Player):
         """Check for collision with player's deflect and handle deflection"""

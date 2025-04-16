@@ -107,7 +107,7 @@ class Game:
     
     def spawn_enemy(self):
         """Spawn an enemy at a valid position"""
-        enemy_type = random.choice([1])  # 1 for E1, 2 for E2, 3 for E3
+        enemy_type = random.choice([1, 2, 3])  # 1 for E1, 2 for E2, 3 for E3
         spawn_pos = self.get_valid_spawn_position(enemy_type)
 
         if enemy_type == 1:
