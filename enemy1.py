@@ -23,30 +23,21 @@ class E1(Enemy):
         # Movement attributes
         self.start_pos = Vector2(x, y)
         self.target_pos = Vector2(x, y)
-        self.move_duration = 3.0  # seconds to reach target
+        self.MOVE_DURATION = (1.0, 3.0)
+        self.WAIT_DURATION = (1.0, 3.0)
         
-        # Setup timers
-        self.WAIT_TIME_MIN = 1.0
-        self.WAIT_TIME_MAX = 5.0
+        self.move_timer = Timer(duration=self.get_random(self.MOVE_DURATION), 
+                                owner=self, 
+                                paused=True)
         
-        # Timer for movement - starts paused
-        self.move_timer = Timer(duration=self.move_duration, owner=self, paused=True)
+        self.wait_timer = Timer(duration=self.get_random(self.WAIT_DURATION), 
+                                owner=self, 
+                                paused=True)
         
-        # Timer for waiting between movements - starts paused
-        self.wait_timer = Timer(
-            duration=random.uniform(self.WAIT_TIME_MIN, self.WAIT_TIME_MAX), 
-            owner=self, 
-            paused=True
-        )
-        
-        # Timer for attack cooldowns - starts paused
         self.attack_timer = Timer(duration=0, owner=self, paused=True)
         
         self.needs_new_target = True
-        
-        # Remove acceleration/deceleration as we'll use easing instead
-
-        self.attack_info = {'radial': {'speed': 8, 'speed_mul': 1, 'delay': 5/60},
+        self.ATTACK_INFOS = {'radial': {'speed': 8, 'speed_mul': 1, 'delay': 5/60},
                                 'burst': {'speed': 20, 'speed_mul': 0.95, 'delay': 10/60, 'spread':20},
                                 'follow': {'speed': 0.1, 'speed_mul': 1.05, 'delay': 5/60},
                                 'damage': 33,
@@ -83,7 +74,7 @@ class E1(Enemy):
                 new_pos_y = min_height
             
             # Ensure maximum height (optional, remove if you want it to go higher)
-            max_height = 100  # 100 pixels from top of screen
+            max_height = 100
             if new_pos_y < max_height:
                 new_pos_y = max_height
             
@@ -101,12 +92,12 @@ class E1(Enemy):
     def shoot_radial(self, target=None):
         """Shoot projectiles in a radial pattern"""
 
-        pr = self.attack_info['radial']
+        pr = self.ATTACK_INFOS['radial']
         def shoot_radial_layer(inerval_deg, offset_deg=0):
             for angle in range(0, 360, inerval_deg):
                 rad_angle = math.radians(angle + offset_deg)
                 velocity = Vector2(math.cos(rad_angle), math.sin(rad_angle)) * pr['speed']
-                projectile = P_Ball(copy.deepcopy(self.position), velocity, pr['speed_mul'], self.attack_info['damage'])
+                projectile = P_Ball(copy.deepcopy(self.position), velocity, pr['speed_mul'], self.ATTACK_INFOS['damage'])
                 self.game.groups['bullets'].add(projectile)
                 self.game.groups['all'].add(projectile)
 
@@ -114,8 +105,7 @@ class E1(Enemy):
             # First round
             shoot_radial_layer(15, 0)
             self.attack_phase = 1
-            self.attack_timer.duration = pr['delay']
-            self.attack_timer.start()
+            self.attack_timer.start(pr['delay'])
             return False
             
         elif self.attack_phase == 1:
@@ -136,19 +126,18 @@ class E1(Enemy):
         # Calculate base direction to target
         to_target = target.position - self.position
         base_angle = math.degrees(math.atan2(to_target.y, to_target.x))
-        pb = self.attack_info['burst']
+        pb = self.ATTACK_INFOS['burst']
         # Fire 4 projectiles with spread
         for _ in range(4):
             spread = random.uniform(-pb['spread'], pb['spread'])
             angle = math.radians(base_angle + spread)
             velocity = Vector2(math.cos(angle), math.sin(angle)) * pb['speed']
-            projectile = P_Ball(copy.deepcopy(self.position), velocity, pb['speed_mul'], self.attack_info['damage'])
+            projectile = P_Ball(copy.deepcopy(self.position), velocity, pb['speed_mul'], self.ATTACK_INFOS['damage'])
             self.game.groups['bullets'].add(projectile)
             self.game.groups['all'].add(projectile)
         
         self.shots_fired += 1
-        self.attack_timer.duration = pb['delay']
-        self.attack_timer.start()
+        self.attack_timer.start(pb['delay'])
         return False
     
     def shoot_follow(self, target):
@@ -161,18 +150,17 @@ class E1(Enemy):
             
         # Calculate direction to target's current position
         to_target = target.position - self.position
-        pf = self.attack_info['follow']
+        pf = self.ATTACK_INFOS['follow']
 
         if to_target.length() > 0:
             direction = to_target.normalize()
             velocity = direction * pf['speed']
-            projectile = P_Ball(copy.deepcopy(self.position), velocity, pf['speed_mul'], self.attack_info['damage'])
+            projectile = P_Ball(copy.deepcopy(self.position), velocity, pf['speed_mul'], self.ATTACK_INFOS['damage'])
             self.game.groups['bullets'].add(projectile)
             self.game.groups['all'].add(projectile)
         
         self.shots_fired += 1
-        self.attack_timer.duration = pf['delay']
-        self.attack_timer.start()
+        self.attack_timer.start(pf['delay'])
         return False
     
     def start_attack(self):
@@ -193,8 +181,7 @@ class E1(Enemy):
         if self.is_attacking:
             if self.current_attack(target):
                 self.is_attacking = False
-                self.wait_timer.duration = random.uniform(self.WAIT_TIME_MIN, self.WAIT_TIME_MAX)
-                self.wait_timer.start()
+                self.wait_timer.start(self.get_random(self.WAIT_DURATION))
                 self.needs_new_target = True
             return
         
@@ -207,8 +194,7 @@ class E1(Enemy):
         if self.needs_new_target:
             self.pick_new_position(target)
             self.start_pos = Vector2(self.position)
-            self.move_timer.duration = self.move_duration
-            self.move_timer.start()
+            self.move_timer.start(self.get_random(self.MOVE_DURATION))
             self.needs_new_target = False
             
         # Update movement
