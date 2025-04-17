@@ -23,8 +23,10 @@ class E2(Enemy):
         
         # Movement attributes
         self.direction = 1  # 1 for right, -1 for left
-        self.MOVE_DURATION = (30, 120) #Frames
-        self.move_timer = self.get_random(self.MOVE_DURATION)
+        self.MOVE_DURATION = (0.5, 2.0) #Frames
+        self.move_timer = Timer(duration=self.get_random(self.MOVE_DURATION), 
+                                owner=self, 
+                                paused=True)
         self.WAIT_DURATION = (60, 180) #Frames
         self.wait_timer = self.get_random(self.WAIT_DURATION)
         self.MAX_DISTANCE = 400   # Maximum allowed distance from player
@@ -256,11 +258,9 @@ class E2(Enemy):
                 else:
                     self.direction = rdm.choice([-1, 1])
                 
-                self.move_timer = self.get_random(self.MOVE_DURATION)
+                self.move_timer.start(self.get_random(self.MOVE_DURATION))
                 
-        elif self.move_timer > 0:
-            # Moving state
-            self.move_timer -= 1
+        elif not self.move_timer.is_completed:
             
             # If too far from player, override direction to ai_logic towards player
             if abs(distance_to_player) > self.MAX_DISTANCE:
@@ -271,30 +271,30 @@ class E2(Enemy):
             self.anim.change_state("move")
             
             # When movement is over, choose an attack based on distance
-            if self.move_timer <= 0:
-                distance_to_player = target.position.x - self.position.x
-                
-                # Randomly choose between attacks with different probabilities based on distance
-                if abs(distance_to_player) < 450:
-                    # Close range - prefer dash attack (60% chance)
-                    attack_choice = rdm.random()
-                    if attack_choice < 0.6:
-                        self.start_dash_attack(target)
-                    elif attack_choice < 0.8:
-                        self.start_shard_attack(target)
-                    else:
-                        self.start_shard_rain(target)
+        if self.move_timer.just_completed:
+            distance_to_player = target.position.x - self.position.x
+            
+            # Randomly choose between attacks with different probabilities based on distance
+            if abs(distance_to_player) < 450:
+                # Close range - prefer dash attack (60% chance)
+                attack_choice = rdm.random()
+                if attack_choice < 0.6:
+                    self.start_dash_attack(target)
+                elif attack_choice < 0.8:
+                    self.start_shard_attack(target)
                 else:
-                    # Long range - prefer projectile attacks (80% chance)
-                    attack_choice = rdm.random()
-                    if attack_choice < 0.5:
-                        self.start_shard_attack(target)
-                    elif attack_choice < 0.8:
-                        self.start_shard_rain(target)
-                    else:
-                        # Move closer to player
-                        self.direction = 1 if distance_to_player > 0 else -1
-                        self.move_timer = self.get_random(self.MOVE_DURATION)
+                    self.start_shard_rain(target)
+            else:
+                # Long range - prefer projectile attacks (80% chance)
+                attack_choice = rdm.random()
+                if attack_choice < 0.5:
+                    self.start_shard_attack(target)
+                elif attack_choice < 0.8:
+                    self.start_shard_rain(target)
+                else:
+                    # Move closer to player
+                    self.direction = 1 if distance_to_player > 0 else -1
+                    self.move_timer.start(self.get_random(self.MOVE_DURATION))
     
     def update(self, target=None):
         self.weapon_anim.update()
