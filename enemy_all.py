@@ -159,14 +159,14 @@ class Enemy(pygame.sprite.Sprite):
                 self.kill()
             return
             
-        # Handle hurt state
         if self.is_hurt and self.hurt_timer.is_completed:
             self.is_hurt = False
+            self.anim.change_state("idle")
         
-        if self.target and not self.is_hurt:  # Only ai_logic/attack if not hurt
+        if self.target and not self.is_hurt:
             self.ai_logic(self.target)
         
-        # Update knockback before applying regular physics
+        # Update everything
         self.update_knockback()
         self.apply_physics()
         self.check_projectile_collisions()
