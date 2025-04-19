@@ -40,7 +40,6 @@ class Timer:
         Returns:
             bool: True if timer just completed, False otherwise
         """
-        self.__just_completed = False
         
         if self.__paused:
             return False
@@ -142,7 +141,10 @@ class Timer:
     @property
     def just_completed(self):
         """just like is_completed() but only trigger once."""
-        return self.__just_completed
+        prev = self.__just_completed
+        self.__just_completed = False
+
+        return prev
 
     # Class methods to manage all timers
     @classmethod
