@@ -188,6 +188,7 @@ class E2(Enemy):
         
         # Start animation
         self.anim.change_state("attack1")
+        self.velocity.x = 0
     
     def shard_attack(self, target):
         """Update shard attack state"""
@@ -244,6 +245,7 @@ class E2(Enemy):
         
         # Start animation
         self.anim.change_state("attack1")
+        self.velocity.x = 0
     
     def rain_attack(self, target):
         """Update shard rain attack state"""
@@ -290,14 +292,7 @@ class E2(Enemy):
     
     def ai_logic(self, target):
         """Updated movement with all attacks"""
-        # Skip AI logic if hurt
-        if self.is_hurt:
-            return
-            
-        # Update weapon animation
         self.weapon_anim.update()
-        
-        # Check for deflect collision
         self.check_deflect_collision(target)
         
         # Handle attack state
@@ -337,21 +332,6 @@ class E2(Enemy):
         # Choose attack when movement completes
         elif self.move_timer.just_completed:
             self.start_attack(target)
-    
-    def update(self, target=None):
-        """Update enemy state"""
-        # Use parent update method which calls ai_logic
-        super().update()
-        
-        # Handle hurt state properly
-        if self.is_hurt and self.hurt_timer.is_completed:
-            # Reset to idle state when hurt timer completes
-            if self.is_attacking:
-                self.is_attacking = False
-                self.current_attack = None
-                self.anim.change_state("idle")
-                # Reset velocity to prevent sliding
-                self.velocity.x = 0
 
     def check_deflect_collision(self, player:Player):
         """Check for collision with player's deflect and handle deflection"""
