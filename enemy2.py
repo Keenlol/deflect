@@ -23,12 +23,18 @@ class E2(Enemy):
         
         # Movement attributes
         self.direction = 1  # 1 for right, -1 for left
-        self.MOVE_DURATION = (0.5, 2.0) #Frames
+        self.MOVE_DURATION = (0.5, 2.0)
+        self.WAIT_DURATION = (1.0, 3.0)
+
         self.move_timer = Timer(duration=self.get_random(self.MOVE_DURATION), 
                                 owner=self, 
                                 paused=True)
-        self.WAIT_DURATION = (60, 180) #Frames
-        self.wait_timer = self.get_random(self.WAIT_DURATION)
+
+        self.wait_timer = Timer(duration=self.get_random(self.WAIT_DURATION), 
+                                owner=self, 
+                                paused=True)
+        self.wait_timer.start()
+
         self.MAX_DISTANCE = 400   # Maximum allowed distance from player
 
         # Attack attributes
@@ -41,7 +47,7 @@ class E2(Enemy):
         self.is_shard_raining = False
         self.rain_timer = 0
         self.rain_index = 0
-        
+
         self.attack_infos = {'slash': {
                                 'speed':10, 
                                 'dash dur':60, 
@@ -92,7 +98,7 @@ class E2(Enemy):
         self.is_dashing = False
         self.weapon_active = False
         self.velocity.x = 0
-        self.wait_timer = self.get_random(self.WAIT_DURATION)
+        self.wait_timer.start(self.get_random(self.WAIT_DURATION))
 
     def update_dash_attack(self, target):
         """Update dash attack state"""
@@ -166,7 +172,7 @@ class E2(Enemy):
                 
                 self.shards.clear()
                 self.is_shard_attacking = False
-                self.wait_timer = self.get_random(self.WAIT_DURATION)
+                self.wait_timer.start(self.get_random(self.WAIT_DURATION))
     
     def start_shard_rain(self, target):
         """Initialize shard rain attack"""
@@ -219,11 +225,16 @@ class E2(Enemy):
         # End attack when all shards have been spawned
         if self.rain_index >= self.attack_infos['rain']['count'] and self.rain_timer >= 60:  # Wait a bit after last shard
             self.is_shard_raining = False
-            self.wait_timer = self.get_random(self.WAIT_DURATION)
+            self.wait_timer.start(self.get_random(self.WAIT_DURATION))
     
     def ai_logic(self, target):
         """Updated movement with all attacks"""
         # Handle attacks
+        print('wait',self.wait_timer.progress,'| move', self.move_timer.progress)
+
+        self.weapon_anim.update()
+        self.check_deflect_collision(self.target)
+
         if not self.is_hurt:
             if self.is_dashing:
                 self.facing_right = self.direction > 0
@@ -236,29 +247,19 @@ class E2(Enemy):
                 self.update_shard_rain(target)
                 return
             
-        # Normal movement
-        # Always face the player when not dashing
-        self.facing_right = target.position.x > self.position.x
-        
-        # Calculate distance to player
-        distance_to_player = target.position.x - self.position.x
-        
-        # Update timers
-        if self.wait_timer > 0:
-            # Waiting state
-            self.wait_timer -= 1
+        if not self.wait_timer.is_completed:
             self.velocity.x = 0
             self.anim.change_state("idle")
-            
-            # When wait is over, start moving in a random direction
-            if self.wait_timer <= 0:
-                # If too far from player, force direction towards player
-                if abs(distance_to_player) > self.MAX_DISTANCE:
-                    self.direction = 1 if distance_to_player > 0 else -1
-                else:
-                    self.direction = rdm.choice([-1, 1])
-                
-                self.move_timer.start(self.get_random(self.MOVE_DURATION))
+            return
+
+        self.facing_right = target.position.x > self.position.x
+        distance_to_player = target.position.x - self.position.x
+        if self.wait_timer.just_completed:
+            if abs(distance_to_player) > self.MAX_DISTANCE:
+                self.direction = 1 if distance_to_player > 0 else -1
+            else:
+                self.direction = rdm.choice([-1, 1])
+            self.move_timer.start(self.get_random(self.MOVE_DURATION))
                 
         elif not self.move_timer.is_completed:
             
@@ -295,11 +296,6 @@ class E2(Enemy):
                     # Move closer to player
                     self.direction = 1 if distance_to_player > 0 else -1
                     self.move_timer.start(self.get_random(self.MOVE_DURATION))
-    
-    def update(self, target=None):
-        self.weapon_anim.update()
-        self.check_deflect_collision(self.target)
-        super().update()
 
     def check_deflect_collision(self, player:Player):
         """Check for collision with player's deflect and handle deflection"""
