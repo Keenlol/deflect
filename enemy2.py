@@ -48,8 +48,8 @@ class E2(Enemy):
         # Attack data
         self.attack_infos = {
             'slash': {'speed': 10, 'dash dur': 0.5, 'charge dur': 0.5},
-            'shard': {'count': 10, 'delay': 0.5, 'radius': 100, 'height': 100},
-            'rain': {'count': 15, 'delay': 3/60, 'height': 300, 'width': 600},
+            'shard': {'count': 10, 'delay': 0.5, 'radius': 100, 'height': 100, 'speed': 10},
+            'rain': {'count': 15, 'delay': 3/60, 'height': 250, 'width': 600},
             'damage': 30
         }
         
@@ -104,7 +104,6 @@ class E2(Enemy):
     
     def start_dash_attack(self, target):
         """Initialize dash attack"""
-        # Set timers duration and start charge timer
         self.dash_timer.duration = self.attack_infos['slash']['dash dur']
         self.charge_timer.start(self.attack_infos['slash']['charge dur'])
 
@@ -112,12 +111,9 @@ class E2(Enemy):
         self.direction = 1 if target.position.x > self.position.x else -1
         self.facing_right = self.direction > 0
 
-        # Start animations
         self.anim.change_state("dash")
         self.weapon_anim.change_state("charge")
         self.weapon_active = True
-        
-        # Reset velocity
         self.velocity.x = 0
 
     def end_dash_attack(self):
@@ -126,13 +122,11 @@ class E2(Enemy):
         self.velocity.x = 0
         self.is_attacking = False
         self.current_attack = None
-        
-        # Set new random wait duration and start wait timer
         self.wait_timer.start(self.get_random(self.WAIT_DURATION))
 
     def dash_attack(self, target):
         """Update dash attack state"""
-        # Always maintain the original dash direction
+        # Maintain the original dash direction
         self.facing_right = self.direction > 0
         
         # Charging phase
@@ -144,11 +138,8 @@ class E2(Enemy):
             self.weapon_anim.change_state("slash")
             self.anim.change_state("attack2")
             self.velocity.x = self.attack_infos['slash']['speed'] * self.direction
-            
-            # Start dash timer
             self.dash_timer.start()
         
-        # Dashing phase - wait for timer to complete
         if self.dash_timer.is_completed:
             self.end_dash_attack()
             return True
@@ -194,17 +185,15 @@ class E2(Enemy):
         """Update shard attack state"""
         if not self.shard_timer.is_completed:
             return False
-            
+
         if self.shard_timer.just_completed:
             # Launch all shards
             for shard in self.shards:
-                # Calculate direction to target with spread
                 to_target = (target.position - shard.position).normalize()
                 angle = math.degrees(math.atan2(to_target.y, to_target.x))
                 final_angle = math.radians(angle)
                 
-                # Set velocity
-                launch_speed = 9  # Slightly random speed
+                launch_speed = self.attack_infos['shard']['speed']
                 velocity = Vector2(math.cos(final_angle), math.sin(final_angle)) * launch_speed
                 shard.velocity = velocity
             
@@ -212,10 +201,7 @@ class E2(Enemy):
             self.is_attacking = False
             self.current_attack = None
             
-            # Reset animation to prevent getting stuck
             self.anim.change_state("idle")
-            
-            # Set new random wait duration and start timer
             self.wait_timer.start(self.get_random(self.WAIT_DURATION))
             return True
             
@@ -226,10 +212,6 @@ class E2(Enemy):
         self.rain_timer.start(self.attack_infos['rain']['delay'])
         self.rain_index = 0
 
-        # Determine spawn direction (left-to-right or right-to-left)
-        self.rain_left_to_right = self.position.x > target.position.x
-        
-        # Calculate positions for all shards
         self.rain_positions = []
         shard_spacing = self.attack_infos['rain']['width'] / (self.attack_infos['rain']['count'] - 1) if self.attack_infos['rain']['count'] > 1 else 0
         
@@ -239,11 +221,9 @@ class E2(Enemy):
             pos_y = target.position.y - self.attack_infos['rain']['height']
             self.rain_positions.append(Vector2(pos_x, pos_y))
         
-        # Reverse positions if needed based on enemy position
-        if not self.rain_left_to_right:
+        if not self.position.x > target.position.x:
             self.rain_positions.reverse()
         
-        # Start animation
         self.anim.change_state("attack1")
         self.velocity.x = 0
     
@@ -251,27 +231,20 @@ class E2(Enemy):
         """Update shard rain attack state"""
         # Spawn new shard when delay timer completes
         if self.rain_timer.just_completed and self.rain_index < self.attack_infos['rain']['count']:
-            # Get next position
             spawn_pos = self.rain_positions[self.rain_index]
             
-            # Create shard with downward velocity
-            shard = Shard(spawn_pos, Vector2(0, -2), self.attack_infos['damage'])
-            shard.GRAVITY = 0.2
+            shard = Shard(spawn_pos, Vector2(0, -4), self.attack_infos['damage'])
+            shard.GRAVITY = 0.3
             
-            # Add to game
             self.game.groups['bullets'].add(shard)
             self.game.groups['all'].add(shard)
             
-            # Increment index and restart timer
             self.rain_index += 1
             self.rain_timer.start()
         
         # End attack when all shards have been spawned
         if self.rain_index >= self.attack_infos['rain']['count']:
-            # Reset animation to prevent getting stuck
             self.anim.change_state("idle")
-            
-            # Set new random wait duration and start timer
             self.wait_timer.start(self.get_random(self.WAIT_DURATION))
             self.is_attacking = False
             self.current_attack = None
@@ -297,39 +270,33 @@ class E2(Enemy):
         
         # Handle attack state
         if self.is_attacking and self.current_attack:
-            # Let the attack continue - facing handled inside dash_attack
             if self.current_attack != self.dash_attack:
                 self.facing_right = target.position.x > self.position.x
-            
             self.current_attack(target)
             return
         
-        # Always face the player when not attacking
         self.facing_right = target.position.x > self.position.x
         
-        # Handle wait state
+        # Waiting
         if not self.wait_timer.is_completed:
             self.velocity.x = 0
             self.anim.change_state("idle")
             return
         
-        # Start moving after wait
+        # Start to move
         if self.wait_timer.just_completed:
-            # Choose direction based on player position
             distance_to_player = target.position.x - self.position.x
             if abs(distance_to_player) > self.MAX_DISTANCE:
                 self.direction = 1 if distance_to_player > 0 else -1
             else:
                 self.direction = rdm.choice([-1, 1])
-                
-            # Start movement
             self.move_timer.start(self.get_random(self.MOVE_DURATION))
         
-        # Handle movement state
+        # Moving
         elif not self.move_timer.is_completed:
             self.update_movement(target)
         
-        # Choose attack when movement completes
+        # Finished moving
         elif self.move_timer.just_completed:
             self.start_attack(target)
 
