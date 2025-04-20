@@ -165,71 +165,30 @@ class E3(Enemy):
 
     def fire_bomb(self, target):
         """Fire a bomb that explodes into multiple lasers"""
-        # Only fire if we haven't fired yet
         if self.shots_fired > 0:
             return True
             
-        # Calculate direction to target
         to_target = target.position - self.position
         direction = to_target.normalize()
         
-        # Get bomb properties
         bomb_info = self.attack_infos['bomb']
-        
-        # Create initial bomb projectile
         gun_position = Vector2(self.position.x + (self.width/2 if self.facing_right else -self.width/2), 
                              self.position.y)
-        
-        # Create the bomb with a callback for explosion
-        def on_slow_callback(bomb):
-            # Create explosion lasers in all directions
-            for i in range(bomb_info['explosion_count']):
-                angle = (360 / bomb_info['explosion_count']) * i
-                rad_angle = math.radians(angle)
-                explosion_dir = Vector2(math.cos(rad_angle), math.sin(rad_angle))
-                
-                # Create explosion laser
-                explosion_laser = Laser(
-                    position=Vector2(bomb.position),  # Use bomb's position
-                    velocity=explosion_dir * bomb_info['explosion_speed'],
-                    damage=bomb_info['explosion_damage'],
-                    radius=bomb_info['explosion_size'],
-                    speed_multiplier=bomb_info['explosion_speed_mul'],
-                    deflected=bomb.is_deflected)
-                
-                self.game.groups['bullets'].add(explosion_laser)
-                self.game.groups['all'].add(explosion_laser)
-            
-            bomb.kill()
 
-        # Create initial bomb laser
         bomb = Laser(position=gun_position, 
                      velocity=direction * bomb_info['initial_speed'],
                      damage=bomb_info['initial_damage'], 
                      radius=bomb_info['initial_size'],
-                     speed_multiplier=bomb_info['speed_mul'])
-        bomb.update = lambda: self._update_bomb(bomb, on_slow_callback)
+                     speed_multiplier=bomb_info['speed_mul'],
+                     bomb_info=bomb_info,
+                     laser_type='bomb',
+                     game=self.game)
         
-        # Add to game groups
         self.game.groups['bullets'].add(bomb)
         self.game.groups['all'].add(bomb)
         self.shots_fired = 1
-        
-        return True  # We're done after firing once
 
-    def _update_bomb(self, bomb, on_slow_callback):
-        """Custom update method for bomb projectiles"""
-        # Apply normal physics
-        bomb.apply_physics()
-        
-        # Check if speed is below threshold
-        if bomb.velocity.length() < self.attack_infos['bomb']['explosion_threshold']:
-            on_slow_callback(bomb)
-            return
-        
-        # Normal bounds check and draw
-        bomb.check_bounds()
-        bomb.draw()
+        return True
 
     def fire_homing(self, target):
         """Fire multiple homing lasers with delay"""
@@ -264,46 +223,6 @@ class E3(Enemy):
         self.attack_timer.start(homing_info['delay'])
         
         return False
-
-    def _update_homing_laser(self, laser):
-        """Custom update method for homing lasers"""
-        if not laser.alive:
-            return
-            
-        # If deflected, switch target to a random enemy
-        if laser.is_deflected and (not hasattr(laser, 'deflected_retargeted') or not laser.deflected_retargeted):
-            # Get all enemies
-            enemies = [sprite for sprite in self.game.groups['enemies'] 
-                      if sprite.alive and sprite != laser.original_target]
-            if enemies:
-                laser.target = self.random(enemies, choice=True)
-                laser.deflected_retargeted = True
-            
-        if not laser.target or not laser.target.alive:
-            # If target is dead/none, just continue in current direction
-            laser.apply_physics()
-            laser.check_bounds()
-            laser.draw()
-            return
-            
-        # Calculate angle to target
-        to_target = laser.target.position - laser.position
-        target_angle = math.degrees(math.atan2(to_target.y, to_target.x))
-        current_angle = math.degrees(math.atan2(laser.velocity.y, laser.velocity.x))
-        
-        # Calculate angle difference and clamp to turn rate
-        angle_diff = (target_angle - current_angle + 180) % 360 - 180
-        turn_amount = max(-laser.turn_rate, min(laser.turn_rate, angle_diff))
-        
-        # Update velocity direction
-        new_angle = math.radians(current_angle + turn_amount)
-        speed = laser.velocity.length()
-        laser.velocity = Vector2(math.cos(new_angle), math.sin(new_angle)) * speed
-        
-        # Normal physics and checks
-        laser.apply_physics()
-        laser.check_bounds()
-        laser.draw()
 
     def fire_laser(self, target):
         """Fire a laser at the target"""

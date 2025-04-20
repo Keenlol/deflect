@@ -200,13 +200,14 @@ class Shard(Projectile):
 class Laser(Projectile):
     def __init__(self, position, velocity, damage, radius, game=None,
                  bounce_limit=0, speed_multiplier=1, deflected=False, 
-                 laser_type='normal', target=None, turn_rate=0.0):
+                 laser_type='normal', target=None, turn_rate=0.0, bomb_info={}):
         # Laser-specific attributes
         self.STRETCH_THRESHOLD = 5
         self.bounces = bounce_limit + 1
         self.target = target
         self.laser_type = laser_type
         self.turn_rate = turn_rate
+        self.bomb_info = bomb_info
         
         # Call parent constructor with appropriate parameters
         # Lasers don't have gravity, speed multiplier, or speed range
@@ -315,7 +316,27 @@ class Laser(Projectile):
         speed = self.velocity.length()
         self.velocity = Vector2(math.cos(new_angle), math.sin(new_angle)) * speed
 
+    def explodes(self):
+        # Create explosion lasers in all directions
+        b_info = self.bomb_info
 
+        for i in range(b_info['explosion_count']):
+            angle = (360 / b_info['explosion_count']) * i
+            rad_angle = math.radians(angle)
+            explosion_dir = Vector2(math.cos(rad_angle), math.sin(rad_angle))
+            
+            # Create explosion laser
+            explosion_laser = Laser(
+                position=Vector2(self.position),  # Use bomb's position
+                velocity=explosion_dir * b_info['explosion_speed'],
+                damage=b_info['explosion_damage'],
+                radius=b_info['explosion_size'],
+                speed_multiplier=b_info['explosion_speed_mul'],
+                deflected=self.is_deflected)
+            
+            self.game.groups['bullets'].add(explosion_laser)
+            self.game.groups['all'].add(explosion_laser)
+        
     def update(self):
         """Update laser position and check bounds"""
         if self.laser_type == 'homing':
@@ -323,3 +344,8 @@ class Laser(Projectile):
         super().update()
         if self.velocity.length() <= 1:
             self.kill()
+
+    def kill(self) -> None:
+        if self.laser_type == 'bomb':
+            self.explodes()
+        return super().kill()        
