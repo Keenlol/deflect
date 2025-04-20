@@ -63,7 +63,7 @@ class E2(Enemy):
         self.shards = []  # Track spawned shards
         self.rain_index = 0
         self.rain_positions = []
-        self.attack_phase = 0  # Track which phase of an attack we're in
+        self.is_dashing = False  # Track which phase of an attack we're in
         
     def start_attack(self, target):
         """Initialize a random attack based on distance to target"""
@@ -73,7 +73,7 @@ class E2(Enemy):
             self.current_attack = rdm.choice([self.shard_attack, self.rain_attack])
 
         self.is_attacking = True
-        self.attack_phase = 0
+        self.is_dashing = False
         
         if self.current_attack == self.dash_attack : self.start_dash_attack(target)
         elif self.current_attack == self.shard_attack : self.start_shard_attack(target)
@@ -106,7 +106,7 @@ class E2(Enemy):
         # Maintain the original dash direction
         self.facing_right = self.direction > 0
         
-        if self.attack_phase == 0:  # Charging phase
+        if not self.is_dashing:  # Charging phase
             if not self.attack_timer.is_completed:
                 return False
                 
@@ -118,10 +118,10 @@ class E2(Enemy):
                 
                 # Start dash phase
                 self.attack_timer.start(self.attack_infos['slash']['dash dur'])
-                self.attack_phase = 1
+                self.is_dashing = True
                 return False
                 
-        elif self.attack_phase == 1:  # Dashing phase
+        elif self.is_dashing:  # Dashing phase
             if self.attack_timer.is_completed:
                 self.end_dash_attack()
                 return True
@@ -287,7 +287,7 @@ class E2(Enemy):
     def check_deflect_collision(self, player:Player):
         """Check for collision with player's deflect and handle deflection"""
         if (self.is_attacking and self.current_attack == self.dash_attack and
-            self.weapon_active and self.attack_phase == 1 and not self.is_knocked_back):
+            self.weapon_active and self.is_dashing and not self.is_knocked_back):
             if player.knife.active and player.knife.anim.current_state == "deflect":
                 if (self.position - player.knife.position).length() <= player.knife.width:
                     knockback_dir = self.position - player.position
