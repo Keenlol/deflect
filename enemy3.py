@@ -1,6 +1,7 @@
 from enemy_all import *
 import math
 from projectile import Laser
+from timer import Timer
 
 class E3(Enemy):
     def __init__(self, x, y, game):
@@ -38,14 +39,19 @@ class E3(Enemy):
 
         # Attack attributes
         self.shots_fired = 0
-        self.attack_timer = 0
         self.is_attacking = False
         self.current_attack = None
-        self.aim_timer = 0
-        self.aim_duration = 1.5  # Fixed aim duration
-        self.aim_cooldown = self.random((3.0, 5.0))  # Random cooldown between aims
-        self.aim_cooldown_timer = 0
         self.is_aiming = False
+        
+        # Timer durations
+        self.AIM_DURATION = 1.5  # Fixed aim duration
+        self.AIM_COOLDOWN = (3.0, 5.0)  # Random cooldown between aims
+        
+        # Create timers
+        self.aim_timer = Timer(duration=self.AIM_DURATION, owner=self, paused=True)
+        self.aim_cooldown_timer = Timer(duration=self.random(self.AIM_COOLDOWN), owner=self, paused=True)
+        self.aim_cooldown_timer.start()
+        self.attack_timer = Timer(duration=0, owner=self, paused=True)
         
         # Attack attributes
         self.attack_infos = {
@@ -69,8 +75,8 @@ class E3(Enemy):
             },
             'homing': {
                 'count': 5,  # Number of homing lasers to fire
-                'delay': 0.2,  # Delay between shots in seconds
-                'speed': 8,
+                'delay': 0.1,  # Delay between shots in seconds
+                'speed': (7.0, 9.0),
                 'turn_rate': (0.5, 4.0),  # Degrees per frame
                 'damage': 25,
                 'size': 8
@@ -97,18 +103,14 @@ class E3(Enemy):
             self.current_speed = 0
             self.velocity = Vector2(0, 0)
             self.anim.change_state("aim")
-
-            # Update aim timer
-            self.aim_timer += 1/C.FPS
             
             # Check if aim duration is complete
-            if self.aim_timer >= self.aim_duration:
+            if self.aim_timer.just_completed:
                 self.is_aiming = False
                 self.is_attacking = True
                 self.anim.change_state("attack")
                 # Reset shots_fired before selecting an attack
                 self.shots_fired = 0
-                self.attack_timer = 0
                 # Randomly choose between the three attacks
                 self.current_attack = self.random((self.fire_laser, self.fire_bomb, self.fire_homing), choice=True)
                 self.current_attack(target)
@@ -124,7 +126,7 @@ class E3(Enemy):
             # Attack animation will play and then return to idle
             if self.anim.animation_finished:
                 self.is_attacking = False
-                self.aim_cooldown_timer = 0
+                self.aim_cooldown_timer.start(self.random(self.AIM_COOLDOWN))
                 self.current_attack = None
         else:
             # Normal movement when not aiming or attacking
@@ -157,12 +159,9 @@ class E3(Enemy):
                 self.anim.change_state("idle")
             
             # Check if it's time to start aiming
-            self.aim_cooldown_timer += 1/C.FPS
-            if self.aim_cooldown_timer >= self.aim_cooldown:
+            if self.aim_cooldown_timer.just_completed:
                 self.is_aiming = True
-                self.aim_timer = 0
-                # Randomize next aim cooldown
-                self.aim_cooldown = self.random((3.0, 5.0))
+                self.aim_timer.start()
 
     def fire_bomb(self, target):
         """Fire a bomb that explodes into multiple lasers"""
@@ -214,8 +213,6 @@ class E3(Enemy):
         # Add to game groups
         self.game.groups['bullets'].add(bomb)
         self.game.groups['all'].add(bomb)
-        
-        # Mark as fired
         self.shots_fired = 1
         
         return True  # We're done after firing once
@@ -238,41 +235,32 @@ class E3(Enemy):
         """Fire multiple homing lasers with delay"""
         homing_info = self.attack_infos['homing']
         
-        # Check if we need to wait for the timer
-        if self.attack_timer > 0:
-            self.attack_timer -= 1/C.FPS
+        if not self.attack_timer.is_completed:
             return False
         
-        # Check if we've fired all shots
         if self.shots_fired >= homing_info['count']:
-            # Reset for next use
             self.shots_fired = 0
             return True
         
-        # Calculate initial direction
         to_target = target.position - self.position
         direction = to_target.normalize()
         
-        # Create homing laser
         gun_position = Vector2(self.position.x + (self.width/2 if self.facing_right else -self.width/2), 
                              self.position.y)
         
-        laser = Laser(gun_position, direction * homing_info['speed'],
+        laser = Laser(gun_position, direction * self.random(homing_info['speed']),
                      homing_info['damage'], homing_info['size'])
         
-        # Add homing behavior
         laser.target = target
         laser.original_target = target  # Keep track of original target for deflection logic
         laser.turn_rate = self.random(homing_info['turn_rate'])
         laser.update = lambda: self._update_homing_laser(laser)
         
-        # Add to game groups
         self.game.groups['bullets'].add(laser)
         self.game.groups['all'].add(laser)
         
-        # Update firing state
         self.shots_fired += 1
-        self.attack_timer = homing_info['delay']
+        self.attack_timer.start(homing_info['delay'])
         
         return False
 
@@ -318,33 +306,24 @@ class E3(Enemy):
 
     def fire_laser(self, target):
         """Fire a laser at the target"""
-        # Only fire if we haven't fired yet
         if self.shots_fired > 0:
             return True
-            
-        # Calculate direction to target
+
         to_target = target.position - self.position
         direction = to_target.normalize()
-        
-        # Create projectile
-        # Position at the edge of the enemy (assuming gun is on the right side)
-        # Adjust based on facing direction
+
         if self.facing_right:
             gun_position = Vector2(self.position.x + self.width/2, self.position.y)
         else:
             gun_position = Vector2(self.position.x - self.width/2, self.position.y)
             
-        # Create a laser projectile with bounce properties
         bounce_info = self.attack_infos['bounce']
         laser = Laser(gun_position, direction * bounce_info['speed'], 
                      bounce_info['damage'], bounce_info['size'], 
                      bounce_info['bounce_limit'])
         
-        # Add to game groups
         self.game.groups['bullets'].add(laser)
         self.game.groups['all'].add(laser)
-        
-        # Mark as fired
         self.shots_fired = 1
-        
+
         return True  # We're done after firing once
