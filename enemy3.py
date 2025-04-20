@@ -319,9 +319,11 @@ class E3(Enemy):
             gun_position = Vector2(self.position.x - self.width/2, self.position.y)
             
         bounce_info = self.attack_infos['bounce']
-        laser = Laser(gun_position, direction * bounce_info['speed'], 
-                     bounce_info['damage'], bounce_info['size'], 
-                     bounce_info['bounce_limit'])
+        laser = Laser(position=gun_position, 
+                     velocity=direction * bounce_info['speed'], 
+                     damage=bounce_info['damage'], 
+                     radius=bounce_info['size'], 
+                     bounce_limit=bounce_info['bounce_limit'])
         
         self.game.groups['bullets'].add(laser)
         self.game.groups['all'].add(laser)
