@@ -39,11 +39,8 @@ class E2(Enemy):
                                paused=True)
         self.wait_timer.start()  # Start in waiting state
         
-        # Attack timers
-        self.charge_timer = Timer(duration=0, owner=self, paused=True)
-        self.dash_timer = Timer(duration=0, owner=self, paused=True)
-        self.shard_timer = Timer(duration=0, owner=self, paused=True)
-        self.rain_timer = Timer(duration=0, owner=self, paused=True)
+        # Attack timer - we'll use just one timer for all attack phases
+        self.attack_timer = Timer(duration=0, owner=self, paused=True)
         
         # Attack data
         self.attack_infos = {
@@ -66,25 +63,24 @@ class E2(Enemy):
         self.shards = []  # Track spawned shards
         self.rain_index = 0
         self.rain_positions = []
+        self.attack_phase = 0  # Track which phase of an attack we're in
         
     def start_attack(self, target):
         """Initialize a random attack based on distance to target"""
-
         if abs(target.position.x - self.position.x) < self.MAX_DISTANCE:
             self.current_attack = rdm.choice([self.dash_attack, self.shard_attack])
         else:
             self.current_attack = rdm.choice([self.shard_attack, self.rain_attack])
 
         self.is_attacking = True
+        self.attack_phase = 0
+        
         if self.current_attack == self.dash_attack : self.start_dash_attack(target)
         elif self.current_attack == self.shard_attack : self.start_shard_attack(target)
         else : self.start_shard_rain(target)
 
     def start_dash_attack(self, target):
         """Initialize dash attack"""
-        self.dash_timer.duration = self.attack_infos['slash']['dash dur']
-        self.charge_timer.start(self.attack_infos['slash']['charge dur'])
-
         # Set direction and facing based on target
         self.direction = 1 if target.position.x > self.position.x else -1
         self.facing_right = self.direction > 0
@@ -93,6 +89,9 @@ class E2(Enemy):
         self.weapon_anim.change_state("charge")
         self.weapon_active = True
         self.velocity.x = 0
+        
+        # Start charge phase
+        self.attack_timer.start(self.attack_infos['slash']['charge dur'])
 
     def end_dash_attack(self):
         """End dash attack and return to idle state"""
@@ -107,21 +106,26 @@ class E2(Enemy):
         # Maintain the original dash direction
         self.facing_right = self.direction > 0
         
-        # Charging phase
-        if not self.charge_timer.is_completed:
-            return False
-            
-        # Just finished charging - start dash
-        if self.charge_timer.just_completed:
-            self.weapon_anim.change_state("slash")
-            self.anim.change_state("attack2")
-            self.velocity.x = self.attack_infos['slash']['speed'] * self.direction
-            self.dash_timer.start()
-        
-        if self.dash_timer.is_completed:
-            self.end_dash_attack()
-            return True
-            
+        if self.attack_phase == 0:  # Charging phase
+            if not self.attack_timer.is_completed:
+                return False
+                
+            if self.attack_timer.just_completed:
+                # Just finished charging - start dash
+                self.weapon_anim.change_state("slash")
+                self.anim.change_state("attack2")
+                self.velocity.x = self.attack_infos['slash']['speed'] * self.direction
+                
+                # Start dash phase
+                self.attack_timer.start(self.attack_infos['slash']['dash dur'])
+                self.attack_phase = 1
+                return False
+                
+        elif self.attack_phase == 1:  # Dashing phase
+            if self.attack_timer.is_completed:
+                self.end_dash_attack()
+                return True
+                
         return False
     
     def draw_weapon(self, surface):
@@ -138,7 +142,7 @@ class E2(Enemy):
     
     def start_shard_attack(self, target):
         """Initialize shard attack"""
-        self.shard_timer.start(self.attack_infos['shard']['delay'])
+        self.attack_timer.start(self.attack_infos['shard']['delay'])
         self.shards.clear()
         
         # Spawn shards above head
@@ -161,10 +165,10 @@ class E2(Enemy):
     
     def shard_attack(self, target):
         """Update shard attack state"""
-        if not self.shard_timer.is_completed:
+        if not self.attack_timer.is_completed:
             return False
 
-        if self.shard_timer.just_completed:
+        if self.attack_timer.just_completed:
             # Launch all shards
             for shard in self.shards:
                 to_target = (target.position - shard.position).normalize()
@@ -187,8 +191,8 @@ class E2(Enemy):
     
     def start_shard_rain(self, target):
         """Initialize shard rain attack"""
-        self.rain_timer.start(self.attack_infos['rain']['delay'])
         self.rain_index = 0
+        self.attack_timer.start(self.attack_infos['rain']['delay'])
 
         self.rain_positions = []
         shard_spacing = self.attack_infos['rain']['width'] / (self.attack_infos['rain']['count'] - 1) if self.attack_infos['rain']['count'] > 1 else 0
@@ -208,7 +212,7 @@ class E2(Enemy):
     def rain_attack(self, target):
         """Update shard rain attack state"""
         # Spawn new shard when delay timer completes
-        if self.rain_timer.just_completed and self.rain_index < self.attack_infos['rain']['count']:
+        if self.attack_timer.just_completed and self.rain_index < self.attack_infos['rain']['count']:
             spawn_pos = self.rain_positions[self.rain_index]
             
             shard = Shard(spawn_pos, Vector2(0, -4), self.attack_infos['damage'])
@@ -218,7 +222,9 @@ class E2(Enemy):
             self.game.groups['all'].add(shard)
             
             self.rain_index += 1
-            self.rain_timer.start()
+            
+            if self.rain_index < self.attack_infos['rain']['count']:
+                self.attack_timer.start(self.attack_infos['rain']['delay'])
         
         # End attack when all shards have been spawned
         if self.rain_index >= self.attack_infos['rain']['count']:
@@ -281,7 +287,7 @@ class E2(Enemy):
     def check_deflect_collision(self, player:Player):
         """Check for collision with player's deflect and handle deflection"""
         if (self.is_attacking and self.current_attack == self.dash_attack and
-            self.weapon_active and self.charge_timer.is_completed and not self.is_knocked_back):
+            self.weapon_active and self.attack_phase == 1 and not self.is_knocked_back):
             if player.knife.active and player.knife.anim.current_state == "deflect":
                 if (self.position - player.knife.position).length() <= player.knife.width:
                     knockback_dir = self.position - player.position
