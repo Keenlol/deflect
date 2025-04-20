@@ -1,6 +1,5 @@
 from enemy_all import *
 import math
-import random
 from projectile import Laser
 
 class E3(Enemy):
@@ -21,13 +20,13 @@ class E3(Enemy):
         }
 
         super().__init__(x, y, game, width=100, 
-                         height=100, gravity=0.0, movespeed=random.uniform(0.5, 2.0), 
+                         height=100, gravity=0.0, movespeed=self.random((0.5, 2.0)), 
                          maxhp=40, anim=anim_info)
 
         # Movement attributes
-        self.TARGET_DST = random.randint(300,500)
+        self.TARGET_DST = self.random((300,500))
         self.DST_TOLERANCE = 75
-        self.ACCELERATION = random.uniform(0.01, 0.1)  # How quickly speed increases
+        self.ACCELERATION = self.random((0.01, 0.1))  # How quickly speed increases
         self.DECELERATION = 0.05 # Multiplier for speed reduction
         self.current_speed = 0  # Track current speed for smooth acceleration
         
@@ -40,12 +39,11 @@ class E3(Enemy):
         # Attack attributes
         self.shots_fired = 0
         self.attack_timer = 0
-        self.attack_phase = 0
         self.is_attacking = False
         self.current_attack = None
         self.aim_timer = 0
         self.aim_duration = 1.5  # Fixed aim duration
-        self.aim_cooldown = random.uniform(3.0, 5.0)  # Random cooldown between aims
+        self.aim_cooldown = self.random((3.0, 5.0))  # Random cooldown between aims
         self.aim_cooldown_timer = 0
         self.is_aiming = False
         
@@ -112,7 +110,7 @@ class E3(Enemy):
                 self.shots_fired = 0
                 self.attack_timer = 0
                 # Randomly choose between the three attacks
-                self.current_attack = random.choice([self.fire_laser, self.fire_bomb, self.fire_homing])
+                self.current_attack = self.random((self.fire_laser, self.fire_bomb, self.fire_homing), choice=True)
                 self.current_attack(target)
         elif self.is_attacking:
             # Stay still during attack
@@ -164,7 +162,7 @@ class E3(Enemy):
                 self.is_aiming = True
                 self.aim_timer = 0
                 # Randomize next aim cooldown
-                self.aim_cooldown = random.uniform(3.0, 5.0)
+                self.aim_cooldown = self.random((3.0, 5.0))
 
     def fire_bomb(self, target):
         """Fire a bomb that explodes into multiple lasers"""
@@ -265,7 +263,7 @@ class E3(Enemy):
         # Add homing behavior
         laser.target = target
         laser.original_target = target  # Keep track of original target for deflection logic
-        laser.turn_rate = self.get_random(homing_info['turn_rate'])
+        laser.turn_rate = self.random(homing_info['turn_rate'])
         laser.update = lambda: self._update_homing_laser(laser)
         
         # Add to game groups
@@ -289,7 +287,7 @@ class E3(Enemy):
             enemies = [sprite for sprite in self.game.groups['enemies'] 
                       if sprite.alive and sprite != laser.original_target]
             if enemies:
-                laser.target = random.choice(enemies)
+                laser.target = self.random(enemies, choice=True)
                 laser.deflected_retargeted = True
             
         if not laser.target or not laser.target.alive:
