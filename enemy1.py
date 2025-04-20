@@ -59,10 +59,10 @@ class E1(Enemy):
         """Pick a new random position near the target"""
         while True:  # Keep trying until we get a valid position
             # First, get a base position relative to player
-            base_y = target.position.y - random.uniform(100, 300)  # Tend to stay above player
+            base_y = target.position.y - self.get_random((100, 300))  # Tend to stay above player
             
             # Get horizontal offset (left or right of player)
-            offset_x = random.choice([-1, 1]) * random.uniform(200, 400)
+            offset_x = self.get_random((-1, 1), choice=True) * self.get_random((200, 400))
             
             # Set new target position
             new_pos_x = target.position.x + offset_x
@@ -129,7 +129,7 @@ class E1(Enemy):
         pb = self.ATTACK_INFOS['burst']
         # Fire 4 projectiles with spread
         for _ in range(4):
-            spread = random.uniform(-pb['spread'], pb['spread'])
+            spread = self.get_random((-pb['spread'], pb['spread']))
             angle = math.radians(base_angle + spread)
             velocity = Vector2(math.cos(angle), math.sin(angle)) * pb['speed']
             projectile = P_Ball(copy.deepcopy(self.position), velocity, pb['speed_mul'], self.ATTACK_INFOS['damage'])
@@ -169,7 +169,7 @@ class E1(Enemy):
         self.attack_phase = 0
         self.attack_timer.reset()
         self.shots_fired = 0
-        self.current_attack = random.choice([self.shoot_radial, self.shoot_burst, self.shoot_follow])
+        self.current_attack = self.get_random((self.shoot_radial, self.shoot_burst, self.shoot_follow), choice=True)
         self.anim.change_state("attack")
     
     def ai_logic(self, target):
