@@ -69,39 +69,17 @@ class E2(Enemy):
         
     def start_attack(self, target):
         """Initialize a random attack based on distance to target"""
-        self.is_attacking = True
-        
-        distance_to_player = target.position.x - self.position.x
-        
-        # Randomly choose between attacks with different probabilities based on distance
-        if abs(distance_to_player) < 450:
-            # Close range - prefer dash attack (60% chance)
-            attack_choice = rdm.random()
-            if attack_choice < 0.6:
-                self.current_attack = self.dash_attack
-                self.start_dash_attack(target)
-            elif attack_choice < 0.8:
-                self.current_attack = self.shard_attack
-                self.start_shard_attack(target)
-            else:
-                self.current_attack = self.rain_attack
-                self.start_shard_rain(target)
+
+        if abs(target.position.x - self.position.x) < self.MAX_DISTANCE:
+            self.current_attack = rdm.choice([self.dash_attack, self.shard_attack])
         else:
-            # Long range - prefer projectile attacks (80% chance)
-            attack_choice = rdm.random()
-            if attack_choice < 0.5:
-                self.current_attack = self.shard_attack
-                self.start_shard_attack(target)
-            elif attack_choice < 0.8:
-                self.current_attack = self.rain_attack
-                self.start_shard_rain(target)
-            else:
-                # Move closer to player
-                self.direction = 1 if distance_to_player > 0 else -1
-                self.move_timer.start(self.get_random(self.MOVE_DURATION))
-                self.is_attacking = False
-                self.current_attack = None
-    
+            self.current_attack = rdm.choice([self.shard_attack, self.rain_attack])
+
+        self.is_attacking = True
+        if self.current_attack == self.dash_attack : self.start_dash_attack(target)
+        elif self.current_attack == self.shard_attack : self.start_shard_attack(target)
+        else : self.start_shard_rain(target)
+
     def start_dash_attack(self, target):
         """Initialize dash attack"""
         self.dash_timer.duration = self.attack_infos['slash']['dash dur']
