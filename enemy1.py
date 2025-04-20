@@ -174,7 +174,6 @@ class E1(Enemy):
     
     def ai_logic(self, target):
         """Move towards target position with easing"""
-        # Always face the player
         self.facing_right = target.position.x > self.position.x
         
         # Handle attacking state
@@ -185,19 +184,19 @@ class E1(Enemy):
                 self.needs_new_target = True
             return
         
-        # Handle waiting
+        # Waiting
         if not self.wait_timer.is_completed:
             self.anim.change_state("idle")
             return
         
-        # Start new movement
+        # Start Moving
         if self.needs_new_target:
             self.pick_new_position(target)
             self.start_pos = Vector2(self.position)
             self.move_timer.start(self.random(self.MOVE_DURATION))
             self.needs_new_target = False
             
-        # Update movement
+        # Moving
         if not self.move_timer.is_completed:
             t = self.move_timer.progress
             eased_t = self.ease_in_out_sine(t)
@@ -205,10 +204,9 @@ class E1(Enemy):
             self.velocity = (self.target_pos - self.start_pos).normalize() * self.MOVE_SPEED
             self.anim.change_state("move")
             
-        # Check if we've reached the target
+        # Finished moving
         if self.move_timer.is_completed and not self.is_attacking:
             self.start_attack()
         
-        # Update rect position
         self.rect.center = self.position
 
