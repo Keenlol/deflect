@@ -248,14 +248,15 @@ class E3(Enemy):
         gun_position = Vector2(self.position.x + (self.width/2 if self.facing_right else -self.width/2), 
                              self.position.y)
         
-        laser = Laser(gun_position, direction * self.random(homing_info['speed']),
-                     homing_info['damage'], homing_info['size'])
-        
-        laser.target = target
-        laser.original_target = target  # Keep track of original target for deflection logic
-        laser.turn_rate = self.random(homing_info['turn_rate'])
-        laser.update = lambda: self._update_homing_laser(laser)
-        
+        laser = Laser(position=gun_position, 
+                     velocity=direction * self.random(homing_info['speed']),
+                     damage=homing_info['damage'], 
+                     radius=homing_info['size'], 
+                     game=self.game, 
+                     laser_type='homing', 
+                     target=target,
+                     turn_rate=self.random(homing_info['turn_rate']))
+
         self.game.groups['bullets'].add(laser)
         self.game.groups['all'].add(laser)
         

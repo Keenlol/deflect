@@ -5,7 +5,7 @@ import math
 import random
 
 class Projectile(pygame.sprite.Sprite):
-    def __init__(self, position:Vector2, velocity=0.0, 
+    def __init__(self, position:Vector2, velocity=0.0, game=None, 
                  speed_multiplier=0.0, speed_range=(0, math.inf), 
                  gravity=0 ,damage=10, radius=10, surfacesize=10, deflected=False):
         super().__init__()
@@ -15,9 +15,10 @@ class Projectile(pygame.sprite.Sprite):
         self.damage = damage
         self.DEFLECTED_VELOCITY = self.velocity * 1.1
         self.SPEED_RANGE = speed_range
-        self.is_deflected = deflected
+        self.__is_deflected = deflected
         self.COLOR_SET = {'red': (255, 0, 0), 'blue': (0, 100, 255)}
-        self.color = self.COLOR_SET['blue'] if self.is_deflected else self.COLOR_SET['red']
+        self.color = self.COLOR_SET['blue'] if self.__is_deflected else self.COLOR_SET['red']
+        self.game = game
 
         # Physics attributes
         self.GRAVITY = gravity
@@ -31,6 +32,19 @@ class Projectile(pygame.sprite.Sprite):
         self.radius = radius
         self.image = pygame.Surface((self.surface_size, self.surface_size), pygame.SRCALPHA)
         self.rect = self.image.get_rect(center=(self.position.x, self.position.y))
+
+    @property
+    def is_deflected(self):
+        return self.__is_deflected
+    
+    @is_deflected.setter
+    def is_deflected(self, value):
+        self.__is_deflected = value
+        self.deflect_action()
+
+    def deflect_action(self):
+        """ Do something when deflected, in case extra actions are needed"""
+        pass
 
     def check_bounds(self):
         """Check if projectile is out of bounds or hit ground"""
@@ -51,7 +65,7 @@ class Projectile(pygame.sprite.Sprite):
     
     def draw(self):
         """Draw projectile, override by child class"""
-        self.color = self.COLOR_SET['blue'] if self.is_deflected else self.COLOR_SET['red']
+        self.color = self.COLOR_SET['blue'] if self.__is_deflected else self.COLOR_SET['red']
 
 
     def apply_physics(self):
@@ -184,15 +198,21 @@ class Shard(Projectile):
         super().update()
 
 class Laser(Projectile):
-    def __init__(self, position, velocity, damage, radius, bounce_limit=0, speed_multiplier=1, deflected=False):
+    def __init__(self, position, velocity, damage, radius, game=None,
+                 bounce_limit=0, speed_multiplier=1, deflected=False, 
+                 laser_type='normal', target=None, turn_rate=0.0):
         # Laser-specific attributes
         self.STRETCH_THRESHOLD = 5
         self.bounces = bounce_limit + 1
+        self.target = target
+        self.laser_type = laser_type
+        self.turn_rate = turn_rate
         
         # Call parent constructor with appropriate parameters
         # Lasers don't have gravity, speed multiplier, or speed range
-        super().__init__(position, velocity, speed_multiplier, [0, math.inf], 0, damage, 
-                         radius=radius, surfacesize=int(radius * 20),
+        super().__init__(position=position, velocity=velocity, speed_multiplier=speed_multiplier, 
+                         speed_range=[0, math.inf], gravity=0, damage=damage, 
+                         radius=radius, surfacesize=int(radius * 20), game=game,
                          deflected=deflected)
         
         # Set up the surface for drawing
@@ -267,9 +287,39 @@ class Laser(Projectile):
                 return True
                 
         return False
-    
+
+    def deflect_action(self):
+        if self.laser_type == 'homing' and self.is_deflected:
+            enemies = [sprite for sprite in self.game.groups['enemies'] 
+                    if sprite.alive]
+            if enemies:
+                self.target = random.choice(enemies)
+
+
+    def update_homing_laser(self):
+        """Custom update method for homing lasers"""     
+        if not self.target or not self.target.alive:
+            return
+            
+        # Calculate angle to target
+        to_target = self.target.position - self.position
+        target_angle = math.degrees(math.atan2(to_target.y, to_target.x))
+        current_angle = math.degrees(math.atan2(self.velocity.y, self.velocity.x))
+        
+        # Calculate angle difference and clamp to turn rate
+        angle_diff = (target_angle - current_angle + 180) % 360 - 180
+        turn_amount = max(-self.turn_rate, min(self.turn_rate, angle_diff))
+        
+        # Update velocity direction
+        new_angle = math.radians(current_angle + turn_amount)
+        speed = self.velocity.length()
+        self.velocity = Vector2(math.cos(new_angle), math.sin(new_angle)) * speed
+
+
     def update(self):
         """Update laser position and check bounds"""
+        if self.laser_type == 'homing':
+            self.update_homing_laser()
         super().update()
         if self.velocity.length() <= 1:
             self.kill()
