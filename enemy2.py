@@ -1,5 +1,4 @@
 from enemy_all import *
-import random as rdm
 import math
 from player import *
 from timer import Timer
@@ -30,11 +29,11 @@ class E2(Enemy):
         self.MAX_DISTANCE = 400   # Maximum allowed distance from player
         
         # Create timers with random durations
-        self.move_timer = Timer(duration=self.get_random(self.MOVE_DURATION), 
+        self.move_timer = Timer(duration=self.random(self.MOVE_DURATION), 
                                owner=self, 
                                paused=True)
         
-        self.wait_timer = Timer(duration=self.get_random(self.WAIT_DURATION), 
+        self.wait_timer = Timer(duration=self.random(self.WAIT_DURATION), 
                                owner=self, 
                                paused=True)
         self.wait_timer.start()  # Start in waiting state
@@ -44,9 +43,24 @@ class E2(Enemy):
         
         # Attack data
         self.attack_infos = {
-            'slash': {'speed': 10, 'dash dur': 0.5, 'charge dur': 0.5},
-            'shard': {'count': 10, 'delay': 0.5, 'radius': 100, 'height': 100, 'speed': 10},
-            'rain': {'count': 15, 'delay': 3/60, 'height': 250, 'width': 600},
+            'slash': {
+                'speed': 10, 
+                'dash dur': 0.5, 
+                'charge dur': 0.5
+                },
+            'shard': {
+                'count': 10, 
+                'delay': 0.5, 
+                'radius': 100, 
+                'height': 100, 
+                'speed': 10
+                },
+            'rain': {
+                'count': 15, 
+                'delay': 3/60, 
+                'height': 250, 
+                'width': 600
+                },
             'damage': 30
         }
         
@@ -68,9 +82,9 @@ class E2(Enemy):
     def start_attack(self, target):
         """Initialize a random attack based on distance to target"""
         if abs(target.position.x - self.position.x) < self.MAX_DISTANCE:
-            self.current_attack = rdm.choice([self.dash_attack, self.shard_attack])
+            self.current_attack = self.random((self.dash_attack, self.shard_attack), choice=True)
         else:
-            self.current_attack = rdm.choice([self.shard_attack, self.rain_attack])
+            self.current_attack = self.random((self.shard_attack, self.rain_attack), choice=True)
 
         self.is_attacking = True
         self.is_dashing = False
@@ -99,7 +113,7 @@ class E2(Enemy):
         self.velocity.x = 0
         self.is_attacking = False
         self.current_attack = None
-        self.wait_timer.start(self.get_random(self.WAIT_DURATION))
+        self.wait_timer.start(self.random(self.WAIT_DURATION))
 
     def dash_attack(self, target):
         """Update dash attack state"""
@@ -150,8 +164,8 @@ class E2(Enemy):
         radius = self.attack_infos['shard']['radius']
         for _ in range(self.attack_infos['shard']['count']):
             spawn_pos = Vector2(
-                self.position.x + rdm.uniform(-radius, radius),
-                self.position.y - height + rdm.uniform(-radius, radius)
+                self.position.x + self.random((-radius, radius)),
+                self.position.y - height + self.random((-radius, radius))
             )
             # Initialize with zero velocity
             shard = Shard(spawn_pos, Vector2(0, 0), self.attack_infos['damage'])
@@ -184,7 +198,7 @@ class E2(Enemy):
             self.current_attack = None
             
             self.anim.change_state("idle")
-            self.wait_timer.start(self.get_random(self.WAIT_DURATION))
+            self.wait_timer.start(self.random(self.WAIT_DURATION))
             return True
             
         return False
@@ -229,7 +243,7 @@ class E2(Enemy):
         # End attack when all shards have been spawned
         if self.rain_index >= self.attack_infos['rain']['count']:
             self.anim.change_state("idle")
-            self.wait_timer.start(self.get_random(self.WAIT_DURATION))
+            self.wait_timer.start(self.random(self.WAIT_DURATION))
             self.is_attacking = False
             self.current_attack = None
             return True
@@ -244,7 +258,7 @@ class E2(Enemy):
             self.direction = 1 if distance_to_player > 0 else -1
         
         if abs(self.velocity.x) < 0.1:
-            self.velocity.x = rdm.randrange(self.MOVE_SPEED[0], self.MOVE_SPEED[1]) * self.direction
+            self.velocity.x = self.random((self.MOVE_SPEED[0], self.MOVE_SPEED[1])) * self.direction
         self.anim.change_state("move")
     
     def ai_logic(self, target):
@@ -273,8 +287,8 @@ class E2(Enemy):
             if abs(distance_to_player) > self.MAX_DISTANCE:
                 self.direction = 1 if distance_to_player > 0 else -1
             else:
-                self.direction = rdm.choice([-1, 1])
-            self.move_timer.start(self.get_random(self.MOVE_DURATION))
+                self.direction = self.random((-1, 1), choice=True)
+            self.move_timer.start(self.random(self.MOVE_DURATION))
         
         # Moving
         elif not self.move_timer.is_completed:
@@ -302,8 +316,8 @@ class E2(Enemy):
         midpoint = (self.position + player_position) / 2
 
         for _ in range(self.attack_infos['shard']['count']):
-            angle_rad = math.radians(random.uniform(0,360))
-            velocity = Vector2(math.cos(angle_rad), math.sin(angle_rad)) * rdm.uniform(15, 25)
+            angle_rad = math.radians(self.random((0.0,360.0)))
+            velocity = Vector2(math.cos(angle_rad), math.sin(angle_rad)) * self.random((15.0, 25.0))
             shard = Shard(midpoint + Vector2(0, -0), velocity, self.attack_infos['damage'], deflected=True)
             self.game.groups['bullets'].add(shard)
             self.game.groups['all'].add(shard)
