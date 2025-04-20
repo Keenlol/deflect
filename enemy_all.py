@@ -56,10 +56,13 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = pygame.Rect(x, y, self.width, self.height)  
     
     @staticmethod
-    def get_random(value_range:tuple):
-        if isinstance(value_range[0], int):
-            return random.randint(value_range[0], value_range[1])
-        return random.uniform(value_range[0], value_range[1])
+    def get_random(values:tuple, choice=False):
+        if not choice:
+            if isinstance(values[0], int):
+                return random.randint(values[0], values[1])
+            return random.uniform(values[0], values[1])
+        else:
+            return random.choice(values)
 
     def update_animation(self):
         """Update the current animation frame"""
