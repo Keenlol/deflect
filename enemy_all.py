@@ -56,7 +56,7 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = pygame.Rect(x, y, self.width, self.height)  
     
     @staticmethod
-    def get_random(values:tuple, choice=False):
+    def random(values:tuple, choice=False):
         if not choice:
             if isinstance(values[0], int):
                 return random.randint(values[0], values[1])

@@ -26,11 +26,11 @@ class E1(Enemy):
         self.MOVE_DURATION = (1.0, 3.0)
         self.WAIT_DURATION = (1.0, 3.0)
         
-        self.move_timer = Timer(duration=self.get_random(self.MOVE_DURATION), 
+        self.move_timer = Timer(duration=self.random(self.MOVE_DURATION), 
                                 owner=self, 
                                 paused=True)
         
-        self.wait_timer = Timer(duration=self.get_random(self.WAIT_DURATION), 
+        self.wait_timer = Timer(duration=self.random(self.WAIT_DURATION), 
                                 owner=self, 
                                 paused=True)
         
@@ -59,10 +59,10 @@ class E1(Enemy):
         """Pick a new random position near the target"""
         while True:  # Keep trying until we get a valid position
             # First, get a base position relative to player
-            base_y = target.position.y - self.get_random((100, 300))  # Tend to stay above player
+            base_y = target.position.y - self.random((100, 300))  # Tend to stay above player
             
             # Get horizontal offset (left or right of player)
-            offset_x = self.get_random((-1, 1), choice=True) * self.get_random((200, 400))
+            offset_x = self.random((-1, 1), choice=True) * self.random((200, 400))
             
             # Set new target position
             new_pos_x = target.position.x + offset_x
@@ -129,7 +129,7 @@ class E1(Enemy):
         pb = self.ATTACK_INFOS['burst']
         # Fire 4 projectiles with spread
         for _ in range(4):
-            spread = self.get_random((-pb['spread'], pb['spread']))
+            spread = self.random((-pb['spread'], pb['spread']))
             angle = math.radians(base_angle + spread)
             velocity = Vector2(math.cos(angle), math.sin(angle)) * pb['speed']
             projectile = P_Ball(copy.deepcopy(self.position), velocity, pb['speed_mul'], self.ATTACK_INFOS['damage'])
@@ -169,7 +169,7 @@ class E1(Enemy):
         self.attack_phase = 0
         self.attack_timer.reset()
         self.shots_fired = 0
-        self.current_attack = self.get_random((self.shoot_radial, self.shoot_burst, self.shoot_follow), choice=True)
+        self.current_attack = self.random((self.shoot_radial, self.shoot_burst, self.shoot_follow), choice=True)
         self.anim.change_state("attack")
     
     def ai_logic(self, target):
@@ -181,7 +181,7 @@ class E1(Enemy):
         if self.is_attacking:
             if self.current_attack(target):
                 self.is_attacking = False
-                self.wait_timer.start(self.get_random(self.WAIT_DURATION))
+                self.wait_timer.start(self.random(self.WAIT_DURATION))
                 self.needs_new_target = True
             return
         
@@ -194,7 +194,7 @@ class E1(Enemy):
         if self.needs_new_target:
             self.pick_new_position(target)
             self.start_pos = Vector2(self.position)
-            self.move_timer.start(self.get_random(self.MOVE_DURATION))
+            self.move_timer.start(self.random(self.MOVE_DURATION))
             self.needs_new_target = False
             
         # Update movement
