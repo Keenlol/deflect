@@ -11,11 +11,17 @@ import math
 import copy
 
 class Enemy(pygame.sprite.Sprite):
+    # Common timer durations
+    MOVE_DURATION = (1.0, 3.0)  
+    WAIT_DURATION = (1.0, 3.0)
+    HURT_DURATION = 1/6
+    KNOCKBACK_DECAY = 0.95
+    
     def __init__(self, x, y, game, anim={"path":"", "loops": {}, "speed": 0.2}, 
                  width=100, height=100, maxhp=100, movespeed=3, 
-                 gravity=0.8, maxfallspeed=15, hurtduration=1/6, bodydamage = 30):
+                 gravity=0.8, maxfallspeed=15, bodydamage=30):
         super().__init__()
-        # Size attributes (can be overridden by child classes)
+        # Basic attributes
         self.width = width
         self.height = height
         self.anim = Animation(self, anim['path'], anim['loops'], anim['speed'])
@@ -30,9 +36,7 @@ class Enemy(pygame.sprite.Sprite):
         self.MAX_HEALTH = maxhp
         self.health = self.MAX_HEALTH
         self.is_hurt = False
-        self.hurt_timer = Timer(duration=hurtduration, owner=self, paused=True)
         self.BODY_DAMAGE = bodydamage
-        self.attack_timer = 0
         self.is_attacking = False
         
         # Movement attributes
@@ -40,8 +44,19 @@ class Enemy(pygame.sprite.Sprite):
         self.GRAVITY = gravity
         self.MAX_FALL_SPEED = maxfallspeed
         
+        # Timer attributes
+        self.move_timer = None
+        self.wait_timer = None
+        self.attack_timer = None
+        self.hurt_timer = Timer(duration=self.HURT_DURATION, owner=self, paused=True)
+        
+        # Attack attributes
+        self.current_attack = None
+        self.attack_infos = {}
+        
         # State attributes
         self.is_alive = True
+        self.is_knocked_back = False
         
         # Game reference
         self.game = game
@@ -49,11 +64,31 @@ class Enemy(pygame.sprite.Sprite):
 
         # Knockback
         self.knockback_velocity = Vector2(0, 0)
-        self.is_knocked_back = False
-        self.KNOCKBACK_DECAY = 0.95
 
+        # Setup visual representation
         self.image = self.anim.get_current_frame(self.facing_right)
-        self.rect = pygame.Rect(x, y, self.width, self.height)  
+        self.rect = pygame.Rect(x, y, self.width, self.height)
+    
+    def init_timers(self, move_duration=None, wait_duration=None, attack_duration=0):
+        """Initialize common timers with appropriate durations"""
+        move_dur = move_duration if move_duration is not None else self.MOVE_DURATION
+        wait_dur = wait_duration if wait_duration is not None else self.WAIT_DURATION
+        
+        self.move_timer = Timer(duration=self.random(move_dur), owner=self, paused=True)
+        self.wait_timer = Timer(duration=self.random(wait_dur), owner=self, paused=True)
+        self.attack_timer = Timer(duration=attack_duration, owner=self, paused=True)
+    
+    def start_waiting(self, duration=None):
+        """Start waiting timer with optional custom duration"""
+        wait_dur = duration if duration is not None else self.random(self.WAIT_DURATION)
+        self.wait_timer.start(wait_dur)
+        self.anim.change_state("idle")
+    
+    def start_movement(self, duration=None):
+        """Start movement timer with optional custom duration"""
+        move_dur = duration if duration is not None else self.random(self.MOVE_DURATION)
+        self.move_timer.start(move_dur)
+        self.anim.change_state("move")
     
     @staticmethod
     def random(values:tuple, choice=False):
@@ -65,12 +100,10 @@ class Enemy(pygame.sprite.Sprite):
             return random.choice(values)
 
     def update_animation(self):
-        """Update the current animation frame"""
         self.anim.update()
         self.image = self.anim.get_current_frame(self.facing_right)
 
     def take_damage(self, amount):
-        """Handle enemy taking damage"""
         self.health -= amount
         self.game.freeze_and_shake(0, 3, 5)
         if self.is_alive:
@@ -92,7 +125,6 @@ class Enemy(pygame.sprite.Sprite):
         pass
     
     def apply_physics(self):
-        """Apply basic physics"""
         # Apply gravity
         if not self.on_ground:
             self.velocity.y += self.GRAVITY
@@ -113,7 +145,6 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.center = self.position
     
     def check_projectile_collisions(self):
-        """Check for collisions with deflected bullets"""
         for bullet in self.game.groups['bullets']:
             if bullet.is_deflected:  # Only check deflected bullets
                 distance = (bullet.position - self.position).length()
@@ -123,13 +154,6 @@ class Enemy(pygame.sprite.Sprite):
                     bullet.kill()
 
     def start_knockback(self, direction, amount):
-        """Start a knockback effect on the enemy
-        
-        Args:
-            direction: Vector2 indicating the knockback direction (doesn't need to be normalized)
-            amount: The knockback force amount
-        """
-
         # Calculate knockback vector
         if direction.length() > 0:  # Avoid division by zero
             direction = direction.normalize()
@@ -141,8 +165,7 @@ class Enemy(pygame.sprite.Sprite):
         self.is_knocked_back = True
     
     def update_knockback(self):
-        """Update the knockback effect"""
-        if hasattr(self, 'is_knocked_back') and self.is_knocked_back:
+        if self.is_knocked_back:
             # Apply knockback velocity to position
             self.position += self.knockback_velocity
             
@@ -153,19 +176,21 @@ class Enemy(pygame.sprite.Sprite):
             if self.knockback_velocity.length() < 0.1:
                 self.knockback_velocity = Vector2(0, 0)
                 self.is_knocked_back = False
-        
+    
     def update(self):
-        """Update enemy state"""
+        # Handle death animation and cleanup
         if not self.is_alive:
             self.update_animation()
             if self.anim.current_state == "death" and self.anim.animation_finished:
                 self.kill()
             return
             
+        # Reset hurt state
         if self.is_hurt and self.hurt_timer.is_completed:
             self.is_hurt = False
             self.anim.change_state("idle")
         
+        # Run AI logic when not hurt
         if self.target and not self.is_hurt:
             self.ai_logic(self.target)
         
@@ -176,8 +201,7 @@ class Enemy(pygame.sprite.Sprite):
         self.update_animation()
 
     def kill(self):
-        """Override kill method to add score"""
         if hasattr(self, 'game') and self.is_alive:
-            self.game.add_score(100)  # Add score for killing enemy
+            self.game.add_score(100)
         super().kill()
 

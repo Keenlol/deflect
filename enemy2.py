@@ -4,6 +4,32 @@ from player import *
 from timer import Timer
 
 class E2(Enemy):
+    # Constants
+    MAX_DISTANCE = 400   # Maximum allowed distance from player
+    
+    # Attack data
+    ATTACK_INFO = {
+        'slash': {
+            'speed': 10, 
+            'dash_dur': 0.5, 
+            'charge_dur': 0.5
+        },
+        'shard': {
+            'count': 10, 
+            'delay': 0.5, 
+            'radius': 100, 
+            'height': 100, 
+            'speed': 10
+        },
+        'rain': {
+            'count': 15, 
+            'delay': 3/60, 
+            'height': 250, 
+            'width': 600
+        },
+        'damage': 30
+    }
+    
     def __init__(self, x, y, game):
         loops = {
             "idle": True,
@@ -24,45 +50,12 @@ class E2(Enemy):
         
         # Movement attributes
         self.direction = 1  # 1 for right, -1 for left
-        self.MOVE_DURATION = (0.5, 2.0)  # Seconds
-        self.WAIT_DURATION = (1.0, 3.0)  # Seconds
-        self.MAX_DISTANCE = 400   # Maximum allowed distance from player
         
-        # Create timers with random durations
-        self.move_timer = Timer(duration=self.random(self.MOVE_DURATION), 
-                               owner=self, 
-                               paused=True)
+        # Initialize timers
+        self.init_timers()
         
-        self.wait_timer = Timer(duration=self.random(self.WAIT_DURATION), 
-                               owner=self, 
-                               paused=True)
-        self.wait_timer.start()  # Start in waiting state
-        
-        # Attack timer - we'll use just one timer for all attack phases
-        self.attack_timer = Timer(duration=0, owner=self, paused=True)
-        
-        # Attack data
-        self.attack_infos = {
-            'slash': {
-                'speed': 10, 
-                'dash dur': 0.5, 
-                'charge dur': 0.5
-                },
-            'shard': {
-                'count': 10, 
-                'delay': 0.5, 
-                'radius': 100, 
-                'height': 100, 
-                'speed': 10
-                },
-            'rain': {
-                'count': 15, 
-                'delay': 3/60, 
-                'height': 250, 
-                'width': 600
-                },
-            'damage': 30
-        }
+        # Set attack info
+        self.attack_infos = self.ATTACK_INFO
         
         # Weapon sprite
         self.weapon_anim = Animation(self, "sprites/enemies/e2_slash", {
@@ -71,16 +64,16 @@ class E2(Enemy):
         }, animation_speed=0.1)
         self.weapon_active = False
         
-        # Attack state
-        self.is_attacking = False
-        self.current_attack = None
-        self.shards = []  # Track spawned shards
+        # Attack state tracking
+        self.shards = []
         self.rain_index = 0
         self.rain_positions = []
-        self.is_dashing = False  # Track which phase of an attack we're in
+        self.is_dashing = False
+        
+        # Start in waiting state
+        self.start_waiting()
         
     def start_attack(self, target):
-        """Initialize a random attack based on distance to target"""
         if abs(target.position.x - self.position.x) < self.MAX_DISTANCE:
             self.current_attack = self.random((self.dash_attack, self.shard_attack), choice=True)
         else:
@@ -89,12 +82,14 @@ class E2(Enemy):
         self.is_attacking = True
         self.is_dashing = False
         
-        if self.current_attack == self.dash_attack : self.start_dash_attack(target)
-        elif self.current_attack == self.shard_attack : self.start_shard_attack(target)
-        else : self.start_shard_rain(target)
+        if self.current_attack == self.dash_attack:
+            self.start_dash_attack(target)
+        elif self.current_attack == self.shard_attack:
+            self.start_shard_attack(target)
+        else:
+            self.start_shard_rain(target)
 
     def start_dash_attack(self, target):
-        """Initialize dash attack"""
         # Set direction and facing based on target
         self.direction = 1 if target.position.x > self.position.x else -1
         self.facing_right = self.direction > 0
@@ -105,18 +100,16 @@ class E2(Enemy):
         self.velocity.x = 0
         
         # Start charge phase
-        self.attack_timer.start(self.attack_infos['slash']['charge dur'])
+        self.attack_timer.start(self.attack_infos['slash']['charge_dur'])
 
     def end_dash_attack(self):
-        """End dash attack and return to idle state"""
         self.weapon_active = False
         self.velocity.x = 0
         self.is_attacking = False
         self.current_attack = None
-        self.wait_timer.start(self.random(self.WAIT_DURATION))
+        self.start_waiting()
 
     def dash_attack(self, target):
-        """Update dash attack state"""
         # Maintain the original dash direction
         self.facing_right = self.direction > 0
         
@@ -131,7 +124,7 @@ class E2(Enemy):
                 self.velocity.x = self.attack_infos['slash']['speed'] * self.direction
                 
                 # Start dash phase
-                self.attack_timer.start(self.attack_infos['slash']['dash dur'])
+                self.attack_timer.start(self.attack_infos['slash']['dash_dur'])
                 self.is_dashing = True
                 return False
                 
@@ -143,7 +136,6 @@ class E2(Enemy):
         return False
     
     def draw_weapon(self, surface):
-        """Draw the weapon animation"""
         if self.weapon_active:
             weapon_frame = self.weapon_anim.get_current_frame(self.facing_right)
             # Position the weapon relative to the enemy
@@ -155,7 +147,6 @@ class E2(Enemy):
             surface.blit(weapon_frame, weapon_rect)
     
     def start_shard_attack(self, target):
-        """Initialize shard attack"""
         self.attack_timer.start(self.attack_infos['shard']['delay'])
         self.shards.clear()
         
@@ -179,7 +170,6 @@ class E2(Enemy):
         self.velocity.x = 0
     
     def shard_attack(self, target):
-        """Update shard attack state"""
         if not self.attack_timer.is_completed:
             return False
 
@@ -199,13 +189,12 @@ class E2(Enemy):
             self.current_attack = None
             
             self.anim.change_state("idle")
-            self.wait_timer.start(self.random(self.WAIT_DURATION))
+            self.start_waiting()
             return True
             
         return False
     
     def start_shard_rain(self, target):
-        """Initialize shard rain attack"""
         self.rain_index = 0
         self.attack_timer.start(self.attack_infos['rain']['delay'])
 
@@ -225,16 +214,15 @@ class E2(Enemy):
         self.velocity.x = 0
     
     def rain_attack(self, target):
-        """Update shard rain attack state"""
         # Spawn new shard when delay timer completes
         if self.attack_timer.just_completed and self.rain_index < self.attack_infos['rain']['count']:
             spawn_pos = self.rain_positions[self.rain_index]
             
             Shard(position=spawn_pos, 
-                velocity=Vector2(0, -4), 
-                game=self.game,
-                damage=self.attack_infos['damage'],
-                gravity=0.3)
+                 velocity=Vector2(0, -4), 
+                 game=self.game,
+                 damage=self.attack_infos['damage'],
+                 gravity=0.3)
             
             self.rain_index += 1
             
@@ -244,7 +232,7 @@ class E2(Enemy):
         # End attack when all shards have been spawned
         if self.rain_index >= self.attack_infos['rain']['count']:
             self.anim.change_state("idle")
-            self.wait_timer.start(self.random(self.WAIT_DURATION))
+            self.start_waiting()
             self.is_attacking = False
             self.current_attack = None
             return True
@@ -252,7 +240,6 @@ class E2(Enemy):
         return False
     
     def update_movement(self, target):
-        """Update movement state"""
         # If too far from player, override direction to move towards player
         distance_to_player = target.position.x - self.position.x
         if abs(distance_to_player) > self.MAX_DISTANCE:
@@ -263,7 +250,6 @@ class E2(Enemy):
         self.anim.change_state("move")
     
     def ai_logic(self, target):
-        """Updated movement with all attacks"""
         self.weapon_anim.update()
         self.check_deflect_collision(target)
         
@@ -279,7 +265,6 @@ class E2(Enemy):
         # Waiting
         if not self.wait_timer.is_completed:
             self.velocity.x = 0
-            self.anim.change_state("idle")
             return
         
         # Start to move
@@ -289,7 +274,7 @@ class E2(Enemy):
                 self.direction = 1 if distance_to_player > 0 else -1
             else:
                 self.direction = self.random((-1, 1), choice=True)
-            self.move_timer.start(self.random(self.MOVE_DURATION))
+            self.start_movement()
         
         # Moving
         elif not self.move_timer.is_completed:
@@ -300,7 +285,6 @@ class E2(Enemy):
             self.start_attack(target)
 
     def check_deflect_collision(self, player:Player):
-        """Check for collision with player's deflect and handle deflection"""
         if (self.is_attacking and self.current_attack == self.dash_attack and
             self.weapon_active and self.is_dashing and not self.is_knocked_back):
             if player.knife.active and player.knife.anim.current_state == "deflect":
@@ -313,15 +297,14 @@ class E2(Enemy):
                     self.spawn_shards(player.position)
     
     def spawn_shards(self, player_position):
-        """Spawn shards at the midpoint between enemy and player with evenly distributed angles"""
         midpoint = (self.position + player_position) / 2
 
         for _ in range(self.attack_infos['shard']['count']):
-            angle_rad = math.radians(self.random((0.0,360.0)))
+            angle_rad = math.radians(self.random((0.0, 360.0)))
             velocity = Vector2(math.cos(angle_rad), math.sin(angle_rad)) * self.random((15.0, 25.0))
             Shard(position=midpoint + Vector2(0, -0), 
-                velocity=velocity, 
-                game=self.game,
-                damage=self.attack_infos['damage'], 
-                deflected=True)
+                 velocity=velocity, 
+                 game=self.game,
+                 damage=self.attack_infos['damage'], 
+                 deflected=True)
 

@@ -4,6 +4,50 @@ from projectile import Laser
 from timer import Timer
 
 class E3(Enemy):
+    # Movement constants
+    TARGET_DISTANCE = (300, 500)
+    DISTANCE_TOLERANCE = 75
+    ACCELERATION_RANGE = (0.01, 0.1)
+    DECELERATION = 0.05
+    
+    # Bobbing constants
+    BOB_FREQUENCY = 0.5  # How many cycles per second
+    BOB_AMPLITUDE = 15   # How many pixels up/down
+    
+    # Timer durations
+    AIM_DURATION = 1.5  # Fixed aim duration
+    AIM_COOLDOWN = (3.0, 5.0)  # Random cooldown between aims
+    
+    # Attack info
+    ATTACK_INFO = {
+        'bounce': {
+            'speed': 20, 
+            'bounce_limit': 5, 
+            'damage': 20, 
+            'size': 8
+        },
+        'bomb': {
+            'initial_speed': 40,
+            'speed_mul': 0.9,  # Slows down over time
+            'explosion_threshold': 1.5,  # Speed threshold for explosion
+            'explosion_count': 18,  # Number of lasers in explosion
+            'explosion_speed': 15,
+            'explosion_speed_mul': 0.95,
+            'initial_damage': 15,
+            'explosion_damage': 10,
+            'initial_size': 12,
+            'explosion_size': 8
+        },
+        'homing': {
+            'count': 5,  # Number of homing lasers to fire
+            'delay': 0.1,  # Delay between shots in seconds
+            'speed': (7.0, 9.0),
+            'turn_rate': (0.5, 4.0),  # Degrees per frame
+            'damage': 25,
+            'size': 8
+        }
+    }
+    
     def __init__(self, x, y, game):
         # Animation setup
         loops = {
@@ -25,76 +69,39 @@ class E3(Enemy):
                          maxhp=40, anim=anim_info)
 
         # Movement attributes
-        self.TARGET_DST = self.random((300,500))
-        self.DST_TOLERANCE = 75
-        self.ACCELERATION = self.random((0.01, 0.1))  # How quickly speed increases
-        self.DECELERATION = 0.05 # Multiplier for speed reduction
+        self.target_dst = self.random(self.TARGET_DISTANCE)
+        self.acceleration = self.random(self.ACCELERATION_RANGE)
         self.current_speed = 0  # Track current speed for smooth acceleration
         
-        # Bobbing attributes
-        self.BOB_FREQUENCY = 0.2  # How many cycles per second
-        self.BOB_AMPLITUDE = 20   # How many pixels up/down
-        self.bobbing_timer = 0.0
-        self.bob_offset = 0  # Current bobbing offset
-
-        # Attack attributes
-        self.shots_fired = 0
-        self.is_attacking = False
-        self.current_attack = None
-        self.is_aiming = False
-        
-        # Timer durations
-        self.AIM_DURATION = 1.5  # Fixed aim duration
-        self.AIM_COOLDOWN = (3.0, 5.0)  # Random cooldown between aims
-        
-        # Create timers
+        # Initialize timers
+        self.init_timers()
         self.aim_timer = Timer(duration=self.AIM_DURATION, owner=self, paused=True)
         self.aim_cooldown_timer = Timer(duration=self.random(self.AIM_COOLDOWN), owner=self, paused=True)
         self.aim_cooldown_timer.start()
-        self.attack_timer = Timer(duration=0, owner=self, paused=True)
         
-        # Attack attributes
-        self.attack_infos = {
-            'bounce': {
-                'speed': 20, 
-                'bounce_limit': 5, 
-                'damage': 20, 
-                'size': 8
-            },
-            'bomb': {
-                'initial_speed': 40,
-                'speed_mul': 0.9,  # Slows down over time
-                'explosion_threshold': 1.5,  # Speed threshold for explosion
-                'explosion_count': 18,  # Number of lasers in explosion
-                'explosion_speed': 15,
-                'explosion_speed_mul': 0.95,
-                'initial_damage': 15,
-                'explosion_damage': 10,
-                'initial_size': 12,
-                'explosion_size': 8
-            },
-            'homing': {
-                'count': 5,  # Number of homing lasers to fire
-                'delay': 0.1,  # Delay between shots in seconds
-                'speed': (7.0, 9.0),
-                'turn_rate': (0.5, 4.0),  # Degrees per frame
-                'damage': 25,
-                'size': 8
-            }
-        }
-
+        # Bobbing setup
+        self.bobbing_timer = Timer(duration=1/self.BOB_FREQUENCY, owner=self, auto_reset=True)
+        self.bobbing_timer.start()
+        self.bob_offset = 0
+        
+        # Attack state tracking
+        self.shots_fired = 0
+        self.is_aiming = False
+        
+        # Set attack info
+        self.attack_infos = self.ATTACK_INFO
+        
     def update_animation(self):
         super().update_animation()
-
+        print(self.bobbing_timer.progress)
         if self.is_alive:
-            self.bobbing_timer += 1 / C.FPS
-            self.bob_offset = self.BOB_AMPLITUDE * math.sin(self.bobbing_timer * self.BOB_FREQUENCY * 2 * math.pi)
+            # Calculate bobbing effect using timer progress
+            self.bob_offset = self.BOB_AMPLITUDE * math.sin(self.bobbing_timer.progress * 2 * math.pi)
             
             # Apply bobbing to position only for rendering, not physics
             self.rect.center = (self.position.x, self.position.y + self.bob_offset)
 
     def ai_logic(self, target):
-        """Main AI logic for E3"""
         self.facing_right = True if target.position.x > self.position.x else False
         
         # Handle aiming and attacking
@@ -134,13 +141,13 @@ class E3(Enemy):
             current_distance = to_player.length()
             
             # Handle horizontal movement based on distance
-            if abs(current_distance - self.TARGET_DST) > self.DST_TOLERANCE:
+            if abs(current_distance - self.target_dst) > self.DISTANCE_TOLERANCE:
                 direction = to_player.normalize()
                 
-                if current_distance < self.TARGET_DST:
+                if current_distance < self.target_dst:
                     direction = -direction
                 
-                self.current_speed = min(self.current_speed + self.ACCELERATION, self.MOVE_SPEED)
+                self.current_speed = min(self.current_speed + self.acceleration, self.MOVE_SPEED)
                 
                 self.velocity = direction * self.current_speed
                 self.position += self.velocity
@@ -164,7 +171,6 @@ class E3(Enemy):
                 self.aim_timer.start()
 
     def fire_bomb(self, target):
-        """Fire a bomb that explodes into multiple lasers"""
         if self.shots_fired > 0:
             return True
             
@@ -185,11 +191,9 @@ class E3(Enemy):
               bomb_info=bomb_info)
 
         self.shots_fired = 1
-
         return True
 
     def fire_homing(self, target):
-        """Fire multiple homing lasers with delay"""
         homing_info = self.attack_infos['homing']
         
         if not self.attack_timer.is_completed:
@@ -220,7 +224,6 @@ class E3(Enemy):
         return False
 
     def fire_laser(self, target):
-        """Fire a laser at the target"""
         if self.shots_fired > 0:
             return True
 
@@ -241,5 +244,4 @@ class E3(Enemy):
               bounce_limit=bounce_info['bounce_limit'])
 
         self.shots_fired = 1
-
-        return True  # We're done after firing once
+        return True

@@ -2,8 +2,16 @@ from enemy_all import *
 from timer import Timer
 
 class E1(Enemy):
+    # Attack properties
+    ATTACK_INFO = {
+        'radial': {'speed': 8, 'speed_mul': 1, 'delay': 5/60},
+        'burst': {'speed': 20, 'speed_mul': 0.95, 'delay': 10/60, 'spread': 20},
+        'follow': {'speed': 0.1, 'speed_mul': 1.05, 'delay': 5/60},
+        'damage': 33,
+        'radius': 10
+    }
+    
     def __init__(self, x, y, game):
-
         loops = {
             "idle": True,
             "move": True,
@@ -23,33 +31,18 @@ class E1(Enemy):
         # Movement attributes
         self.start_pos = Vector2(x, y)
         self.target_pos = Vector2(x, y)
-        self.MOVE_DURATION = (1.0, 3.0)
-        self.WAIT_DURATION = (1.0, 3.0)
         
-        self.move_timer = Timer(duration=self.random(self.MOVE_DURATION), 
-                                owner=self, 
-                                paused=True)
+        # Initialize timers
+        self.init_timers()
         
-        self.wait_timer = Timer(duration=self.random(self.WAIT_DURATION), 
-                                owner=self, 
-                                paused=True)
-        
-        self.attack_timer = Timer(duration=0, owner=self, paused=True)
-        
+        # Attack attributes
+        self.attack_infos = self.ATTACK_INFO
         self.needs_new_target = True
-        self.ATTACK_INFOS = {'radial': {'speed': 8, 'speed_mul': 1, 'delay': 5/60},
-                                'burst': {'speed': 20, 'speed_mul': 0.95, 'delay': 10/60, 'spread':20},
-                                'follow': {'speed': 0.1, 'speed_mul': 1.05, 'delay': 5/60},
-                                'damage': 33,
-                                'radius': 10}
-        
-        # Attack pattern attributes
         self.attack_phase = 0
-        self.is_attacking = False
-        self.current_attack = None
         self.shots_fired = 0
 
-        self.wait_timer.start()
+        # Start in waiting state
+        self.start_waiting()
 
     def ease_in_out_sine(self, t):
         """Sine easing function for smooth movement"""
@@ -91,8 +84,7 @@ class E1(Enemy):
     
     def shoot_radial(self, target=None):
         """Shoot projectiles in a radial pattern"""
-
-        pr = self.ATTACK_INFOS['radial']
+        pr = self.attack_infos['radial']
         def shoot_radial_layer(inerval_deg, offset_deg=0):
             for angle in range(0, 360, inerval_deg):
                 rad_angle = math.radians(angle + offset_deg)
@@ -100,9 +92,8 @@ class E1(Enemy):
                 P_Ball(position=copy.deepcopy(self.position), 
                        velocity=velocity, 
                        game=self.game,
-                       damage=self.ATTACK_INFOS['damage'],
+                       damage=self.attack_infos['damage'],
                        speed_multiplier=pr['speed_mul'])
-
 
         if self.attack_phase == 0:
             # First round
@@ -129,7 +120,7 @@ class E1(Enemy):
         # Calculate base direction to target
         to_target = target.position - self.position
         base_angle = math.degrees(math.atan2(to_target.y, to_target.x))
-        pb = self.ATTACK_INFOS['burst']
+        pb = self.attack_infos['burst']
         # Fire 4 projectiles with spread
         for _ in range(4):
             spread = self.random((-pb['spread'], pb['spread']))
@@ -138,7 +129,7 @@ class E1(Enemy):
             P_Ball(position=copy.deepcopy(self.position), 
                    velocity=velocity, 
                    game=self.game,
-                   damage=self.ATTACK_INFOS['damage'],
+                   damage=self.attack_infos['damage'],
                    speed_multiplier=pb['speed_mul'])
         
         self.shots_fired += 1
@@ -155,7 +146,7 @@ class E1(Enemy):
             
         # Calculate direction to target's current position
         to_target = target.position - self.position
-        pf = self.ATTACK_INFOS['follow']
+        pf = self.attack_infos['follow']
 
         if to_target.length() > 0:
             direction = to_target.normalize()
@@ -163,7 +154,7 @@ class E1(Enemy):
             P_Ball(position=copy.deepcopy(self.position), 
                    velocity=velocity, 
                    game=self.game,
-                   damage=self.ATTACK_INFOS['damage'],
+                   damage=self.attack_infos['damage'],
                    speed_multiplier=pf['speed_mul'])
         
         self.shots_fired += 1
@@ -187,7 +178,7 @@ class E1(Enemy):
         if self.is_attacking:
             if self.current_attack(target):
                 self.is_attacking = False
-                self.wait_timer.start(self.random(self.WAIT_DURATION))
+                self.start_waiting()
                 self.needs_new_target = True
             return
         
@@ -200,7 +191,7 @@ class E1(Enemy):
         if self.needs_new_target:
             self.pick_new_position(target)
             self.start_pos = Vector2(self.position)
-            self.move_timer.start(self.random(self.MOVE_DURATION))
+            self.start_movement()
             self.needs_new_target = False
             
         # Moving
