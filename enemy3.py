@@ -175,17 +175,15 @@ class E3(Enemy):
         gun_position = Vector2(self.position.x + (self.width/2 if self.facing_right else -self.width/2), 
                              self.position.y)
 
-        bomb = Laser(position=gun_position, 
-                     velocity=direction * bomb_info['initial_speed'],
-                     damage=bomb_info['initial_damage'], 
-                     radius=bomb_info['initial_size'],
-                     speed_multiplier=bomb_info['speed_mul'],
-                     bomb_info=bomb_info,
-                     laser_type='bomb',
-                     game=self.game)
-        
-        self.game.groups['bullets'].add(bomb)
-        self.game.groups['all'].add(bomb)
+        Laser(position=gun_position, 
+                velocity=direction * bomb_info['initial_speed'],
+                damage=bomb_info['initial_damage'], 
+                radius=bomb_info['initial_size'],
+                speed_multiplier=bomb_info['speed_mul'],
+                bomb_info=bomb_info,
+                laser_type='bomb',
+                game=self.game)
+
         self.shots_fired = 1
 
         return True
@@ -207,17 +205,14 @@ class E3(Enemy):
         gun_position = Vector2(self.position.x + (self.width/2 if self.facing_right else -self.width/2), 
                              self.position.y)
         
-        laser = Laser(position=gun_position, 
-                     velocity=direction * self.random(homing_info['speed']),
-                     damage=homing_info['damage'], 
-                     radius=homing_info['size'], 
-                     game=self.game, 
-                     laser_type='homing', 
-                     target=target,
-                     turn_rate=self.random(homing_info['turn_rate']))
-
-        self.game.groups['bullets'].add(laser)
-        self.game.groups['all'].add(laser)
+        Laser(position=gun_position, 
+                velocity=direction * self.random(homing_info['speed']),
+                damage=homing_info['damage'], 
+                radius=homing_info['size'], 
+                game=self.game, 
+                laser_type='homing', 
+                target=target,
+                turn_rate=self.random(homing_info['turn_rate']))
         
         self.shots_fired += 1
         self.attack_timer.start(homing_info['delay'])
@@ -238,15 +233,13 @@ class E3(Enemy):
             gun_position = Vector2(self.position.x - self.width/2, self.position.y)
             
         bounce_info = self.attack_infos['bounce']
-        laser = Laser(position=gun_position, 
+        Laser(position=gun_position, 
                      velocity=direction * bounce_info['speed'], 
                      damage=bounce_info['damage'], 
                      radius=bounce_info['size'], 
                      bounce_limit=bounce_info['bounce_limit'],
                      game=self.game)
-        
-        self.game.groups['bullets'].add(laser)
-        self.game.groups['all'].add(laser)
+
         self.shots_fired = 1
 
         return True  # We're done after firing once

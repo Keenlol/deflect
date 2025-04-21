@@ -173,8 +173,6 @@ class E2(Enemy):
                           damage=self.attack_infos['damage'],
                           game=self.game)
             self.shards.append(shard)
-            self.game.groups['bullets'].add(shard)
-            self.game.groups['all'].add(shard)
         
         # Start animation
         self.anim.change_state("attack1")
@@ -232,14 +230,11 @@ class E2(Enemy):
         if self.attack_timer.just_completed and self.rain_index < self.attack_infos['rain']['count']:
             spawn_pos = self.rain_positions[self.rain_index]
             
-            shard = Shard(position=spawn_pos, 
-                          velocity=Vector2(0, -4), 
-                          damage=self.attack_infos['damage'],
-                          game=self.game)
-            shard.GRAVITY = 0.3
-            
-            self.game.groups['bullets'].add(shard)
-            self.game.groups['all'].add(shard)
+            Shard(position=spawn_pos, 
+                velocity=Vector2(0, -4), 
+                damage=self.attack_infos['damage'],
+                game=self.game,
+                gravity=0.3)
             
             self.rain_index += 1
             
@@ -324,11 +319,9 @@ class E2(Enemy):
         for _ in range(self.attack_infos['shard']['count']):
             angle_rad = math.radians(self.random((0.0,360.0)))
             velocity = Vector2(math.cos(angle_rad), math.sin(angle_rad)) * self.random((15.0, 25.0))
-            shard = Shard(position=midpoint + Vector2(0, -0), 
-                          velocity=velocity, 
-                          damage=self.attack_infos['damage'], 
-                          deflected=True,
-                          game=self.game)
-            self.game.groups['bullets'].add(shard)
-            self.game.groups['all'].add(shard)
+            Shard(position=midpoint + Vector2(0, -0), 
+                velocity=velocity, 
+                damage=self.attack_infos['damage'], 
+                deflected=True,
+                game=self.game)
 

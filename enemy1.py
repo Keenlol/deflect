@@ -97,13 +97,12 @@ class E1(Enemy):
             for angle in range(0, 360, inerval_deg):
                 rad_angle = math.radians(angle + offset_deg)
                 velocity = Vector2(math.cos(rad_angle), math.sin(rad_angle)) * pr['speed']
-                projectile = P_Ball(position=copy.deepcopy(self.position), 
+                P_Ball(position=copy.deepcopy(self.position), 
                                     velocity=velocity, 
                                     speed_multiplier=pr['speed_mul'], 
                                     damage=self.ATTACK_INFOS['damage'],
                                     game=self.game)
-                self.game.groups['bullets'].add(projectile)
-                self.game.groups['all'].add(projectile)
+
 
         if self.attack_phase == 0:
             # First round
@@ -136,13 +135,11 @@ class E1(Enemy):
             spread = self.random((-pb['spread'], pb['spread']))
             angle = math.radians(base_angle + spread)
             velocity = Vector2(math.cos(angle), math.sin(angle)) * pb['speed']
-            projectile = P_Ball(position=copy.deepcopy(self.position), 
-                                velocity=velocity, 
-                                speed_multiplier=pb['speed_mul'], 
-                                damage=self.ATTACK_INFOS['damage'],
-                                game=self.game)
-            self.game.groups['bullets'].add(projectile)
-            self.game.groups['all'].add(projectile)
+            P_Ball(position=copy.deepcopy(self.position), 
+                    velocity=velocity, 
+                    speed_multiplier=pb['speed_mul'], 
+                    damage=self.ATTACK_INFOS['damage'],
+                    game=self.game)
         
         self.shots_fired += 1
         self.attack_timer.start(pb['delay'])
@@ -163,13 +160,11 @@ class E1(Enemy):
         if to_target.length() > 0:
             direction = to_target.normalize()
             velocity = direction * pf['speed']
-            projectile = P_Ball(position=copy.deepcopy(self.position), 
-                                velocity=velocity, 
-                                speed_multiplier=pf['speed_mul'], 
-                                damage=self.ATTACK_INFOS['damage'],
-                                game=self.game)
-            self.game.groups['bullets'].add(projectile)
-            self.game.groups['all'].add(projectile)
+            P_Ball(position=copy.deepcopy(self.position), 
+                velocity=velocity, 
+                speed_multiplier=pf['speed_mul'], 
+                damage=self.ATTACK_INFOS['damage'],
+                game=self.game)
         
         self.shots_fired += 1
         self.attack_timer.start(pf['delay'])

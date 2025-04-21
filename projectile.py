@@ -33,6 +33,9 @@ class Projectile(pygame.sprite.Sprite):
         self.image = pygame.Surface((self.surface_size, self.surface_size), pygame.SRCALPHA)
         self.rect = self.image.get_rect(center=(self.position.x, self.position.y))
 
+        self.game.groups['bullets'].add(self)
+        self.game.groups['all'].add(self)
+
     @property
     def is_deflected(self):
         return self.__is_deflected
@@ -146,11 +149,12 @@ class P_Ball(Projectile):
         super().update()
 
 class Shard(Projectile):
-    def __init__(self, position=Vector2(0,0), velocity=Vector2(0,0), damage=33, deflected=False, game=None):
+    def __init__(self, position=Vector2(0,0), velocity=Vector2(0,0), damage=33, 
+                 deflected=False, game=None, gravity=0):
         self.base = random.randint(20, 30)
         self.height = random.randint(20, 45)
 
-        super().__init__(position=position, velocity=velocity, speed_multiplier=1.0, speed_range=[0, 30], gravity=0, damage=damage, 
+        super().__init__(position=position, velocity=velocity, speed_multiplier=1.0, speed_range=[0, 30], gravity=gravity, damage=damage, 
                          radius=(self.base + self.height) / 4, 
                          surfacesize=int(max(self.base, self.height) * 2),
                          deflected=deflected, game=game)
@@ -332,7 +336,8 @@ class Laser(Projectile):
                 damage=b_info['explosion_damage'],
                 radius=b_info['explosion_size'],
                 speed_multiplier=b_info['explosion_speed_mul'],
-                deflected=self.is_deflected)
+                deflected=self.is_deflected,
+                game=self.game)
             
             self.game.groups['bullets'].add(explosion_laser)
             self.game.groups['all'].add(explosion_laser)
