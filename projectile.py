@@ -5,13 +5,13 @@ import math
 import random
 
 class Projectile(pygame.sprite.Sprite):
-    def __init__(self, position:Vector2, velocity=0.0, game=None, 
+    def __init__(self, position:Vector2, velocity=Vector2(0,0), game=None, 
                  speed_multiplier=0.0, speed_range=(0, math.inf), 
                  gravity=0 ,damage=10, radius=10, surfacesize=10, deflected=False):
         super().__init__()
         # Basic attributes
         self.position = position
-        self.velocity = Vector2(velocity)
+        self.velocity = velocity
         self.damage = damage
         self.DEFLECTED_VELOCITY = self.velocity * 1.1
         self.SPEED_RANGE = speed_range
@@ -92,14 +92,14 @@ class Projectile(pygame.sprite.Sprite):
 
 
 class P_Ball(Projectile):
-    def __init__(self, position, velocity, speed_multiplier, damage):
+    def __init__(self, position=Vector2(0,0), velocity=Vector2(0,0), speed_multiplier=1.0, damage=33, game=None):
         # Stretch and squash parameters
         self.STRETCH_THRESHOLD = 8  # Speed at which stretching begins
         self.MAX_STRETCH_RATIO = 2.5  # Maximum stretching ratio
         self.MIN_SQUASH_RATIO = 0.85  # Minimum squashing ratio
         radius = 10
 
-        super().__init__(position, velocity, speed_multiplier, [6, 30], 0, damage, 
+        super().__init__(position=position, velocity=velocity, speed_multiplier=speed_multiplier, speed_range=[6, 30], gravity=0, damage=damage, game=game,
                          radius=radius, surfacesize=int(radius * 2 * self.MAX_STRETCH_RATIO))
         self.color = (255, 0, 0)  # Default red color
     
@@ -146,14 +146,14 @@ class P_Ball(Projectile):
         super().update()
 
 class Shard(Projectile):
-    def __init__(self, position, velocity, damage, deflected=False):
+    def __init__(self, position=Vector2(0,0), velocity=Vector2(0,0), damage=33, deflected=False, game=None):
         self.base = random.randint(20, 30)
         self.height = random.randint(20, 45)
 
-        super().__init__(position, velocity, 1.0, [0, 30], 0, damage, 
+        super().__init__(position=position, velocity=velocity, speed_multiplier=1.0, speed_range=[0, 30], gravity=0, damage=damage, 
                          radius=(self.base + self.height) / 4, 
                          surfacesize=int(max(self.base, self.height) * 2),
-                         deflected=deflected)
+                         deflected=deflected, game=game)
         
         # Rotation attributes
         self.angle = random.uniform(0, 360)
@@ -198,8 +198,8 @@ class Shard(Projectile):
         super().update()
 
 class Laser(Projectile):
-    def __init__(self, position, velocity, damage, radius, game=None,
-                 bounce_limit=0, speed_multiplier=1, deflected=False, 
+    def __init__(self, position=Vector2(0,0), velocity=Vector2(0,0), damage=33, radius=10, game=None,
+                 bounce_limit=0, speed_multiplier=1, deflected=False,
                  laser_type='normal', target=None, turn_rate=0.0, bomb_info={}):
         # Laser-specific attributes
         self.STRETCH_THRESHOLD = 5

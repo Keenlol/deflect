@@ -97,7 +97,11 @@ class E1(Enemy):
             for angle in range(0, 360, inerval_deg):
                 rad_angle = math.radians(angle + offset_deg)
                 velocity = Vector2(math.cos(rad_angle), math.sin(rad_angle)) * pr['speed']
-                projectile = P_Ball(copy.deepcopy(self.position), velocity, pr['speed_mul'], self.ATTACK_INFOS['damage'])
+                projectile = P_Ball(position=copy.deepcopy(self.position), 
+                                    velocity=velocity, 
+                                    speed_multiplier=pr['speed_mul'], 
+                                    damage=self.ATTACK_INFOS['damage'],
+                                    game=self.game)
                 self.game.groups['bullets'].add(projectile)
                 self.game.groups['all'].add(projectile)
 
@@ -132,7 +136,11 @@ class E1(Enemy):
             spread = self.random((-pb['spread'], pb['spread']))
             angle = math.radians(base_angle + spread)
             velocity = Vector2(math.cos(angle), math.sin(angle)) * pb['speed']
-            projectile = P_Ball(copy.deepcopy(self.position), velocity, pb['speed_mul'], self.ATTACK_INFOS['damage'])
+            projectile = P_Ball(position=copy.deepcopy(self.position), 
+                                velocity=velocity, 
+                                speed_multiplier=pb['speed_mul'], 
+                                damage=self.ATTACK_INFOS['damage'],
+                                game=self.game)
             self.game.groups['bullets'].add(projectile)
             self.game.groups['all'].add(projectile)
         
@@ -155,7 +163,11 @@ class E1(Enemy):
         if to_target.length() > 0:
             direction = to_target.normalize()
             velocity = direction * pf['speed']
-            projectile = P_Ball(copy.deepcopy(self.position), velocity, pf['speed_mul'], self.ATTACK_INFOS['damage'])
+            projectile = P_Ball(position=copy.deepcopy(self.position), 
+                                velocity=velocity, 
+                                speed_multiplier=pf['speed_mul'], 
+                                damage=self.ATTACK_INFOS['damage'],
+                                game=self.game)
             self.game.groups['bullets'].add(projectile)
             self.game.groups['all'].add(projectile)
         

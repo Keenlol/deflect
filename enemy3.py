@@ -242,7 +242,8 @@ class E3(Enemy):
                      velocity=direction * bounce_info['speed'], 
                      damage=bounce_info['damage'], 
                      radius=bounce_info['size'], 
-                     bounce_limit=bounce_info['bounce_limit'])
+                     bounce_limit=bounce_info['bounce_limit'],
+                     game=self.game)
         
         self.game.groups['bullets'].add(laser)
         self.game.groups['all'].add(laser)
