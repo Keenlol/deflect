@@ -170,8 +170,8 @@ class E2(Enemy):
             # Initialize with zero velocity
             shard = Shard(position=spawn_pos, 
                           velocity=Vector2(0, 0), 
-                          damage=self.attack_infos['damage'],
-                          game=self.game)
+                          game=self.game,
+                          damage=self.attack_infos['damage'])
             self.shards.append(shard)
         
         # Start animation
@@ -232,8 +232,8 @@ class E2(Enemy):
             
             Shard(position=spawn_pos, 
                 velocity=Vector2(0, -4), 
-                damage=self.attack_infos['damage'],
                 game=self.game,
+                damage=self.attack_infos['damage'],
                 gravity=0.3)
             
             self.rain_index += 1
@@ -321,7 +321,7 @@ class E2(Enemy):
             velocity = Vector2(math.cos(angle_rad), math.sin(angle_rad)) * self.random((15.0, 25.0))
             Shard(position=midpoint + Vector2(0, -0), 
                 velocity=velocity, 
+                game=self.game,
                 damage=self.attack_infos['damage'], 
-                deflected=True,
-                game=self.game)
+                deflected=True)
 

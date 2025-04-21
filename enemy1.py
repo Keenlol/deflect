@@ -98,10 +98,10 @@ class E1(Enemy):
                 rad_angle = math.radians(angle + offset_deg)
                 velocity = Vector2(math.cos(rad_angle), math.sin(rad_angle)) * pr['speed']
                 P_Ball(position=copy.deepcopy(self.position), 
-                                    velocity=velocity, 
-                                    speed_multiplier=pr['speed_mul'], 
-                                    damage=self.ATTACK_INFOS['damage'],
-                                    game=self.game)
+                       velocity=velocity, 
+                       game=self.game,
+                       damage=self.ATTACK_INFOS['damage'],
+                       speed_multiplier=pr['speed_mul'])
 
 
         if self.attack_phase == 0:
@@ -136,10 +136,10 @@ class E1(Enemy):
             angle = math.radians(base_angle + spread)
             velocity = Vector2(math.cos(angle), math.sin(angle)) * pb['speed']
             P_Ball(position=copy.deepcopy(self.position), 
-                    velocity=velocity, 
-                    speed_multiplier=pb['speed_mul'], 
-                    damage=self.ATTACK_INFOS['damage'],
-                    game=self.game)
+                   velocity=velocity, 
+                   game=self.game,
+                   damage=self.ATTACK_INFOS['damage'],
+                   speed_multiplier=pb['speed_mul'])
         
         self.shots_fired += 1
         self.attack_timer.start(pb['delay'])
@@ -161,10 +161,10 @@ class E1(Enemy):
             direction = to_target.normalize()
             velocity = direction * pf['speed']
             P_Ball(position=copy.deepcopy(self.position), 
-                velocity=velocity, 
-                speed_multiplier=pf['speed_mul'], 
-                damage=self.ATTACK_INFOS['damage'],
-                game=self.game)
+                   velocity=velocity, 
+                   game=self.game,
+                   damage=self.ATTACK_INFOS['damage'],
+                   speed_multiplier=pf['speed_mul'])
         
         self.shots_fired += 1
         self.attack_timer.start(pf['delay'])

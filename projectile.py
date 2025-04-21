@@ -5,14 +5,24 @@ import math
 import random
 
 class Projectile(pygame.sprite.Sprite):
-    def __init__(self, position:Vector2, velocity=Vector2(0,0), game=None, 
-                 speed_multiplier=0.0, speed_range=(0, math.inf), 
-                 gravity=0 ,damage=10, radius=10, surfacesize=10, deflected=False):
+    def __init__(self, 
+                 position=Vector2(0, 0),        # Starting position
+                 velocity=Vector2(0, 0),        # Initial velocity vector
+                 game=None,                     # Game reference
+                 damage=10,                     # Damage dealt
+                 radius=10,                     # Collision radius 
+                 speed_multiplier=1.0,          # Speed change per frame
+                 speed_range=(0, math.inf),     # Min/max speed
+                 gravity=0,                     # Gravity effect
+                 surfacesize=None,              # Size of surface for drawing
+                 deflected=False):              # Whether this is deflected
         super().__init__()
+        
         # Basic attributes
         self.position = position
         self.velocity = velocity
         self.damage = damage
+        self.radius = radius
         self.DEFLECTED_VELOCITY = self.velocity * 1.1
         self.SPEED_RANGE = speed_range
         self.__is_deflected = deflected
@@ -28,13 +38,14 @@ class Projectile(pygame.sprite.Sprite):
         self.alive = True
 
         # Draw
-        self.surface_size = surfacesize
-        self.radius = radius
+        self.surface_size = surfacesize if surfacesize is not None else radius * 2
         self.image = pygame.Surface((self.surface_size, self.surface_size), pygame.SRCALPHA)
         self.rect = self.image.get_rect(center=(self.position.x, self.position.y))
 
-        self.game.groups['bullets'].add(self)
-        self.game.groups['all'].add(self)
+        # Add to game groups if game is provided
+        if self.game:
+            self.game.groups['bullets'].add(self)
+            self.game.groups['all'].add(self)
 
     @property
     def is_deflected(self):
@@ -70,8 +81,8 @@ class Projectile(pygame.sprite.Sprite):
         """Draw projectile, override by child class"""
         self.color = self.COLOR_SET['blue'] if self.__is_deflected else self.COLOR_SET['red']
 
-
     def apply_physics(self):
+        """Apply physics to projectile"""
         self.velocity *= self.SPEED_MULTIPLIER
         self.velocity.y += self.GRAVITY
         self.position += self.velocity
@@ -79,7 +90,6 @@ class Projectile(pygame.sprite.Sprite):
 
         if self.velocity.length() != 0:
             self.velocity.clamp_magnitude_ip(self.SPEED_RANGE[0], self.SPEED_RANGE[1])
-
 
     def update(self):
         """Update projectile position and check bounds"""
@@ -95,24 +105,46 @@ class Projectile(pygame.sprite.Sprite):
 
 
 class P_Ball(Projectile):
-    def __init__(self, position=Vector2(0,0), velocity=Vector2(0,0), speed_multiplier=1.0, damage=33, game=None):
+    def __init__(self, 
+                 position=Vector2(0, 0),
+                 velocity=Vector2(0, 0),
+                 game=None,
+                 damage=33,
+                 radius=10,
+                 speed_multiplier=1.0,
+                 deflected=False):
+        
         # Stretch and squash parameters
         self.STRETCH_THRESHOLD = 8  # Speed at which stretching begins
         self.MAX_STRETCH_RATIO = 2.5  # Maximum stretching ratio
         self.MIN_SQUASH_RATIO = 0.85  # Minimum squashing ratio
-        radius = 10
 
-        super().__init__(position=position, velocity=velocity, speed_multiplier=speed_multiplier, speed_range=[6, 30], gravity=0, damage=damage, game=game,
-                         radius=radius, surfacesize=int(radius * 2 * self.MAX_STRETCH_RATIO))
+        # Calculate surface size based on max possible stretch
+        surfacesize = int(radius * 2 * self.MAX_STRETCH_RATIO)
+        
+        # Call parent constructor with specific parameters
+        super().__init__(
+            position=position,
+            velocity=velocity,
+            game=game,
+            damage=damage,
+            radius=radius,
+            speed_multiplier=speed_multiplier,
+            speed_range=[6, 30],  # P_Ball specific speed range
+            gravity=0,
+            surfacesize=surfacesize,
+            deflected=deflected
+        )
+        
         self.color = (255, 0, 0)  # Default red color
-    
         self.draw()
     
     def draw(self):
         """Draw the ball with current color, stretching based on velocity"""
-        # Clear the surface
+        # Call parent draw for color updates
         super().draw()
 
+        # Clear the surface
         self.image.fill((0, 0, 0, 0))
         center = (self.surface_size // 2, self.surface_size // 2)
         speed = self.velocity.length()
@@ -143,21 +175,36 @@ class P_Ball(Projectile):
             self.image.blit(rotated_surface, rotated_rect)
         else:
             pygame.draw.circle(self.image, self.color, center, self.radius)
-    
-    def update(self):
-        """Update projectile position and check bounds"""
-        super().update()
+
 
 class Shard(Projectile):
-    def __init__(self, position=Vector2(0,0), velocity=Vector2(0,0), damage=33, 
-                 deflected=False, game=None, gravity=0):
+    def __init__(self, 
+                 position=Vector2(0, 0),
+                 velocity=Vector2(0, 0),
+                 game=None,
+                 damage=33,
+                 gravity=0,
+                 deflected=False):
+        
+        # Shard-specific attributes
         self.base = random.randint(20, 30)
         self.height = random.randint(20, 45)
+        radius = (self.base + self.height) / 4
+        surfacesize = int(max(self.base, self.height) * 2)
 
-        super().__init__(position=position, velocity=velocity, speed_multiplier=1.0, speed_range=[0, 30], gravity=gravity, damage=damage, 
-                         radius=(self.base + self.height) / 4, 
-                         surfacesize=int(max(self.base, self.height) * 2),
-                         deflected=deflected, game=game)
+        # Call parent constructor with calculated parameters
+        super().__init__(
+            position=position, 
+            velocity=velocity, 
+            game=game,
+            damage=damage,
+            radius=radius,
+            speed_multiplier=1.0, 
+            speed_range=[0, 30],
+            gravity=gravity,
+            surfacesize=surfacesize,
+            deflected=deflected
+        )
         
         # Rotation attributes
         self.angle = random.uniform(0, 360)
@@ -168,6 +215,7 @@ class Shard(Projectile):
         self.draw()
     
     def draw(self):
+        """Draw the shard as a triangle"""
         super().draw()
 
         self.image.fill((0, 0, 0, 0))
@@ -190,21 +238,34 @@ class Shard(Projectile):
         self.image.blit(rotated_surface, rotated_rect)
     
     def update(self):
+        """Update shard position, rotation, and check bounds"""
         # Update rotation
         self.angle += self.spin_speed
         
         # Apply gravity only if deflected
         if self.is_deflected and self.GRAVITY == 0:
-            self.GRAVITY = random.uniform(0.2,0.5)
+            self.GRAVITY = random.uniform(0.2, 0.5)
             self.spin_speed = self.DEFLECTED_SPIN
         
         # Update position
         super().update()
 
+
 class Laser(Projectile):
-    def __init__(self, position=Vector2(0,0), velocity=Vector2(0,0), damage=33, radius=10, game=None,
-                 bounce_limit=0, speed_multiplier=1, deflected=False,
-                 laser_type='normal', target=None, turn_rate=0.0, bomb_info={}):
+    def __init__(self, 
+                 position=Vector2(0, 0),
+                 velocity=Vector2(0, 0),
+                 game=None,
+                 damage=33,
+                 radius=10,
+                 speed_multiplier=1.0,
+                 bounce_limit=0,
+                 deflected=False,
+                 laser_type='normal',
+                 target=None,
+                 turn_rate=0.0,
+                 bomb_info={}):
+        
         # Laser-specific attributes
         self.STRETCH_THRESHOLD = 5
         self.bounces = bounce_limit + 1
@@ -213,27 +274,36 @@ class Laser(Projectile):
         self.turn_rate = turn_rate
         self.bomb_info = bomb_info
         
-        # Call parent constructor with appropriate parameters
-        # Lasers don't have gravity, speed multiplier, or speed range
-        super().__init__(position=position, velocity=velocity, speed_multiplier=speed_multiplier, 
-                         speed_range=[0, math.inf], gravity=0, damage=damage, 
-                         radius=radius, surfacesize=int(radius * 20), game=game,
-                         deflected=deflected)
+        # Calculate surface size based on laser length
+        surfacesize = int(radius * 20)
+        
+        # Call parent constructor with laser-specific parameters
+        super().__init__(
+            position=position, 
+            velocity=velocity,
+            game=game, 
+            damage=damage,
+            radius=radius, 
+            speed_multiplier=speed_multiplier,
+            speed_range=[0, math.inf],
+            gravity=0,
+            surfacesize=surfacesize,
+            deflected=deflected
+        )
         
         # Set up the surface for drawing
         self.draw()
     
     def draw(self):
-        """Draw the laser as a square that stretches based on velocity"""
+        """Draw the laser as a rectangle that stretches based on velocity"""
         super().draw()
-
         
         # Clear the surface
         self.image.fill((0, 0, 0, 0))
         center = (self.surface_size // 2, self.surface_size // 2)
         speed = self.velocity.length()
         
-        # Stretch and squash based on velocity, similar to P_Ball
+        # Stretch and squash based on velocity
         stretch_factor = (speed / self.STRETCH_THRESHOLD)
         
         angle_rad = math.atan2(self.velocity.y, self.velocity.x)
@@ -260,7 +330,7 @@ class Laser(Projectile):
         self.image.blit(rotated_surface, rotated_rect)
     
     def check_bounds(self):
-        """Check if projectile is out of bounds or hit ground"""
+        """Check if projectile is out of bounds and handle bouncing if enabled"""
         if self.bounces > 0:
             # Bounce off left edge
             if self.position.x <= 0:
@@ -294,15 +364,15 @@ class Laser(Projectile):
         return False
 
     def deflect_action(self):
-        if self.laser_type == 'homing' and self.is_deflected:
+        """Retarget homing laser when deflected"""
+        if self.laser_type == 'homing' and self.is_deflected and self.game:
             enemies = [sprite for sprite in self.game.groups['enemies'] 
-                    if sprite.alive]
+                      if sprite.alive]
             if enemies:
                 self.target = random.choice(enemies)
 
-
     def update_homing_laser(self):
-        """Custom update method for homing lasers"""     
+        """Update homing laser to track its target"""
         if not self.target or not self.target.alive:
             return
             
@@ -321,6 +391,7 @@ class Laser(Projectile):
         self.velocity = Vector2(math.cos(new_angle), math.sin(new_angle)) * speed
 
     def explodes(self):
+        """Create explosion effect for bomb-type lasers"""
         # Create explosion lasers in all directions
         b_info = self.bomb_info
 
@@ -329,28 +400,28 @@ class Laser(Projectile):
             rad_angle = math.radians(angle)
             explosion_dir = Vector2(math.cos(rad_angle), math.sin(rad_angle))
             
-            # Create explosion laser
+            # Create explosion laser - game groups are handled in constructor
             explosion_laser = Laser(
                 position=Vector2(self.position),  # Use bomb's position
                 velocity=explosion_dir * b_info['explosion_speed'],
+                game=self.game,
                 damage=b_info['explosion_damage'],
                 radius=b_info['explosion_size'],
                 speed_multiplier=b_info['explosion_speed_mul'],
-                deflected=self.is_deflected,
-                game=self.game)
-            
-            self.game.groups['bullets'].add(explosion_laser)
-            self.game.groups['all'].add(explosion_laser)
+                deflected=self.is_deflected)
         
     def update(self):
-        """Update laser position and check bounds"""
+        """Update laser position, special behaviors, and check bounds"""
         if self.laser_type == 'homing':
             self.update_homing_laser()
+            
         super().update()
+        
         if self.velocity.length() <= 1:
             self.kill()
 
     def kill(self) -> None:
+        """Handle special effects when laser is destroyed"""
         if self.laser_type == 'bomb':
             self.explodes()
         return super().kill()        

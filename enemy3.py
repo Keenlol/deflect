@@ -176,13 +176,13 @@ class E3(Enemy):
                              self.position.y)
 
         Laser(position=gun_position, 
-                velocity=direction * bomb_info['initial_speed'],
-                damage=bomb_info['initial_damage'], 
-                radius=bomb_info['initial_size'],
-                speed_multiplier=bomb_info['speed_mul'],
-                bomb_info=bomb_info,
-                laser_type='bomb',
-                game=self.game)
+              velocity=direction * bomb_info['initial_speed'],
+              game=self.game,
+              damage=bomb_info['initial_damage'], 
+              radius=bomb_info['initial_size'],
+              speed_multiplier=bomb_info['speed_mul'],
+              laser_type='bomb',
+              bomb_info=bomb_info)
 
         self.shots_fired = 1
 
@@ -206,13 +206,13 @@ class E3(Enemy):
                              self.position.y)
         
         Laser(position=gun_position, 
-                velocity=direction * self.random(homing_info['speed']),
-                damage=homing_info['damage'], 
-                radius=homing_info['size'], 
-                game=self.game, 
-                laser_type='homing', 
-                target=target,
-                turn_rate=self.random(homing_info['turn_rate']))
+              velocity=direction * self.random(homing_info['speed']),
+              game=self.game,
+              damage=homing_info['damage'], 
+              radius=homing_info['size'], 
+              laser_type='homing', 
+              target=target,
+              turn_rate=self.random(homing_info['turn_rate']))
         
         self.shots_fired += 1
         self.attack_timer.start(homing_info['delay'])
@@ -234,11 +234,11 @@ class E3(Enemy):
             
         bounce_info = self.attack_infos['bounce']
         Laser(position=gun_position, 
-                     velocity=direction * bounce_info['speed'], 
-                     damage=bounce_info['damage'], 
-                     radius=bounce_info['size'], 
-                     bounce_limit=bounce_info['bounce_limit'],
-                     game=self.game)
+              velocity=direction * bounce_info['speed'], 
+              game=self.game,
+              damage=bounce_info['damage'], 
+              radius=bounce_info['size'], 
+              bounce_limit=bounce_info['bounce_limit'])
 
         self.shots_fired = 1
 
