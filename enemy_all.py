@@ -11,7 +11,6 @@ import math
 import copy
 
 class Enemy(pygame.sprite.Sprite):
-    # Common timer durations
     MOVE_DURATION = (1.0, 3.0)  
     WAIT_DURATION = (1.0, 3.0)
     HURT_DURATION = 1/6
@@ -65,7 +64,6 @@ class Enemy(pygame.sprite.Sprite):
         # Knockback
         self.knockback_velocity = Vector2(0, 0)
 
-        # Setup visual representation
         self.image = self.anim.get_current_frame(self.facing_right)
         self.rect = pygame.Rect(x, y, self.width, self.height)
     
@@ -130,7 +128,6 @@ class Enemy(pygame.sprite.Sprite):
             self.velocity.y += self.GRAVITY
             self.velocity.y = min(self.velocity.y, self.MAX_FALL_SPEED)
         
-        # Update position
         self.position += self.velocity
         
         # Floor collision
@@ -141,60 +138,49 @@ class Enemy(pygame.sprite.Sprite):
         else:
             self.on_ground = False
         
-        # Update rect position
         self.rect.center = self.position
     
     def check_projectile_collisions(self):
         for bullet in self.game.groups['bullets']:
-            if bullet.is_deflected:  # Only check deflected bullets
+            if bullet.is_deflected:
                 distance = (bullet.position - self.position).length()
-                if distance < self.width/2:  # Using sprite width as collision radius
+                if distance < self.width/2:
                     self.take_damage(bullet.damage)
                     self.start_knockback(bullet.velocity, bullet.velocity.length() * 0.1)
                     bullet.kill()
 
     def start_knockback(self, direction, amount):
-        # Calculate knockback vector
-        if direction.length() > 0:  # Avoid division by zero
+        if direction.length() > 0:
             direction = direction.normalize()
         else:
-            direction = Vector2(1, 0)  # Default direction if none provided
+            direction = Vector2(1, 0)
         
-        # Set knockback velocity
         self.knockback_velocity = direction * amount
         self.is_knocked_back = True
     
     def update_knockback(self):
         if self.is_knocked_back:
-            # Apply knockback velocity to position
             self.position += self.knockback_velocity
-            
-            # Apply decay to knockback velocity
             self.knockback_velocity *= self.KNOCKBACK_DECAY
             
-            # If knockback velocity becomes negligible, end knockback
             if self.knockback_velocity.length() < 0.1:
                 self.knockback_velocity = Vector2(0, 0)
                 self.is_knocked_back = False
     
     def update(self):
-        # Handle death animation and cleanup
         if not self.is_alive:
             self.update_animation()
             if self.anim.current_state == "death" and self.anim.animation_finished:
                 self.kill()
             return
             
-        # Reset hurt state
         if self.is_hurt and self.hurt_timer.is_completed:
             self.is_hurt = False
             self.anim.change_state("idle")
         
-        # Run AI logic when not hurt
         if self.target and not self.is_hurt:
             self.ai_logic(self.target)
         
-        # Update everything
         self.update_knockback()
         self.apply_physics()
         self.check_projectile_collisions()

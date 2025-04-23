@@ -9,24 +9,9 @@ class E2(Enemy):
     
     # Attack data
     ATTACK_INFO = {
-        'slash': {
-            'speed': 10, 
-            'dash_dur': 0.5, 
-            'charge_dur': 0.5
-        },
-        'shard': {
-            'count': 10, 
-            'delay': 0.5, 
-            'radius': 100, 
-            'height': 100, 
-            'speed': 10
-        },
-        'rain': {
-            'count': 15, 
-            'delay': 3/60, 
-            'height': 250, 
-            'width': 600
-        },
+        'slash': {'speed': 10, 'dash_dur': 0.5, 'charge_dur': 0.5},
+        'shard': {'count': 10, 'delay': 0.5, 'radius': 100, 'height': 100, 'speed': 10},
+        'rain': {'count': 15, 'delay': 3/60, 'height': 250, 'width': 600},
         'damage': 30
     }
     
@@ -53,10 +38,7 @@ class E2(Enemy):
         
         # Initialize timers
         self.init_timers()
-        
-        # Set attack info
-        self.attack_infos = self.ATTACK_INFO
-        
+                
         # Weapon sprite
         self.weapon_anim = Animation(self, "sprites/enemies/e2_slash", {
             "charge": False,
@@ -100,7 +82,7 @@ class E2(Enemy):
         self.velocity.x = 0
         
         # Start charge phase
-        self.attack_timer.start(self.attack_infos['slash']['charge_dur'])
+        self.attack_timer.start(self.ATTACK_INFO['slash']['charge_dur'])
 
     def end_dash_attack(self):
         self.weapon_active = False
@@ -121,10 +103,10 @@ class E2(Enemy):
                 # Just finished charging - start dash
                 self.weapon_anim.change_state("slash")
                 self.anim.change_state("attack2")
-                self.velocity.x = self.attack_infos['slash']['speed'] * self.direction
+                self.velocity.x = self.ATTACK_INFO['slash']['speed'] * self.direction
                 
                 # Start dash phase
-                self.attack_timer.start(self.attack_infos['slash']['dash_dur'])
+                self.attack_timer.start(self.ATTACK_INFO['slash']['dash_dur'])
                 self.is_dashing = True
                 return False
                 
@@ -147,13 +129,13 @@ class E2(Enemy):
             surface.blit(weapon_frame, weapon_rect)
     
     def start_shard_attack(self, target):
-        self.attack_timer.start(self.attack_infos['shard']['delay'])
+        self.attack_timer.start(self.ATTACK_INFO['shard']['delay'])
         self.shards.clear()
         
         # Spawn shards above head
-        height = self.attack_infos['shard']['height']
-        radius = self.attack_infos['shard']['radius']
-        for _ in range(self.attack_infos['shard']['count']):
+        height = self.ATTACK_INFO['shard']['height']
+        radius = self.ATTACK_INFO['shard']['radius']
+        for _ in range(self.ATTACK_INFO['shard']['count']):
             spawn_pos = Vector2(
                 self.position.x + self.random((-radius, radius)),
                 self.position.y - height + self.random((-radius, radius))
@@ -162,10 +144,9 @@ class E2(Enemy):
             shard = Shard(position=spawn_pos, 
                           velocity=Vector2(0, 0), 
                           game=self.game,
-                          damage=self.attack_infos['damage'])
+                          damage=self.ATTACK_INFO['damage'])
             self.shards.append(shard)
         
-        # Start animation
         self.anim.change_state("attack1")
         self.velocity.x = 0
     
@@ -180,7 +161,7 @@ class E2(Enemy):
                 angle = math.degrees(math.atan2(to_target.y, to_target.x))
                 final_angle = math.radians(angle)
                 
-                launch_speed = self.attack_infos['shard']['speed']
+                launch_speed = self.ATTACK_INFO['shard']['speed']
                 velocity = Vector2(math.cos(final_angle), math.sin(final_angle)) * launch_speed
                 shard.velocity = velocity
             
@@ -196,15 +177,15 @@ class E2(Enemy):
     
     def start_shard_rain(self, target):
         self.rain_index = 0
-        self.attack_timer.start(self.attack_infos['rain']['delay'])
+        self.attack_timer.start(self.ATTACK_INFO['rain']['delay'])
 
         self.rain_positions = []
-        shard_spacing = self.attack_infos['rain']['width'] / (self.attack_infos['rain']['count'] - 1) if self.attack_infos['rain']['count'] > 1 else 0
+        shard_spacing = self.ATTACK_INFO['rain']['width'] / (self.ATTACK_INFO['rain']['count'] - 1) if self.ATTACK_INFO['rain']['count'] > 1 else 0
         
-        start_x = target.position.x - self.attack_infos['rain']['width'] / 2
-        for i in range(self.attack_infos['rain']['count']):
+        start_x = target.position.x - self.ATTACK_INFO['rain']['width'] / 2
+        for i in range(self.ATTACK_INFO['rain']['count']):
             pos_x = start_x + i * shard_spacing
-            pos_y = target.position.y - self.attack_infos['rain']['height']
+            pos_y = target.position.y - self.ATTACK_INFO['rain']['height']
             self.rain_positions.append(Vector2(pos_x, pos_y))
         
         if not self.position.x > target.position.x:
@@ -215,22 +196,22 @@ class E2(Enemy):
     
     def rain_attack(self, target):
         # Spawn new shard when delay timer completes
-        if self.attack_timer.just_completed and self.rain_index < self.attack_infos['rain']['count']:
+        if self.attack_timer.just_completed and self.rain_index < self.ATTACK_INFO['rain']['count']:
             spawn_pos = self.rain_positions[self.rain_index]
             
             Shard(position=spawn_pos, 
                  velocity=Vector2(0, -4), 
                  game=self.game,
-                 damage=self.attack_infos['damage'],
+                 damage=self.ATTACK_INFO['damage'],
                  gravity=0.3)
             
             self.rain_index += 1
             
-            if self.rain_index < self.attack_infos['rain']['count']:
-                self.attack_timer.start(self.attack_infos['rain']['delay'])
+            if self.rain_index < self.ATTACK_INFO['rain']['count']:
+                self.attack_timer.start(self.ATTACK_INFO['rain']['delay'])
         
         # End attack when all shards have been spawned
-        if self.rain_index >= self.attack_infos['rain']['count']:
+        if self.rain_index >= self.ATTACK_INFO['rain']['count']:
             self.anim.change_state("idle")
             self.start_waiting()
             self.is_attacking = False
@@ -290,7 +271,7 @@ class E2(Enemy):
             if player.knife.active and player.knife.anim.current_state == "deflect":
                 if (self.position - player.knife.position).length() <= player.knife.width:
                     knockback_dir = self.position - player.position
-                    knockback_amount = self.attack_infos['slash']['speed']
+                    knockback_amount = self.ATTACK_INFO['slash']['speed']
                     self.start_knockback(knockback_dir, knockback_amount)
                     self.end_dash_attack()
                     self.game.freeze_and_shake(10, 7, 7)
@@ -299,12 +280,12 @@ class E2(Enemy):
     def spawn_shards(self, player_position):
         midpoint = (self.position + player_position) / 2
 
-        for _ in range(self.attack_infos['shard']['count']):
+        for _ in range(self.ATTACK_INFO['shard']['count']):
             angle_rad = math.radians(self.random((0.0, 360.0)))
             velocity = Vector2(math.cos(angle_rad), math.sin(angle_rad)) * self.random((15.0, 25.0))
             Shard(position=midpoint + Vector2(0, -0), 
                  velocity=velocity, 
                  game=self.game,
-                 damage=self.attack_infos['damage'], 
+                 damage=self.ATTACK_INFO['damage'], 
                  deflected=True)
 

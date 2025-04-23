@@ -7,7 +7,7 @@ class E3(Enemy):
     # Movement constants
     TARGET_DISTANCE = (300, 500)
     DISTANCE_TOLERANCE = 75
-    ACCELERATION_RANGE = (0.01, 0.1)
+    ACCELERATION_RANGE = (0.01, 0.05)
     DECELERATION = 0.05
     
     # Bobbing constants
@@ -87,9 +87,6 @@ class E3(Enemy):
         # Attack state tracking
         self.shots_fired = 0
         self.is_aiming = False
-        
-        # Set attack info
-        self.attack_infos = self.ATTACK_INFO
         
     def update_animation(self):
         super().update_animation()
@@ -177,7 +174,7 @@ class E3(Enemy):
         to_target = target.position - self.position
         direction = to_target.normalize()
         
-        bomb_info = self.attack_infos['bomb']
+        bomb_info = self.ATTACK_INFO['bomb']
         gun_position = Vector2(self.position.x + (self.width/2 if self.facing_right else -self.width/2), 
                              self.position.y)
 
@@ -194,7 +191,7 @@ class E3(Enemy):
         return True
 
     def fire_homing(self, target):
-        homing_info = self.attack_infos['homing']
+        homing_info = self.ATTACK_INFO['homing']
         
         if not self.attack_timer.is_completed:
             return False
@@ -235,7 +232,7 @@ class E3(Enemy):
         else:
             gun_position = Vector2(self.position.x - self.width/2, self.position.y)
             
-        bounce_info = self.attack_infos['bounce']
+        bounce_info = self.ATTACK_INFO['bounce']
         Laser(position=gun_position, 
               velocity=direction * bounce_info['speed'], 
               game=self.game,

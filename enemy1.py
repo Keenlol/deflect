@@ -36,8 +36,7 @@ class E1(Enemy):
         self.init_timers()
         
         # Attack attributes
-        self.attack_infos = self.ATTACK_INFO
-        self.needs_new_target = True
+        self.needs_new_pos = True
         self.attack_phase = 0
         self.shots_fired = 0
 
@@ -50,41 +49,32 @@ class E1(Enemy):
     
     def pick_new_position(self, target):
         """Pick a new random position near the target"""
-        while True:  # Keep trying until we get a valid position
-            # First, get a base position relative to player
+        while True:
             base_y = target.position.y - self.random((100, 300))  # Tend to stay above player
-            
-            # Get horizontal offset (left or right of player)
             offset_x = self.random((-1, 1), choice=True) * self.random((200, 400))
             
-            # Set new target position
             new_pos_x = target.position.x + offset_x
             new_pos_y = base_y
             
-            # Ensure minimum height from ground
             min_height = C.WINDOW_HEIGHT - C.FLOOR_HEIGHT - self.height - 100
             if new_pos_y > min_height:
                 new_pos_y = min_height
             
-            # Ensure maximum height (optional, remove if you want it to go higher)
             max_height = 100
             if new_pos_y < max_height:
                 new_pos_y = max_height
             
-            # Set the position
             self.target_pos.x = new_pos_x
             self.target_pos.y = new_pos_y
             
-            # If position is valid (not too close to current position), break
             if Vector2(self.target_pos - self.position).length() > 100:
                 break
         
-        # Reset flag
-        self.needs_new_target = False
+        self.needs_new_pos = False
     
     def shoot_radial(self, target=None):
         """Shoot projectiles in a radial pattern"""
-        pr = self.attack_infos['radial']
+        pr = self.ATTACK_INFO['radial']
         def shoot_radial_layer(inerval_deg, offset_deg=0):
             for angle in range(0, 360, inerval_deg):
                 rad_angle = math.radians(angle + offset_deg)
@@ -92,16 +82,17 @@ class E1(Enemy):
                 P_Ball(position=copy.deepcopy(self.position), 
                        velocity=velocity, 
                        game=self.game,
-                       damage=self.attack_infos['damage'],
+                       damage=self.ATTACK_INFO['damage'],
                        speed_multiplier=pr['speed_mul'])
 
+        # First layer
         if self.attack_phase == 0:
-            # First round
             shoot_radial_layer(15, 0)
             self.attack_phase = 1
             self.attack_timer.start(pr['delay'])
             return False
-            
+        
+        # Second layer
         elif self.attack_phase == 1:
             if not self.attack_timer.is_completed:
                 return False
@@ -120,7 +111,8 @@ class E1(Enemy):
         # Calculate base direction to target
         to_target = target.position - self.position
         base_angle = math.degrees(math.atan2(to_target.y, to_target.x))
-        pb = self.attack_infos['burst']
+        pb = self.ATTACK_INFO['burst']
+
         # Fire 4 projectiles with spread
         for _ in range(4):
             spread = self.random((-pb['spread'], pb['spread']))
@@ -129,7 +121,7 @@ class E1(Enemy):
             P_Ball(position=copy.deepcopy(self.position), 
                    velocity=velocity, 
                    game=self.game,
-                   damage=self.attack_infos['damage'],
+                   damage=self.ATTACK_INFO['damage'],
                    speed_multiplier=pb['speed_mul'])
         
         self.shots_fired += 1
@@ -143,10 +135,10 @@ class E1(Enemy):
             
         if not self.attack_timer.is_completed:
             return False
-            
+
         # Calculate direction to target's current position
         to_target = target.position - self.position
-        pf = self.attack_infos['follow']
+        pf = self.ATTACK_INFO['follow']
 
         if to_target.length() > 0:
             direction = to_target.normalize()
@@ -154,7 +146,7 @@ class E1(Enemy):
             P_Ball(position=copy.deepcopy(self.position), 
                    velocity=velocity, 
                    game=self.game,
-                   damage=self.attack_infos['damage'],
+                   damage=self.ATTACK_INFO['damage'],
                    speed_multiplier=pf['speed_mul'])
         
         self.shots_fired += 1
@@ -179,7 +171,7 @@ class E1(Enemy):
             if self.current_attack(target):
                 self.is_attacking = False
                 self.start_waiting()
-                self.needs_new_target = True
+                self.needs_new_pos = True
             return
         
         # Waiting
@@ -188,11 +180,11 @@ class E1(Enemy):
             return
         
         # Start Moving
-        if self.needs_new_target:
+        if self.needs_new_pos:
             self.pick_new_position(target)
             self.start_pos = Vector2(self.position)
             self.start_movement()
-            self.needs_new_target = False
+            self.needs_new_pos = False
             
         # Moving
         if not self.move_timer.is_completed:
