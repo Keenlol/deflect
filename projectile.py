@@ -114,15 +114,12 @@ class P_Ball(Projectile):
                  speed_multiplier=1.0,
                  deflected=False):
         
-        # Stretch and squash parameters
-        self.STRETCH_THRESHOLD = 8  # Speed at which stretching begins
-        self.MAX_STRETCH_RATIO = 2.5  # Maximum stretching ratio
-        self.MIN_SQUASH_RATIO = 0.85  # Minimum squashing ratio
+        self.STRETCH_THRESHOLD = 8
+        self.MAX_STRETCH_RATIO = 2.5
+        self.MIN_SQUASH_RATIO = 0.85
 
-        # Calculate surface size based on max possible stretch
         surfacesize = int(radius * 2 * self.MAX_STRETCH_RATIO)
         
-        # Call parent constructor with specific parameters
         super().__init__(
             position=position,
             velocity=velocity,
@@ -130,13 +127,12 @@ class P_Ball(Projectile):
             damage=damage,
             radius=radius,
             speed_multiplier=speed_multiplier,
-            speed_range=[6, 30],  # P_Ball specific speed range
+            speed_range=[6, 30],
             gravity=0,
             surfacesize=surfacesize,
             deflected=deflected
         )
         
-        self.color = (255, 0, 0)  # Default red color
         self.draw()
     
     def draw(self):
@@ -400,9 +396,7 @@ class Laser(Projectile):
             rad_angle = math.radians(angle)
             explosion_dir = Vector2(math.cos(rad_angle), math.sin(rad_angle))
             
-            # Create explosion laser - game groups are handled in constructor
-            explosion_laser = Laser(
-                position=Vector2(self.position),  # Use bomb's position
+            Laser(position=Vector2(self.position),
                 velocity=explosion_dir * b_info['explosion_speed'],
                 game=self.game,
                 damage=b_info['explosion_damage'],

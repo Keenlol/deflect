@@ -69,10 +69,11 @@ The game window should now open and you can start playing.
 - [x] Enemy 3 assets.
 - [x] Enemy 3 mechanics.
 - [x] Implement the new timer system for Player and Game.
-- [ ] Implement the new timer system for enemy.
-- [ ] Improve the code for everything.
+- [x] Implement the new timer system for enemy.
+- [x] Improve the code for everything.
 - [ ] Balance Enemy and Players, refine spawning and scoring.
 - [ ] Statistic tracking and visualization.
+- [ ] Redo the assets. Do background
 - [ ] Sound effects.
 - [ ] Main menu and extra UIs.
 
