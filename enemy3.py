@@ -90,7 +90,6 @@ class E3(Enemy):
         
     def update_animation(self):
         super().update_animation()
-        print(self.bobbing_timer.progress)
         if self.is_alive:
             # Calculate bobbing effect using timer progress
             self.bob_offset = self.BOB_AMPLITUDE * math.sin(self.bobbing_timer.progress * 2 * math.pi)
