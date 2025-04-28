@@ -125,8 +125,8 @@ class HealthBar(UI):
         self.image.blit(masked_fg, (0, 0))
 
 class Button(UI):
-    HOVER_DURATION = 0.25
-    UNHOVER_DURATION = 0.5
+    HOVER_DURATION = 0.20
+    UNHOVER_DURATION = 0.25
     HOVER_SCALE = 1.1
     
     def __init__(self, position: Vector2, width: int, height: int, text: str, 
