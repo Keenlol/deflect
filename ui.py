@@ -3,6 +3,7 @@ from pygame.math import Vector2
 from animation import Animation
 import math
 from config import Config as C
+from timer import Timer
 
 class UI(pygame.sprite.Sprite):
     def __init__(self, position: Vector2, width: int, height: int):
@@ -124,12 +125,16 @@ class HealthBar(UI):
         self.image.blit(masked_fg, (0, 0))
 
 class Button(UI):
+    HOVER_DURATION = 0.25
+    UNHOVER_DURATION = 0.5
+    HOVER_SCALE = 1.1
+    
     def __init__(self, position: Vector2, width: int, height: int, text: str, 
                  callback=None, idle_color=(200, 200, 200), hover_color=(255, 255, 255),
                  bg_color=(0, 0, 0, 0), text_size=32):
         super().__init__(position, width, height)
         
-        # Button specific attributes
+        # Button attributes
         self.original_width = width
         self.original_height = height
         self.text = text
@@ -139,13 +144,13 @@ class Button(UI):
         self.bg_color = bg_color            # Background color (with alpha)
         self.text_size = text_size
         
-        # Animation properties
+        # Animation state
         self.is_hovered = False
-        self.hover_progress = 0.0  # 0.0 to 1.0
-        self.hover_direction = 0   # 1 for hovering, -1 for un-hovering, 0 for idle
-        self.hover_duration = 0.25  # seconds for hover animation (reduced by half)
-        self.unhover_duration = 0.5  # seconds for un-hover animation (reduced by half)
-        self.hover_scale = 1.1     # scale factor when fully hovered
+        self.hover_direction = 0   # 1 for hover, -1 for unhover
+        
+        # Create animation timers
+        self.hover_timer = Timer(duration=self.HOVER_DURATION, owner=self, paused=True)
+        self.unhover_timer = Timer(duration=self.UNHOVER_DURATION, owner=self, paused=True)
         
         # Initialize font - use cached font if possible
         if not hasattr(Button, 'font_cache'):
@@ -159,29 +164,35 @@ class Button(UI):
                 Button.font_cache[text_size] = pygame.font.Font(None, text_size)
         
         self.font = Button.font_cache[text_size]
+        self.was_pressed = False
         
         # Initial render
         self.render()
     
-    def circ_ease_out(self, t):
+    def easing(self, progress, direction):
         """Circular easing out function for smooth animations"""
-        t = max(0, min(1, t))  # Clamp t between 0 and 1
-        return math.sqrt(1 - pow(t - 1, 2))
+        progress = max(0, min(1, progress))
+        return math.sqrt(1 - pow(progress - 1, 2))  # Hover
     
     def render(self):
         """Render the button with current state"""
         # Clear the surface
         self.image.fill((0, 0, 0, 0))
         
-        # Calculate current size and color based on hover progress
+        # Calculate current animation state
         ease_factor = 0
-        if self.hover_progress > 0:
-            # Apply ease-out function to the progress for both hovering and un-hovering
-            ease_factor = self.circ_ease_out(self.hover_progress)
-            
-            # Calculate current scale
-            current_scale = 1.0 + (self.hover_scale - 1.0) * ease_factor
-            
+        active_timer = None
+
+        if self.hover_direction == 1:
+            active_timer = self.hover_timer
+            ease_factor = self.easing(active_timer.progress, 1)
+        elif self.hover_direction == -1:
+            active_timer = self.unhover_timer
+            ease_factor = 1 - self.easing(active_timer.progress, -1)
+     
+        if active_timer:
+            # Calculate scaled size
+            current_scale = 1.0 + (self.HOVER_SCALE - 1.0) * ease_factor
             current_width = int(self.original_width * current_scale)
             current_height = int(self.original_height * current_scale)
             
@@ -209,8 +220,6 @@ class Button(UI):
             # Update rect to accommodate the new size for hit detection while keeping center
             self.rect.width = current_width
             self.rect.height = current_height
-            # Keep the center position
-            self.rect.center = self.position
         else:
             # Normal state (no hover)
             button_rect = pygame.Rect(0, 0, self.original_width, self.original_height)
@@ -228,7 +237,8 @@ class Button(UI):
             # Reset rect to original size while maintaining center
             self.rect.width = self.original_width
             self.rect.height = self.original_height
-            self.rect.center = self.position
+        
+        self.rect.center = self.position
     
     def update(self):
         if not self.active:
@@ -239,30 +249,24 @@ class Button(UI):
         previous_hover_state = self.is_hovered
         self.is_hovered = self.rect.collidepoint(mouse_pos)
         
-        # Check for hover state change
+        # Handle hover state changes
         if self.is_hovered != previous_hover_state:
-            # State changed, update animation direction
-            self.hover_direction = 1 if self.is_hovered else -1
+            # State changed
+            if self.is_hovered:
+                self.hover_direction = 1
+                self.unhover_timer.stop()
+                self.hover_timer.start()
+            else:
+                self.hover_direction = -1
+                self.hover_timer.stop()
+                self.unhover_timer.start()
         
-        # Update hover animation progress
-        if self.hover_direction != 0:
-            # Calculate time delta (assume 60 FPS for simplicity)
-            dt = 1 / C.FPS
-            
-            # Update progress based on direction and appropriate duration
-            duration = self.hover_duration if self.hover_direction > 0 else self.unhover_duration
-            self.hover_progress += self.hover_direction * (dt / duration)
-            
-            # Clamp progress between 0 and 1
-            self.hover_progress = max(0, min(1, self.hover_progress))
-            
-            # Check if animation completed
-            if self.hover_progress == 0 or self.hover_progress == 1:
-                self.hover_direction = 0
-        
+        if not self.is_hovered and self.unhover_timer.just_completed:
+            self.hover_direction = 0
+
         # Handle mouse clicks - only register on button release
         mouse_buttons = pygame.mouse.get_pressed()
-        if self.is_hovered and not mouse_buttons[0] and hasattr(self, 'was_pressed') and self.was_pressed and self.callback:
+        if self.is_hovered and not mouse_buttons[0] and self.was_pressed and self.callback:
             self.callback()
             
         # Track if button was pressed
