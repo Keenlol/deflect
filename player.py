@@ -198,6 +198,13 @@ class Player(pygame.sprite.Sprite):
         # Update position
         if not (self.is_dead and self.on_ground):
             self.position += self.velocity
+            
+            # Prevent walking off screen horizontally
+            half_width = int((self.width / 2) - 20)
+            if self.position.x - half_width < 0:
+                self.position.x = half_width
+            elif self.position.x > C.WINDOW_WIDTH - half_width:
+                self.position.x = C.WINDOW_WIDTH - half_width
         
         # Floor collision (using the bottom of the sprite)
         if self.position.y + self.height/2 > C.WINDOW_HEIGHT - C.FLOOR_HEIGHT:
@@ -270,8 +277,8 @@ class Player(pygame.sprite.Sprite):
             self.is_deflecting = False
         
         # Make player blink during invincibility
-        if self.is_invincible and int(self.invincible_timer.progress * 10) % 2:  # Blink effect
-            self.image.set_alpha(128)
+        if self.is_invincible and int(self.invincible_timer.progress * 20) % 2:  # Blink effect
+            self.image.set_alpha(100)
         else:
             self.image.set_alpha(255)
     
