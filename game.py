@@ -75,9 +75,9 @@ class Game:
             height=button_height,
             text="Play",
             callback=self.start_game,
-            idle_color=(80, 120, 255),
-            hover_color=(255, 255, 255),
-            text_size=48
+            idle_color=(207, 218, 227),
+            hover_color=(94, 175, 255),
+            text_size=64
         )
         
         # Create Statistics button
@@ -87,9 +87,9 @@ class Game:
             height=button_height,
             text="Statistics",
             callback=self.show_statistics,
-            idle_color=(80, 200, 100),
-            hover_color=(255, 255, 255),
-            text_size=48
+            idle_color=(207, 218, 227),
+            hover_color=(255, 205, 120),
+            text_size=64
         )
         
         # Create Quit button
@@ -99,9 +99,9 @@ class Game:
             height=button_height,
             text="Quit",
             callback=self.quit_game,
-            idle_color=(200, 80, 80),
-            hover_color=(255, 255, 255),
-            text_size=48
+            idle_color=(207, 218, 227),
+            hover_color=(224, 79, 74),
+            text_size=64
         )
         
         # Add buttons to menu group
@@ -129,9 +129,9 @@ class Game:
             height=button_height,
             text="Resume",
             callback=self.resume_game,
-            idle_color=(80, 120, 255),
-            hover_color=(255, 255, 255),
-            text_size=48
+            idle_color=(207, 218, 227),
+            hover_color=(94, 175, 255),
+            text_size=56
         )
         
         # Create Retry button
@@ -141,9 +141,9 @@ class Game:
             height=button_height,
             text="Retry",
             callback=self.retry_game,
-            idle_color=(120, 170, 40),
-            hover_color=(255, 255, 255),
-            text_size=48
+            idle_color=(207, 218, 227),
+            hover_color=(94, 175, 255),
+            text_size=56
         )
         
         # Create Statistics button
@@ -153,9 +153,9 @@ class Game:
             height=button_height,
             text="Statistics",
             callback=self.show_statistics,
-            idle_color=(80, 200, 100),
-            hover_color=(255, 255, 255),
-            text_size=48
+            idle_color=(207, 218, 227),
+            hover_color=(255, 205, 120),
+            text_size=56
         )
         
         # Create Menu button
@@ -165,9 +165,9 @@ class Game:
             height=button_height,
             text="Menu",
             callback=self.return_to_menu,
-            idle_color=(200, 80, 80),
-            hover_color=(255, 255, 255),
-            text_size=48
+            idle_color=(207, 218, 227),
+            hover_color=(224, 79, 74),
+            text_size=56
         )
         
         # Add buttons to pause menu group
@@ -196,9 +196,9 @@ class Game:
             height=button_height,
             text="Retry",
             callback=self.retry_game,
-            idle_color=(120, 170, 40),
-            hover_color=(255, 255, 255),
-            text_size=48
+            idle_color=(207, 218, 227),
+            hover_color=(94, 175, 255),
+            text_size=56
         )
         
         # Create Statistics button
@@ -208,9 +208,9 @@ class Game:
             height=button_height,
             text="Statistics",
             callback=self.show_statistics,
-            idle_color=(80, 200, 100),
-            hover_color=(255, 255, 255),
-            text_size=48
+            idle_color=(207, 218, 227),
+            hover_color=(255, 205, 120),
+            text_size=56
         )
         
         # Create Menu button
@@ -220,9 +220,9 @@ class Game:
             height=button_height,
             text="Menu",
             callback=self.return_to_menu,
-            idle_color=(200, 80, 80),
-            hover_color=(255, 255, 255),
-            text_size=48
+            idle_color=(207, 218, 227),
+            hover_color=(224, 79, 74),
+            text_size=56
         )
         
         # Add buttons to game over menu group
