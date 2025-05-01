@@ -61,18 +61,15 @@ class Projectile(pygame.sprite.Sprite):
         pass
 
     def check_bounds(self):
-        """Check if projectile is out of bounds or hit ground"""
-        # Check if out of screen bounds
+        """Check if projectile is out of screen bounds or has hit the ground"""
+        # Check if projectile is out of screen bounds
         if (self.position.x < -100 or 
-            self.position.x > C.WINDOW_WIDTH + 100 or
-            self.position.y < -100 or
-            self.position.y > C.WINDOW_HEIGHT + 100):
-            self.kill()
+            self.position.x > C.WINDOW_WIDTH + 100 or 
+            self.position.y > C.WINDOW_HEIGHT + 100):  # Only check bottom and sides
             return True
             
-        # Check if hit ground
-        if self.position.y >= C.WINDOW_HEIGHT - C.FLOOR_HEIGHT:
-            self.kill()
+        # Check if projectile has hit the ground
+        if self.position.y + self.radius/2 > C.WINDOW_HEIGHT - C.FLOOR_HEIGHT:
             return True
             
         return False
