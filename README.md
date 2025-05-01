@@ -75,7 +75,7 @@ The game window should now open and you can start playing.
 - [ ] Statistic tracking and visualization.
 - [ ] Redo the assets. Do background
 - [ ] Sound effects.
-- [ ] Main menu and extra UIs.
+- [x] Main menu and extra UIs.
 
 
 ## 📎 Links
