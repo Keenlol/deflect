@@ -73,6 +73,11 @@ The game window should now open and you can start playing.
 - [x] Improve the code for everything.
 - [ ] Balance Enemy and Players, refine spawning and scoring.
 - [ ] Statistic tracking and visualization.
+    - [ ] Dodged attacks
+    - [x] Player position
+    - [ ] Damage income type
+    - [ ] Enemy lifespan
+    - [ ] Total damage deflected
 - [ ] Redo the assets. Do background
 - [ ] Sound effects.
 - [x] Main menu and extra UIs.
