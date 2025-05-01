@@ -5,6 +5,10 @@ from config import *
 import math
 import random
 from projectile import *
+import uuid
+from stats import Stats
+from timer import Timer
+from datetime import datetime, timedelta
 
 class Knife(pygame.sprite.Sprite):
     def __init__(self, player):
@@ -33,6 +37,13 @@ class Knife(pygame.sprite.Sprite):
         self.active = False
         self.angle = 0
         self.DEFLECTED_SPEED_MUL = 2
+        self.current_deflect_id = None
+        
+        # Deflection damage tracking
+        self.deflection_damage = {}
+        
+        # Time window for considering projectiles part of the same deflection (seconds)
+        self.DEFLECTION_FINALIZE_DELAY = 5.0
         # Add to game's sprite group
         # self.player.game.all_sprites.add(self)
     
@@ -58,6 +69,7 @@ class Knife(pygame.sprite.Sprite):
             # Check if animation is finished
             if self.anim.animation_finished:
                 self.active = False
+                self.current_deflect_id = None
         else:
             # When inactive, use transparent surface
             self.image = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
@@ -71,12 +83,54 @@ class Knife(pygame.sprite.Sprite):
 
         self.position = self.player.position + offset_vector
         self.rect.center = self.position
+        
+        self.check_completed_deflections()
     
+    def check_completed_deflections(self):
+        """Check for deflections that have been completed and need their total damage recorded."""
+        keys_to_remove = []
+        current_time = datetime.now()
+        
+        for deflect_id, data in self.deflection_damage.items():
+            # Skip current active deflection
+            if deflect_id == self.current_deflect_id:
+                continue
+            time_elapsed = current_time - data["timestamp"]
+            
+            # If sufficient time has passed and this deflection has hits that haven't been recorded yet
+            if time_elapsed.total_seconds() >= self.DEFLECTION_FINALIZE_DELAY and not data["recorded"]:
+                if data["hit_count"] > 0:
+                    # Record the combined damage for this deflection batch
+                    Stats().record('dmg_deflected', total_damage=data["total_damage"])
+                
+                # Mark as recorded either way, and ready for removal
+                data["recorded"] = True
+                keys_to_remove.append(deflect_id)
+            
+            # If it's been a very long time, clean it up regardless
+            elif time_elapsed.total_seconds() >= self.DEFLECTION_FINALIZE_DELAY * 2:
+                keys_to_remove.append(deflect_id)
+        
+        # Clean up completed deflections
+        for key in keys_to_remove:
+            del self.deflection_damage[key]
+
     def activate(self, mouse_pos):
         """Activate the knife and set its position and rotation towards the mouse"""
         if not self.active:
             self.active = True
             self.anim.change_state("deflect")
+            
+            # Generate a new deflect ID for this deflection action
+            self.current_deflect_id = str(uuid.uuid4())
+            
+            # Initialize damage tracking for this deflection
+            self.deflection_damage[self.current_deflect_id] = {
+                "total_damage": 0,
+                "hit_count": 0,
+                "recorded": False,
+                "timestamp": datetime.now()
+            }
             
             # Calculate direction to mouse
             to_mouse = Vector2(mouse_pos) - self.player.position
@@ -115,8 +169,18 @@ class Knife(pygame.sprite.Sprite):
         if isinstance(bullet, Shard): error_deg = 45
         angle_rad = math.radians(self.angle + random.randrange(-error_deg, error_deg))
 
+        # Set the deflect_id on the bullet to track which deflection batch it belongs to
+        bullet._Projectile__tag['deflect_id'] = self.current_deflect_id
+        bullet._Projectile__tag['damage_recorded'] = False
+
         bullet.is_deflected = True
         bullet.SPEED_RANGE[0] *= self.DEFLECTED_SPEED_MUL
         bullet.SPEED_RANGE[1] *= self.DEFLECTED_SPEED_MUL
         bullet.velocity = Vector2(math.cos(angle_rad), -math.sin(angle_rad)) * (bullet.velocity.length() * self.DEFLECTED_SPEED_MUL)
         bullet.draw()
+    
+    def record_deflected_damage(self, deflect_id, damage):
+        """Record damage done by deflected projectiles in the same batch"""
+        if deflect_id in self.deflection_damage:
+            self.deflection_damage[deflect_id]["total_damage"] += damage
+            self.deflection_damage[deflect_id]["hit_count"] += 1

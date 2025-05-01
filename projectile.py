@@ -21,7 +21,9 @@ class Projectile(pygame.sprite.Sprite):
         super().__init__()
         
         self.__tag = {'attack_name': attack_name,
-                      'deflect_timestamp': None}
+                      'deflect_timestamp': None,
+                      'deflect_id': None,
+                      'damage_recorded': False}
 
         # Basic attributes
         self.position = position
@@ -30,9 +32,9 @@ class Projectile(pygame.sprite.Sprite):
         self.radius = radius
         self.DEFLECTED_VELOCITY = self.velocity * 1.1
         self.SPEED_RANGE = speed_range
-        self.__is_deflected = deflected
+        self.is_deflected = deflected
         self.COLOR_SET = {'red': (255, 0, 0), 'blue': (0, 100, 255)}
-        self.color = self.COLOR_SET['blue'] if self.__is_deflected else self.COLOR_SET['red']
+        self.color = self.COLOR_SET['blue'] if self.is_deflected else self.COLOR_SET['red']
         self.game = game
 
         # Physics attributes
@@ -52,6 +54,7 @@ class Projectile(pygame.sprite.Sprite):
             self.game.groups['bullets'].add(self)
             self.game.groups['all'].add(self)
 
+
     @property
     def is_deflected(self):
         return self.__is_deflected
@@ -59,6 +62,8 @@ class Projectile(pygame.sprite.Sprite):
     @is_deflected.setter
     def is_deflected(self, value):
         self.__is_deflected = value
+        if value:
+            self.__tag['deflect_timestamp'] = datetime.now()
         self.deflect_action()
 
     @property
@@ -85,7 +90,7 @@ class Projectile(pygame.sprite.Sprite):
     
     def draw(self):
         """Draw projectile, override by child class"""
-        self.color = self.COLOR_SET['blue'] if self.__is_deflected else self.COLOR_SET['red']
+        self.color = self.COLOR_SET['blue'] if self.is_deflected else self.COLOR_SET['red']
 
     def apply_physics(self):
         """Apply physics to projectile"""

@@ -161,6 +161,14 @@ class Enemy(pygame.sprite.Sprite):
                 if distance < self.width/2:
                     self.take_damage(bullet.damage)
                     self.start_knockback(bullet.velocity, bullet.velocity.length() * 0.1)
+                    
+                    # If the bullet has a deflect_id, record the damage for this deflection batch
+                    if hasattr(bullet, '_Projectile__tag') and 'deflect_id' in bullet._Projectile__tag:
+                        deflect_id = bullet._Projectile__tag['deflect_id']
+                        # Find player knife to add damage to deflection batch
+                        if self.game and self.game.player and self.game.player.knife:
+                            self.game.player.knife.record_deflected_damage(deflect_id, bullet.damage)
+                    
                     bullet.kill()
 
     def start_knockback(self, direction, amount):
