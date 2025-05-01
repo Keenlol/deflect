@@ -10,6 +10,7 @@ from pygame.math import Vector2
 import random
 from timer import Timer
 import sys
+from stats import Stats
 
 class Game:
     # Game States
@@ -32,6 +33,7 @@ class Game:
         self.game_over_timer = Timer(duration=1.5, owner=self)  # Increased delay
         self.freeze_timer = Timer(duration=0, owner=self)
         self.shake_timer = Timer(duration=0, owner=self)
+        self.player_stats_timer = Timer(duration=2.0, owner=self, auto_reset=True)
         self.shake_intensity = 0
         self.camera_offset = Vector2(0, 0)
         
@@ -401,16 +403,13 @@ class Game:
         
         # Update based on game state
         if self.game_state == Game.STATE_MENU:
-            # Only update menu elements
             self.groups['menu'].update()
         elif self.game_state == Game.STATE_PAUSED:
-            # Only update pause menu elements while paused
             self.groups['pause'].update()
         elif self.game_state == Game.STATE_GAMEOVER:
-            # Update game over menu
             self.groups['gameover'].update()
         elif self.game_state == Game.STATE_PLAYING:
-            # Handle freeze effect
+            # freeze effect
             if not self.freeze_timer.is_completed:
                 return
             
@@ -418,7 +417,7 @@ class Game:
             if self.freeze_timer.just_completed:
                 self.shake_timer.start()
 
-            # Handle enemy spawn timer
+            # Enemy spawn timer
             if self.spawn_timer.is_completed and not self.game_over:
                 self.spawn_enemy()
                 self.spawn_timer.duration = self.get_next_spawn_time()
@@ -431,7 +430,11 @@ class Game:
                 enemy.update()
             
             self.groups['ui'].update()
-            
+            if self.player_stats_timer.just_completed:
+                Stats().record('player_pos',
+                               player_x=self.player.position.x,
+                               player_y=self.player.position.y)
+
             # Check for game over
             if not self.game_over and self.player.health <= 0:
                 self.game_over = True
