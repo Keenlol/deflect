@@ -23,7 +23,8 @@ class Projectile(pygame.sprite.Sprite):
         self.__tag = {'attack_name': attack_name,
                       'deflect_timestamp': None,
                       'deflect_id': None,
-                      'damage_recorded': False}
+                      'damage_recorded': False,
+                      'dodge_counted_by': None}
 
         # Basic attributes
         self.position = position

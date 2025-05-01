@@ -15,6 +15,14 @@ class Player(pygame.sprite.Sprite):
         self.width = 100
         self.height = 100
         
+        # Private tag for stats tracking
+        self.__tag = {
+            'dodge_start_position': None,
+            'dodge_damage_evaded': 0,
+            'dodge_counted_enemies': set(),
+            'last_processed_bullets': set()  # Cache for processed bullets
+        }
+        
         # Animation system
         animation_states = {
             "idle": True,
@@ -67,7 +75,7 @@ class Player(pygame.sprite.Sprite):
         self.DOUBLE_JUMP_FORCE = -12
         
         # Deflect attributes
-        self.DEFLECT_COOLDOWN = 25 / C.FPS  # Convert frames to seconds
+        self.DEFLECT_COOLDOWN = 0.5  # Convert frames to seconds
         self.deflect_cooldown_timer = Timer(duration=self.DEFLECT_COOLDOWN, owner=self, paused=True)
         self.can_deflect = True
         self.is_deflecting = False
@@ -89,6 +97,30 @@ class Player(pygame.sprite.Sprite):
         self.image = self.anim.get_current_frame(self.facing_right)
         self.rect = self.image.get_rect(center=(x, y))
     
+    @property
+    def dodge_start_position(self):
+        return self.__tag['dodge_start_position']
+        
+    @dodge_start_position.setter
+    def dodge_start_position(self, value):
+        self.__tag['dodge_start_position'] = value
+        
+    @property
+    def dodge_damage_evaded(self):
+        return self.__tag['dodge_damage_evaded']
+        
+    @dodge_damage_evaded.setter
+    def dodge_damage_evaded(self, value):
+        self.__tag['dodge_damage_evaded'] = value
+        
+    @property
+    def dodge_counted_enemies(self):
+        return self.__tag['dodge_counted_enemies']
+    
+    @property
+    def last_processed_bullets(self):
+        return self.__tag['last_processed_bullets']
+    
     def start_dodge(self):
         """Initialize a dodge movement in the direction of the mouse"""
         if self.can_dodge and not self.is_dodging:
@@ -97,6 +129,12 @@ class Player(pygame.sprite.Sprite):
             self.dodge_timer.start()
             self.dodge_cooldown_timer.start()
             self.on_ground = False
+            
+            # Store position at start of dodge for damage evasion tracking
+            self.dodge_start_position = Vector2(self.position)
+            self.dodge_damage_evaded = 0
+            self.dodge_counted_enemies.clear()
+            self.last_processed_bullets.clear()
             
             mouse_pos = pygame.mouse.get_pos()
             to_mouse = Vector2(mouse_pos) - self.position
@@ -310,7 +348,13 @@ class Player(pygame.sprite.Sprite):
                 self.on_ground = False
                 self.position.y -= 1  # Slight lift to guarantee we're off ground
             
-            # End any dodge
+            # End any dodge and record evaded damage (even if damage_evaded is 0)
+            if self.is_dodging:
+                Stats().record('dodged_attack', damage_evaded=self.dodge_damage_evaded)
+                self.dodge_start_position = None
+                self.dodge_counted_enemies.clear()
+                self.last_processed_bullets.clear()
+            
             self.is_dodging = False
             self.dodge_timer.stop()
 
@@ -318,38 +362,127 @@ class Player(pygame.sprite.Sprite):
     
     def check_projectile_collisions(self):
         """Check for collisions with enemy bullets"""
-        if self.is_dodging or self.is_invincible or self.is_dead:
+        if self.is_invincible or self.is_dead:
             return
-            
+        
+        # Define a maximum check distance to avoid unnecessary calculations
+        max_check_dist = self.width * 1.5  # Larger buffer to account for fast moving projectiles
+        dodge_pos = self.dodge_start_position
+        current_pos = self.position
+        collision_width = self.width/3
+        dodge_width = self.width
+        bullet_cache = self.last_processed_bullets
+        
         for bullet in self.game.groups['bullets']:
+            # Skip if this bullet was already processed
+            if bullet in bullet_cache:
+                continue
+                
             if not bullet.is_deflected:  # Only check non-deflected bullets
-                distance = (bullet.position - self.position).length()
-                if distance < self.width/3:
-                    self.take_damage(bullet.damage, bullet.position)
-                    Stats().record('dmg_income',
-                                   attack_name=bullet.attack_name,
-                                   damage=bullet.damage)
-                    bullet.kill()
+                bullet_pos = bullet.position
+                
+                # Skip distant projectiles with quick bounding box check
+                dx = abs(bullet_pos.x - current_pos.x)
+                dy = abs(bullet_pos.y - current_pos.y)
+                
+                # Skip if bullet is too far from both current and dodge start positions
+                if dx > max_check_dist or dy > max_check_dist:
+                    if not self.is_dodging or not dodge_pos or \
+                       abs(bullet_pos.x - dodge_pos.x) > max_check_dist or \
+                       abs(bullet_pos.y - dodge_pos.y) > max_check_dist:
+                        continue
+                
+                # Check collision with player's current position if not dodging
+                if not self.is_dodging:
+                    # Use squared distance for performance (avoids square root)
+                    dx = bullet_pos.x - current_pos.x
+                    dy = bullet_pos.y - current_pos.y
+                    dist_sq = dx*dx + dy*dy
+                    collision_width_sq = collision_width * collision_width
+                    
+                    if dist_sq < collision_width_sq:
+                        self.take_damage(bullet.damage, bullet_pos)
+                        Stats().record('dmg_income',
+                                      attack_name=bullet.attack_name,
+                                      damage=bullet.damage)
+                        bullet.kill()
+                        continue
+                
+                # If player is dodging, check for dodge evasion (collision with original position)
+                elif dodge_pos:
+                    try:
+                        # Skip already counted projectiles
+                        if bullet._Projectile__tag.get('dodge_counted_by') != id(self):
+                            dx = bullet_pos.x - dodge_pos.x
+                            dy = bullet_pos.y - dodge_pos.y
+                            dist_sq = dx*dx + dy*dy
+                            dodge_width_sq = dodge_width * dodge_width
+                            
+                            if dist_sq < dodge_width_sq:
+                                self.dodge_damage_evaded += bullet.damage
+                                bullet._Projectile__tag['dodge_counted_by'] = id(self)
+                                # Add to processed set
+                                bullet_cache.add(bullet)
+                    except (AttributeError, KeyError):
+                        pass
 
     def check_enemy_collisions(self):
         """Check for collisions with enemies"""
-        if self.is_dodging or self.is_invincible or self.is_dead:
+        if self.is_invincible or self.is_dead:
             return
+        
+        # IT WOULDNT HAVE TO BE THIS MUCH IF THERE WERE NO STATS TRACKING
+        # AHHHHH
+
+        # Store values locally for better performance
+        dodge_pos = self.dodge_start_position
+        current_pos = self.position 
+        is_dodging = self.is_dodging
+        dodge_counted = self.dodge_counted_enemies
+        player_radius = self.width/2
             
         for enemy in self.game.groups['enemies']:
             if enemy.is_alive:
-                distance = (enemy.position - self.position).length()
-                if distance < self.width/2 + enemy.width/3:
-                    self.take_damage(enemy.BODY_DAMAGE, enemy.position)
-                    Stats().record('dmg_income',
-                                   attack_name=enemy.name + ' ' + 'Body',
-                                   damage=enemy.BODY_DAMAGE)    
+                enemy_pos = enemy.position
+                enemy_radius = enemy.width/3
+                collision_dist = player_radius + enemy_radius
+                
+                # Check evasion if dodging
+                if is_dodging and dodge_pos and enemy not in dodge_counted:
+                    dx = enemy_pos.x - dodge_pos.x
+                    dy = enemy_pos.y - dodge_pos.y
+                    dist_sq = dx*dx + dy*dy
+                    collision_dist_sq = collision_dist * collision_dist
+                    
+                    if dist_sq < collision_dist_sq:
+                        self.dodge_damage_evaded += enemy.BODY_DAMAGE
+                        dodge_counted.add(enemy)
+                
+                # Check actual collision if not dodging
+                if not is_dodging:
+                    dx = enemy_pos.x - current_pos.x
+                    dy = enemy_pos.y - current_pos.y
+                    dist_sq = dx*dx + dy*dy
+                    collision_dist_sq = collision_dist * collision_dist
+                    
+                    if dist_sq < collision_dist_sq:
+                        self.take_damage(enemy.BODY_DAMAGE, enemy_pos)
+                        Stats().record('dmg_income',
+                                      attack_name=enemy.name + ' ' + 'Body',
+                                      damage=enemy.BODY_DAMAGE)
+
     def update(self):
         """Update the player's state"""
         # Check for timer completions
         if self.dodge_timer.is_completed and self.is_dodging:
             self.is_dodging = False
             self.velocity.y *= 0.5
+            
+            # Record dodge statistics when dodge ends (record even if damage_evaded is 0)
+            Stats().record('dodged_attack', damage_evaded=self.dodge_damage_evaded)
+            self.dodge_start_position = None
+            self.dodge_counted_enemies.clear()
+            self.last_processed_bullets.clear()
             
         if self.dodge_cooldown_timer.is_completed and self.on_ground and not self.can_dodge:
             self.can_dodge = True

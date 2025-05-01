@@ -30,7 +30,7 @@ class Stats:
         },
         'dmg_deflected':{
             'file': 'stats_dmg_deflected.csv',
-            'headers': ['timestamp', 'total_damage']
+            'headers': ['timestamp', 'total_damage_dealt']
         },
     }
     

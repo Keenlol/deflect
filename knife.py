@@ -7,8 +7,7 @@ import random
 from projectile import *
 import uuid
 from stats import Stats
-from timer import Timer
-from datetime import datetime, timedelta
+from datetime import datetime
 
 class Knife(pygame.sprite.Sprite):
     def __init__(self, player):
@@ -41,21 +40,16 @@ class Knife(pygame.sprite.Sprite):
         
         # Deflection damage tracking
         self.deflection_damage = {}
-        
-        # Time window for considering projectiles part of the same deflection (seconds)
         self.DEFLECTION_FINALIZE_DELAY = 5.0
-        # Add to game's sprite group
-        # self.player.game.all_sprites.add(self)
     
     def update(self):
         """Update the knife's state and position"""
         if self.active:
-            # Update animation
             self.anim.update()
             self.original_image = self.anim.get_current_frame(self.facing_right)
             
             # Calculate display angle (Pygame rotation is clockwise from up)
-            display_angle = self.angle  # Convert our angle to Pygame's system
+            display_angle = self.angle
             if not self.facing_right:
                 display_angle += 180
 
@@ -63,10 +57,8 @@ class Knife(pygame.sprite.Sprite):
             self.image = pygame.transform.rotate(self.original_image, display_angle)
             self.rect = self.image.get_rect()
             
-            # Check for bullet collisions when active
             self.check_projectile_collisions()
             
-            # Check if animation is finished
             if self.anim.animation_finished:
                 self.active = False
                 self.current_deflect_id = None
@@ -101,7 +93,7 @@ class Knife(pygame.sprite.Sprite):
             if time_elapsed.total_seconds() >= self.DEFLECTION_FINALIZE_DELAY and not data["recorded"]:
                 if data["hit_count"] > 0:
                     # Record the combined damage for this deflection batch
-                    Stats().record('dmg_deflected', total_damage=data["total_damage"])
+                    Stats().record('dmg_deflected', total_damage_dealt=data["total_damage_dealt"])
                 
                 # Mark as recorded either way, and ready for removal
                 data["recorded"] = True
@@ -121,12 +113,9 @@ class Knife(pygame.sprite.Sprite):
             self.active = True
             self.anim.change_state("deflect")
             
-            # Generate a new deflect ID for this deflection action
             self.current_deflect_id = str(uuid.uuid4())
-            
-            # Initialize damage tracking for this deflection
             self.deflection_damage[self.current_deflect_id] = {
-                "total_damage": 0,
+                "total_damage_dealt": 0,
                 "hit_count": 0,
                 "recorded": False,
                 "timestamp": datetime.now()
@@ -182,5 +171,5 @@ class Knife(pygame.sprite.Sprite):
     def record_deflected_damage(self, deflect_id, damage):
         """Record damage done by deflected projectiles in the same batch"""
         if deflect_id in self.deflection_damage:
-            self.deflection_damage[deflect_id]["total_damage"] += damage
+            self.deflection_damage[deflect_id]["total_damage_dealt"] += damage
             self.deflection_damage[deflect_id]["hit_count"] += 1
