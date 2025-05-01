@@ -72,12 +72,14 @@ The game window should now open and you can start playing.
 - [x] Implement the new timer system for enemy.
 - [x] Improve the code for everything.
 - [ ] Balance Enemy and Players, refine spawning and scoring.
-- [ ] Statistic tracking and visualization.
-    - [ ] Dodged attacks
+- [x] Statistic tracking and visualization.
+    - [ ] Add tkinter window
+    - [ ] Add clean all button for all data
+    - [x] Dodged attacks
     - [x] Player position
-    - [ ] Damage income type
+    - [x] Damage income type
     - [x] Enemy lifespan
-    - [ ] Total damage deflected
+    - [x] Total damage deflected
 - [ ] Redo the assets. Do background
 - [ ] Sound effects.
 - [x] Main menu and extra UIs.
