@@ -83,7 +83,8 @@ class E1(Enemy):
                        velocity=velocity, 
                        game=self.game,
                        damage=self.ATTACK_INFO['damage'],
-                       speed_multiplier=pr['speed_mul'])
+                       speed_multiplier=pr['speed_mul'],
+                       attack_name='Radial Cast')
 
         # First layer
         if self.attack_phase == 0:
@@ -122,7 +123,8 @@ class E1(Enemy):
                    velocity=velocity, 
                    game=self.game,
                    damage=self.ATTACK_INFO['damage'],
-                   speed_multiplier=pb['speed_mul'])
+                   speed_multiplier=pb['speed_mul'],
+                   attack_name='Burst Cast')
         
         self.shots_fired += 1
         self.attack_timer.start(pb['delay'])
@@ -147,7 +149,8 @@ class E1(Enemy):
                    velocity=velocity, 
                    game=self.game,
                    damage=self.ATTACK_INFO['damage'],
-                   speed_multiplier=pf['speed_mul'])
+                   speed_multiplier=pf['speed_mul'],
+                   attack_name='Track Cast')
         
         self.shots_fired += 1
         self.attack_timer.start(pf['delay'])

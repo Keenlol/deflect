@@ -76,7 +76,7 @@ The game window should now open and you can start playing.
     - [ ] Dodged attacks
     - [x] Player position
     - [ ] Damage income type
-    - [ ] Enemy lifespan
+    - [x] Enemy lifespan
     - [ ] Total damage deflected
 - [ ] Redo the assets. Do background
 - [ ] Sound effects.

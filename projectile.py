@@ -3,6 +3,7 @@ from pygame.math import Vector2
 from config import Config as C
 import math
 import random
+from datetime import datetime
 
 class Projectile(pygame.sprite.Sprite):
     def __init__(self, 
@@ -15,9 +16,13 @@ class Projectile(pygame.sprite.Sprite):
                  speed_range=(0, math.inf),     # Min/max speed
                  gravity=0,                     # Gravity effect
                  surfacesize=None,              # Size of surface for drawing
-                 deflected=False):              # Whether this is deflected
+                 deflected=False,
+                 attack_name=''):              # Whether this is deflected
         super().__init__()
         
+        self.__tag = {'attack_name': attack_name,
+                      'deflect_timestamp': None}
+
         # Basic attributes
         self.position = position
         self.velocity = velocity
@@ -55,6 +60,10 @@ class Projectile(pygame.sprite.Sprite):
     def is_deflected(self, value):
         self.__is_deflected = value
         self.deflect_action()
+
+    @property
+    def attack_name(self):
+        return self.__tag['attack_name']
 
     def deflect_action(self):
         """ Do something when deflected, in case extra actions are needed"""
@@ -109,7 +118,8 @@ class P_Ball(Projectile):
                  damage=33,
                  radius=10,
                  speed_multiplier=1.0,
-                 deflected=False):
+                 deflected=False,
+                 attack_name=''):
         
         self.STRETCH_THRESHOLD = 8
         self.MAX_STRETCH_RATIO = 2.5
@@ -127,7 +137,8 @@ class P_Ball(Projectile):
             speed_range=[6, 30],
             gravity=0,
             surfacesize=surfacesize,
-            deflected=deflected
+            deflected=deflected,
+            attack_name=attack_name
         )
         
         self.draw()
@@ -177,7 +188,8 @@ class Shard(Projectile):
                  game=None,
                  damage=33,
                  gravity=0,
-                 deflected=False):
+                 deflected=False,
+                 attack_name=''):
         
         # Shard-specific attributes
         self.base = random.randint(20, 30)
@@ -196,7 +208,8 @@ class Shard(Projectile):
             speed_range=[0, 30],
             gravity=gravity,
             surfacesize=surfacesize,
-            deflected=deflected
+            deflected=deflected,
+            attack_name=attack_name
         )
         
         # Rotation attributes
@@ -257,7 +270,8 @@ class Laser(Projectile):
                  laser_type='normal',
                  target=None,
                  turn_rate=0.0,
-                 bomb_info={}):
+                 bomb_info={},
+                 attack_name=''):
         
         # Laser-specific attributes
         self.STRETCH_THRESHOLD = 5
@@ -281,7 +295,8 @@ class Laser(Projectile):
             speed_range=[0, math.inf],
             gravity=0,
             surfacesize=surfacesize,
-            deflected=deflected
+            deflected=deflected,
+            attack_name=attack_name
         )
         
         # Set up the surface for drawing
@@ -399,7 +414,8 @@ class Laser(Projectile):
                 damage=b_info['explosion_damage'],
                 radius=b_info['explosion_size'],
                 speed_multiplier=b_info['explosion_speed_mul'],
-                deflected=self.is_deflected)
+                deflected=self.is_deflected,
+                attack_name=self.attack_name)
         
     def update(self):
         """Update laser position, special behaviors, and check bounds"""

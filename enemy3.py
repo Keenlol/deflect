@@ -184,7 +184,8 @@ class E3(Enemy):
               radius=bomb_info['initial_size'],
               speed_multiplier=bomb_info['speed_mul'],
               laser_type='bomb',
-              bomb_info=bomb_info)
+              bomb_info=bomb_info,
+              attack_name='Exploding Laser')
 
         self.shots_fired = 1
         return True
@@ -212,7 +213,8 @@ class E3(Enemy):
               radius=homing_info['size'], 
               laser_type='homing', 
               target=target,
-              turn_rate=self.random(homing_info['turn_rate']))
+              turn_rate=self.random(homing_info['turn_rate']),
+              attack_name='Homing Laser')
         
         self.shots_fired += 1
         self.attack_timer.start(homing_info['delay'])
@@ -237,7 +239,8 @@ class E3(Enemy):
               game=self.game,
               damage=bounce_info['damage'], 
               radius=bounce_info['size'], 
-              bounce_limit=bounce_info['bounce_limit'])
+              bounce_limit=bounce_info['bounce_limit'],
+              attack_name='Bouncing Laser')
 
         self.shots_fired = 1
         return True

@@ -6,6 +6,7 @@ from animation import Animation
 from knife import Knife
 import math
 from timer import Timer
+from stats import Stats
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, game, x=0, y=0):
@@ -325,6 +326,9 @@ class Player(pygame.sprite.Sprite):
                 distance = (bullet.position - self.position).length()
                 if distance < self.width/3:
                     self.take_damage(bullet.damage, bullet.position)
+                    Stats().record('dmg_income',
+                                   attack_name=bullet.attack_name,
+                                   damage=bullet.damage)
                     bullet.kill()
 
     def check_enemy_collisions(self):
@@ -337,7 +341,9 @@ class Player(pygame.sprite.Sprite):
                 distance = (enemy.position - self.position).length()
                 if distance < self.width/2 + enemy.width/3:
                     self.take_damage(enemy.BODY_DAMAGE, enemy.position)
-    
+                    Stats().record('dmg_income',
+                                   attack_name=enemy.name + ' ' + 'Body',
+                                   damage=enemy.BODY_DAMAGE)    
     def update(self):
         """Update the player's state"""
         # Check for timer completions

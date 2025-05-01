@@ -22,7 +22,7 @@ class Stats:
         },
         'dmg_income':{
             'file': 'stats_dmg_income.csv',
-            'headers': ['timestamp', 'attack_type']
+            'headers': ['timestamp', 'attack_name', 'damage']
         },
         'enemy_lifespan':{
             'file': 'stats_enemy_lifespan.csv',

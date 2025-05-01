@@ -33,7 +33,7 @@ class Game:
         self.game_over_timer = Timer(duration=1.5, owner=self)  # Increased delay
         self.freeze_timer = Timer(duration=0, owner=self)
         self.shake_timer = Timer(duration=0, owner=self)
-        self.player_stats_timer = Timer(duration=2.0, owner=self, auto_reset=True)
+        self.player_stats_timer = Timer(duration=5.0, owner=self, auto_reset=True)
         self.shake_intensity = 0
         self.camera_offset = Vector2(0, 0)
         
