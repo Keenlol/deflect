@@ -66,7 +66,7 @@ class E3(Enemy):
 
         super().__init__(x, y, game, width=100, 
                          height=100, gravity=0.0, movespeed=self.random((0.5, 2.0)), 
-                         maxhp=40, anim=anim_info)
+                         maxhp=40, anim=anim_info, name='Gunman')
 
         # Movement attributes
         self.target_dst = self.random(self.TARGET_DISTANCE)

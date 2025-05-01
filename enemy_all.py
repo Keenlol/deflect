@@ -5,6 +5,8 @@ from config import Config as C
 from projectile import *
 from animation import Animation
 from timer import Timer
+from datetime import datetime
+from stats import Stats
 
 import random
 import math
@@ -18,8 +20,11 @@ class Enemy(pygame.sprite.Sprite):
     
     def __init__(self, x, y, game, anim={"path":"", "loops": {}, "speed": 0.2}, 
                  width=100, height=100, maxhp=100, movespeed=3, 
-                 gravity=0.8, maxfallspeed=15, bodydamage=30):
+                 gravity=0.8, maxfallspeed=15, bodydamage=30, name=''):
         super().__init__()
+        self.__tag = {'name': name,
+                      'spawn_time': datetime.now()}
+
         # Basic attributes
         self.width = width
         self.height = height
@@ -66,7 +71,16 @@ class Enemy(pygame.sprite.Sprite):
 
         self.image = self.anim.get_current_frame(self.facing_right)
         self.rect = pygame.Rect(x, y, self.width, self.height)
+
+    @property
+    def name(self):
+        return self.__tag['name']
     
+    @property
+    def lifespan(self):
+        difference = datetime.now() - self.__tag['spawn_time']
+        return difference.total_seconds()
+
     def init_timers(self, move_duration=None, wait_duration=None, attack_duration=0):
         """Initialize common timers with appropriate durations"""
         move_dur = move_duration if move_duration is not None else self.MOVE_DURATION
@@ -189,5 +203,8 @@ class Enemy(pygame.sprite.Sprite):
     def kill(self):
         if hasattr(self, 'game') and self.is_alive:
             self.game.add_score(100)
+        Stats().record(stat_type='enemy_lifespan',
+                     enemy_type=self.name,
+                     lifespan_sec=self.lifespan)
         super().kill()
 
