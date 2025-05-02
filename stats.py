@@ -40,6 +40,31 @@ class Stats:
         },
     }
     
+    FONT_SIZE = {'small':10,
+                 'medium': 12,
+                 'big': 14}
+                 
+    # Define color themes for charts
+    CHART_THEME = {
+        'background': 'black',
+        'text': 'white',
+        'grid': '#333333',
+        'table': {
+            'cell_bg': 'black',
+            'header_bg': '#222222',
+            'cell_text': 'white',
+            'edge_color': '#444444'
+        },
+        'heatmap': 'plasma',  # A colormap that looks good on dark backgrounds
+        'pie': {
+            'edge_color': 'black',
+            'text_color': 'white'
+        },
+        'boxplot': 'Set2',
+        'histogram': '#1E90FF',  # Dodger blue
+        'floor_line': 'white'
+    }
+
     def __new__(cls):
         """Ensure only one instance of Stats exists (singleton pattern)"""
         if cls.__instance is None:
@@ -194,6 +219,9 @@ class Stats:
 
     def create_dodge_stats_tab(self, notebook, data):
         """Create a tab showing dodge statistics table"""
+        fsize = self.FONT_SIZE
+        theme = self.CHART_THEME
+
         # Create frame for this tab
         tab = ttk.Frame(notebook)
         notebook.add(tab, text="Dodge Stats")
@@ -204,11 +232,12 @@ class Stats:
             return
         
         try:
-            # Create a figure for the table
-            fig = plt.Figure(figsize=(4, 3), dpi=80)
+            # Create a figure for the table with dark background
+            fig = plt.Figure(figsize=(4, 3), dpi=80, facecolor=theme['background'])
             ax = fig.add_subplot(111)
             ax.axis('tight')
             ax.axis('off')
+            ax.set_facecolor(theme['background'])
             
             # Table data
             table_data = [
@@ -219,11 +248,17 @@ class Stats:
                 ['Std Dev', f"{data['std']:.2f}"]
             ]
             
-            # Create the table
+            # Create the table with dark style
             table = ax.table(cellText=table_data, loc='center', cellLoc='center')
             table.auto_set_font_size(False)
-            table.set_fontsize(10)
+            table.set_fontsize(fsize['big'])
             table.scale(1, 1.5)
+            
+            # Style the table cells
+            for (row, col), cell in table.get_celld().items():
+                cell.set_text_props(color=theme['table']['cell_text'])
+                cell.set_facecolor(theme['table']['cell_bg'] if row > 0 else theme['table']['header_bg'])
+                cell.set_edgecolor(theme['table']['edge_color'])
             
             # Display the figure
             canvas = FigureCanvasTkAgg(fig, master=tab)
@@ -235,6 +270,9 @@ class Stats:
 
     def create_player_position_tab(self, notebook, df):
         """Create a tab showing player position heatmap"""
+        fsize = self.FONT_SIZE
+        theme = self.CHART_THEME
+
         # Create frame for this tab
         tab = ttk.Frame(notebook)
         notebook.add(tab, text="Player Position")
@@ -245,15 +283,16 @@ class Stats:
             return
             
         try:
-            # Create figure for the heatmap
-            fig = plt.Figure(figsize=(4, 3), dpi=80)
+            # Create figure for the heatmap with dark theme
+            fig = plt.Figure(figsize=(4, 3), dpi=80, facecolor=theme['background'])
             ax = fig.add_subplot(111)
+            ax.set_facecolor(theme['background'])
             
             # Create heatmap using seaborn
             sns.kdeplot(
                 x=df['player_x'],
                 y=df['player_y'],
-                cmap="Reds",
+                cmap=theme['heatmap'],
                 fill=True,
                 ax=ax
             )
@@ -265,13 +304,23 @@ class Stats:
             # Invert y-axis (because in pygame, y increases downward)
             ax.invert_yaxis()
             
-            # Set labels
-            ax.set_xlabel('X Position', fontsize=8)
-            ax.set_ylabel('Y Position', fontsize=8)
-            ax.set_title('Player Position Heatmap', fontsize=10)
+            # Set labels with light text color
+            ax.set_xlabel('X Position', fontsize=fsize['medium'], color=theme['text'])
+            ax.set_ylabel('Y Position', fontsize=fsize['medium'], color=theme['text'])
+            ax.set_title('Player Position Heatmap', fontsize=fsize['big'], color=theme['text'])
+            
+            # Make the tick labels white
+            ax.tick_params(axis='both', which='major', colors=theme['text'])
+            
+            # Set grid color for better visibility
+            ax.grid(color=theme['grid'], linestyle='-', linewidth=0.5, alpha=0.5)
             
             # Add a little marker for the floor
-            ax.axhline(y=C.WINDOW_HEIGHT - C.FLOOR_HEIGHT, color='gray', linestyle='--', alpha=0.7)
+            ax.axhline(y=C.WINDOW_HEIGHT - C.FLOOR_HEIGHT, color=theme['floor_line'], linestyle='--', alpha=0.7)
+            
+            # Style the spines
+            for spine in ax.spines.values():
+                spine.set_color(theme['text'])
             
             # Display the figure
             canvas = FigureCanvasTkAgg(fig, master=tab)
@@ -283,6 +332,9 @@ class Stats:
     
     def create_damage_income_tab(self, notebook, df):
         """Create a tab showing damage income pie chart"""
+        fsize = self.FONT_SIZE
+        theme = self.CHART_THEME
+
         # Create frame for this tab
         tab = ttk.Frame(notebook)
         notebook.add(tab, text="Damage Income")
@@ -293,9 +345,10 @@ class Stats:
             return
             
         try:
-            # Create figure for the pie chart
-            fig = plt.Figure(figsize=(4, 3), dpi=80)
+            # Create figure for the pie chart with dark background
+            fig = plt.Figure(figsize=(4, 3), dpi=80, facecolor=theme['background'])
             ax = fig.add_subplot(111)
+            ax.set_facecolor(theme['background'])
             
             # Create pie chart
             wedges, texts, autotexts = ax.pie(
@@ -303,17 +356,19 @@ class Stats:
                 labels=df['attack_name'],
                 autopct='%1.1f%%',
                 startangle=90,
-                shadow=False
+                shadow=False,
+                wedgeprops={'edgecolor': theme['pie']['edge_color']}
             )
             
-            # Styling for better readability
+            # Styling for better readability on dark background
             for text in texts:
-                text.set_fontsize(6)
+                text.set_fontsize(fsize['small'])
+                text.set_color(theme['pie']['text_color'])
             for autotext in autotexts:
-                autotext.set_fontsize(6)
-                autotext.set_color('white')
+                autotext.set_fontsize(fsize['small'])
+                autotext.set_color(theme['pie']['text_color'])
             
-            ax.set_title('Damage by Attack Type', fontsize=10)
+            ax.set_title('Damage by Attack Type', fontsize=fsize['big'], color=theme['text'])
             ax.axis('equal')  # Equal aspect ratio ensures the pie chart is circular
             
             # Display the figure
@@ -326,6 +381,9 @@ class Stats:
     
     def create_enemy_lifespan_tab(self, notebook, df):
         """Create a tab showing enemy lifespan boxplot"""
+        fsize = self.FONT_SIZE
+        theme = self.CHART_THEME
+
         # Create frame for this tab
         tab = ttk.Frame(notebook)
         notebook.add(tab, text="Enemy Lifespan")
@@ -336,9 +394,10 @@ class Stats:
             return
             
         try:
-            # Create figure
-            fig = plt.Figure(figsize=(4, 3), dpi=80)
+            # Create figure with dark background
+            fig = plt.Figure(figsize=(4, 3), dpi=80, facecolor=theme['background'])
             ax = fig.add_subplot(111)
+            ax.set_facecolor(theme['background'])
             
             # Create boxplot using seaborn
             sns.boxplot(
@@ -346,16 +405,21 @@ class Stats:
                 y='lifespan_sec',
                 data=df,
                 ax=ax,
-                palette='Set2'
+                palette=theme['boxplot']
             )
             
-            # Set labels
-            ax.set_xlabel('Enemy Type', fontsize=8)
-            ax.set_ylabel('Lifespan (sec)', fontsize=8)
-            ax.set_title('Enemy Lifespan', fontsize=10)
+            # Set labels with light text
+            ax.set_xlabel('Enemy Type', fontsize=fsize['medium'], color=theme['text'])
+            ax.set_ylabel('Lifespan (sec)', fontsize=fsize['medium'], color=theme['text'])
+            ax.set_title('Enemy Lifespan', fontsize=fsize['big'], color=theme['text'])
             
-            # Make tick labels smaller
-            ax.tick_params(axis='both', which='major', labelsize=6)
+            # Style the tick labels and grid
+            ax.tick_params(axis='both', which='major', labelsize=fsize['small'], colors=theme['text'])
+            ax.grid(color=theme['grid'], linestyle='-', linewidth=0.5, alpha=0.5)
+            
+            # Style the spines
+            for spine in ax.spines.values():
+                spine.set_color(theme['text'])
             
             # Display the figure
             canvas = FigureCanvasTkAgg(fig, master=tab)
@@ -367,6 +431,9 @@ class Stats:
     
     def create_damage_deflected_tab(self, notebook, df):
         """Create a tab showing damage deflected histogram"""
+        fsize = self.FONT_SIZE
+        theme = self.CHART_THEME
+
         # Create frame for this tab
         tab = ttk.Frame(notebook)
         notebook.add(tab, text="Damage Deflected")
@@ -377,9 +444,10 @@ class Stats:
             return
             
         try:
-            # Create figure
-            fig = plt.Figure(figsize=(4, 3), dpi=80)
+            # Create figure with dark background
+            fig = plt.Figure(figsize=(4, 3), dpi=80, facecolor=theme['background'])
             ax = fig.add_subplot(111)
+            ax.set_facecolor(theme['background'])
             
             # Create histogram using seaborn
             sns.histplot(
@@ -388,16 +456,23 @@ class Stats:
                 bins=10,  # Adjust number of bins as needed
                 kde=True,  # Add kernel density estimate
                 ax=ax,
-                color='steelblue'
+                color=theme['histogram'],
+                edgecolor=theme['text'],
+                line_kws={'color': theme['text']}
             )
             
-            # Set labels
-            ax.set_xlabel('Damage Amount', fontsize=8)
-            ax.set_ylabel('Frequency', fontsize=8)
-            ax.set_title('Deflected Damage Distribution', fontsize=10)
+            # Set labels with light text
+            ax.set_xlabel('Damage Amount', fontsize=fsize['medium'], color=theme['text'])
+            ax.set_ylabel('Frequency', fontsize=fsize['medium'], color=theme['text'])
+            ax.set_title('Deflected Damage Distribution', fontsize=fsize['big'], color=theme['text'])
             
-            # Make tick labels smaller
-            ax.tick_params(axis='both', which='major', labelsize=6)
+            # Style the tick labels and grid
+            ax.tick_params(axis='both', which='major', labelsize=fsize['small'], colors=theme['text'])
+            ax.grid(color=theme['grid'], linestyle='-', linewidth=0.5, alpha=0.5)
+            
+            # Style the spines
+            for spine in ax.spines.values():
+                spine.set_color(theme['text'])
             
             # Display the figure
             canvas = FigureCanvasTkAgg(fig, master=tab)

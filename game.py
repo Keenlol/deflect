@@ -380,6 +380,16 @@ class Game:
         root.title("Game Statistics")
         root.geometry("400x400")
         root.resizable(True, True)
+        root.configure(background='black')  # Set dark background
+        
+        # Configure ttk style for dark theme
+        style = ttk.Style()
+        style.theme_use('default')
+        style.configure('TNotebook', background='black', borderwidth=0)
+        style.configure('TNotebook.Tab', background='black', foreground='white', padding=[10, 2])
+        style.map('TNotebook.Tab', background=[('selected', '#333333')])
+        style.configure('TFrame', background='black')
+        style.configure('TLabel', background='black', foreground='white')
         
         # Set the window close event to restore the game state
         def on_window_close():
