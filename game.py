@@ -14,11 +14,9 @@ from stats import Stats
 import tkinter as tk
 from tkinter import ttk
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import seaborn as sns
-import os
 
 class Game:
     # Game States
@@ -398,238 +396,23 @@ class Game:
         
         # Add tabs based on available data
         if 'dodge' in self.stats_data:
-            self.create_dodge_stats_tab(notebook, self.stats_data['dodge'])
+            Stats().create_dodge_stats_tab(notebook, self.stats_data['dodge'])
             
         if 'position' in self.stats_data:
-            self.create_player_position_tab(notebook, self.stats_data['position'])
+            Stats().create_player_position_tab(notebook, self.stats_data['position'])
             
         if 'damage_income' in self.stats_data:
-            self.create_damage_income_tab(notebook, self.stats_data['damage_income'])
+            Stats().create_damage_income_tab(notebook, self.stats_data['damage_income'])
             
         if 'enemy_lifespan' in self.stats_data:
-            self.create_enemy_lifespan_tab(notebook, self.stats_data['enemy_lifespan'])
+            Stats().create_enemy_lifespan_tab(notebook, self.stats_data['enemy_lifespan'])
             
         if 'deflected' in self.stats_data:
-            self.create_damage_deflected_tab(notebook, self.stats_data['deflected'])
+            Stats().create_damage_deflected_tab(notebook, self.stats_data['deflected'])
         
         # Run the Tkinter main loop
         root.mainloop()
-    
-    def create_dodge_stats_tab(self, notebook, data):
-        """Create a tab showing dodge statistics table"""
-        # Create frame for this tab
-        tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Dodge Stats")
-        
-        if not data:
-            lbl = ttk.Label(tab, text="No dodge data available")
-            lbl.pack(pady=20)
-            return
-        
-        try:
-            # Create a figure for the table
-            fig = plt.Figure(figsize=(4, 3), dpi=80)
-            ax = fig.add_subplot(111)
-            ax.axis('tight')
-            ax.axis('off')
-            
-            # Table data
-            table_data = [
-                ['Statistic', 'Value'],
-                ['Minimum', f"{data['min']:.2f}"],
-                ['Maximum', f"{data['max']:.2f}"],
-                ['Average', f"{data['avg']:.2f}"],
-                ['Std Dev', f"{data['std']:.2f}"]
-            ]
-            
-            # Create the table
-            table = ax.table(cellText=table_data, loc='center', cellLoc='center')
-            table.auto_set_font_size(False)
-            table.set_fontsize(10)
-            table.scale(1, 1.5)
-            
-            # Display the figure
-            canvas = FigureCanvasTkAgg(fig, master=tab)
-            canvas.draw()
-            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-        except Exception as e:
-            lbl = ttk.Label(tab, text=f"Error creating chart: {e}")
-            lbl.pack(pady=20)
-    
-    def create_player_position_tab(self, notebook, df):
-        """Create a tab showing player position heatmap"""
-        # Create frame for this tab
-        tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Player Position")
-        
-        if df.empty:
-            lbl = ttk.Label(tab, text="No player position data available")
-            lbl.pack(pady=20)
-            return
-            
-        try:
-            # Create figure for the heatmap
-            fig = plt.Figure(figsize=(4, 3), dpi=80)
-            ax = fig.add_subplot(111)
-            
-            # Create heatmap using seaborn
-            sns.kdeplot(
-                x=df['player_x'],
-                y=df['player_y'],
-                cmap="Reds",
-                fill=True,
-                ax=ax
-            )
-            
-            # Set plot limits to match game window
-            ax.set_xlim(0, C.WINDOW_WIDTH)
-            ax.set_ylim(0, C.WINDOW_HEIGHT)
-            
-            # Invert y-axis (because in pygame, y increases downward)
-            ax.invert_yaxis()
-            
-            # Set labels
-            ax.set_xlabel('X Position', fontsize=8)
-            ax.set_ylabel('Y Position', fontsize=8)
-            ax.set_title('Player Position Heatmap', fontsize=10)
-            
-            # Add a little marker for the floor
-            ax.axhline(y=C.WINDOW_HEIGHT - C.FLOOR_HEIGHT, color='gray', linestyle='--', alpha=0.7)
-            
-            # Display the figure
-            canvas = FigureCanvasTkAgg(fig, master=tab)
-            canvas.draw()
-            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-        except Exception as e:
-            lbl = ttk.Label(tab, text=f"Error creating chart: {e}")
-            lbl.pack(pady=20)
-    
-    def create_damage_income_tab(self, notebook, df):
-        """Create a tab showing damage income pie chart"""
-        # Create frame for this tab
-        tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Damage Income")
-        
-        if df.empty:
-            lbl = ttk.Label(tab, text="No damage income data available")
-            lbl.pack(pady=20)
-            return
-            
-        try:
-            # Create figure for the pie chart
-            fig = plt.Figure(figsize=(4, 3), dpi=80)
-            ax = fig.add_subplot(111)
-            
-            # Create pie chart
-            wedges, texts, autotexts = ax.pie(
-                df['damage'],
-                labels=df['attack_name'],
-                autopct='%1.1f%%',
-                startangle=90,
-                shadow=False
-            )
-            
-            # Styling for better readability
-            for text in texts:
-                text.set_fontsize(6)
-            for autotext in autotexts:
-                autotext.set_fontsize(6)
-                autotext.set_color('white')
-            
-            ax.set_title('Damage by Attack Type', fontsize=10)
-            ax.axis('equal')  # Equal aspect ratio ensures the pie chart is circular
-            
-            # Display the figure
-            canvas = FigureCanvasTkAgg(fig, master=tab)
-            canvas.draw()
-            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-        except Exception as e:
-            lbl = ttk.Label(tab, text=f"Error creating chart: {e}")
-            lbl.pack(pady=20)
-    
-    def create_enemy_lifespan_tab(self, notebook, df):
-        """Create a tab showing enemy lifespan boxplot"""
-        # Create frame for this tab
-        tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Enemy Lifespan")
-        
-        if df.empty:
-            lbl = ttk.Label(tab, text="No enemy lifespan data available")
-            lbl.pack(pady=20)
-            return
-            
-        try:
-            # Create figure
-            fig = plt.Figure(figsize=(4, 3), dpi=80)
-            ax = fig.add_subplot(111)
-            
-            # Create boxplot using seaborn
-            sns.boxplot(
-                x='enemy_type',
-                y='lifespan_sec',
-                data=df,
-                ax=ax,
-                palette='Set2'
-            )
-            
-            # Set labels
-            ax.set_xlabel('Enemy Type', fontsize=8)
-            ax.set_ylabel('Lifespan (sec)', fontsize=8)
-            ax.set_title('Enemy Lifespan', fontsize=10)
-            
-            # Make tick labels smaller
-            ax.tick_params(axis='both', which='major', labelsize=6)
-            
-            # Display the figure
-            canvas = FigureCanvasTkAgg(fig, master=tab)
-            canvas.draw()
-            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-        except Exception as e:
-            lbl = ttk.Label(tab, text=f"Error creating chart: {e}")
-            lbl.pack(pady=20)
-    
-    def create_damage_deflected_tab(self, notebook, df):
-        """Create a tab showing damage deflected histogram"""
-        # Create frame for this tab
-        tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Damage Deflected")
-        
-        if df.empty:
-            lbl = ttk.Label(tab, text="No damage deflected data available")
-            lbl.pack(pady=20)
-            return
-            
-        try:
-            # Create figure
-            fig = plt.Figure(figsize=(4, 3), dpi=80)
-            ax = fig.add_subplot(111)
-            
-            # Create histogram using seaborn
-            sns.histplot(
-                data=df,
-                x='total_damage_dealt',
-                bins=10,  # Adjust number of bins as needed
-                kde=True,  # Add kernel density estimate
-                ax=ax,
-                color='steelblue'
-            )
-            
-            # Set labels
-            ax.set_xlabel('Damage Amount', fontsize=8)
-            ax.set_ylabel('Frequency', fontsize=8)
-            ax.set_title('Deflected Damage Distribution', fontsize=10)
-            
-            # Make tick labels smaller
-            ax.tick_params(axis='both', which='major', labelsize=6)
-            
-            # Display the figure
-            canvas = FigureCanvasTkAgg(fig, master=tab)
-            canvas.draw()
-            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-        except Exception as e:
-            lbl = ttk.Label(tab, text=f"Error creating chart: {e}")
-            lbl.pack(pady=20)
-    
+
     def quit_game(self):
         """Quit the game - callback for Quit button"""
         self.running = False
