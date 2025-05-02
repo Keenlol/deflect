@@ -11,6 +11,14 @@ import random
 from timer import Timer
 import sys
 from stats import Stats
+import tkinter as tk
+from tkinter import ttk
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import seaborn as sns
+import os
 
 class Game:
     # Game States
@@ -18,6 +26,7 @@ class Game:
     STATE_PLAYING = 1
     STATE_GAMEOVER = 2
     STATE_PAUSED = 3  # New state for pause menu
+    STATE_STATISTICS = 4  # New state for statistics window
     
     def __init__(self):
         pg.init()
@@ -52,6 +61,11 @@ class Game:
             'pause': pg.sprite.Group(),  # Pause menu elements
             'gameover': pg.sprite.Group()  # Game over menu elements
         }
+        
+        # Stats related attributes
+        self.stats_button = None
+        self.stats_data = {}  # To hold processed statistical data
+        self.pending_stats_window = False
         
         # Setup the home menu
         self.setup_home_menu()
@@ -260,9 +274,361 @@ class Game:
         self.setup_game()
     
     def show_statistics(self):
-        """Show statistics screen - callback for Statistics button"""
-        # Currently does nothing as specified
-        pass
+        """Prepare statistics data and schedule window creation for next frame"""
+        # Find the statistics button to change its text
+        stats_button = None
+        button_groups = [self.groups['menu'], self.groups['pause'], self.groups['gameover']]
+        
+        for group in button_groups:
+            for button in group:
+                if isinstance(button, Button) and button.callback == self.show_statistics:
+                    stats_button = button
+                    break
+            if stats_button:
+                break
+        
+        self.stats_button = stats_button
+        
+        # Schedule stats window creation for next frame
+        if self.game_state != Game.STATE_STATISTICS:
+            self.previous_state = self.game_state
+            self.game_state = Game.STATE_STATISTICS
+            
+            # Change button text to "X"
+            if self.stats_button:
+                self.stats_button.text = "X"
+            
+            # Pre-load data to avoid lag
+            try:
+                self.preload_stats_data()
+            except Exception as e:
+                print(f"Error loading statistics data: {e}")
+                self.game_state = self.previous_state
+                return
+        else:
+            # If already in stats mode, exit it
+            self.game_state = self.previous_state
+            
+            # Reset button text
+            if self.stats_button:
+                self.stats_button.text = "Statistics"
+    
+    def preload_stats_data(self):
+        """Pre-process all statistics data to avoid lag when creating charts"""
+        stats = Stats()
+        self.stats_data = {}
+        
+        # Process dodge attack data
+        dodge_data = stats.get_stats('dodged_attack')
+        if dodge_data:
+            df = pd.DataFrame(dodge_data)
+            df['damage_evaded'] = pd.to_numeric(df['damage_evaded'])
+            self.stats_data['dodge'] = {
+                'min': df['damage_evaded'].min(),
+                'max': df['damage_evaded'].max(),
+                'avg': df['damage_evaded'].mean(),
+                'std': df['damage_evaded'].std()
+            }
+        
+        # Process player position data
+        pos_data = stats.get_stats('player_pos')
+        if pos_data:
+            df = pd.DataFrame(pos_data)
+            df['player_x'] = pd.to_numeric(df['player_x'])
+            df['player_y'] = pd.to_numeric(df['player_y'])
+            self.stats_data['position'] = df
+        
+        # Process damage income data
+        dmg_data = stats.get_stats('dmg_income')
+        if dmg_data:
+            df = pd.DataFrame(dmg_data)
+            df['damage'] = pd.to_numeric(df['damage'])
+            damage_by_attack = df.groupby('attack_name')['damage'].sum().reset_index()
+            damage_by_attack = damage_by_attack.sort_values('damage', ascending=False)
+            
+            # Limit to top categories
+            if len(damage_by_attack) > 8:
+                other_damage = damage_by_attack.iloc[8:]['damage'].sum()
+                top_attacks = damage_by_attack.iloc[:8]
+                # Create a new row for "Other"
+                other_row = pd.DataFrame([{'attack_name': 'Other', 'damage': other_damage}])
+                top_attacks = pd.concat([top_attacks, other_row], ignore_index=True)
+            else:
+                top_attacks = damage_by_attack
+                
+            self.stats_data['damage_income'] = top_attacks
+        
+        # Process enemy lifespan data
+        lifespan_data = stats.get_stats('enemy_lifespan')
+        if lifespan_data:
+            df = pd.DataFrame(lifespan_data)
+            df['lifespan_sec'] = pd.to_numeric(df['lifespan_sec'])
+            self.stats_data['enemy_lifespan'] = df
+        
+        # Process damage deflected data
+        deflect_data = stats.get_stats('dmg_deflected')
+        if deflect_data:
+            df = pd.DataFrame(deflect_data)
+            df['total_damage_dealt'] = pd.to_numeric(df['total_damage_dealt'])
+            self.stats_data['deflected'] = df
+    
+    def create_stats_window(self):
+        """Create and show the statistics window using the preloaded data"""
+        import matplotlib
+        matplotlib.use('Agg')  # Use Agg backend to avoid threading issues
+        
+        # Create the root window
+        root = tk.Tk()
+        root.title("Game Statistics")
+        root.geometry("400x400")
+        root.resizable(True, True)
+        
+        # Set the window close event to restore the game state
+        def on_window_close():
+            if self.stats_button:
+                self.stats_button.text = "Statistics"
+            self.game_state = self.previous_state
+            root.destroy()
+            
+        root.protocol("WM_DELETE_WINDOW", on_window_close)
+        
+        # Create notebook for tabs
+        notebook = ttk.Notebook(root)
+        notebook.pack(fill='both', expand=True, padx=5, pady=5)
+        
+        # Add tabs based on available data
+        if 'dodge' in self.stats_data:
+            self.create_dodge_stats_tab(notebook, self.stats_data['dodge'])
+            
+        if 'position' in self.stats_data:
+            self.create_player_position_tab(notebook, self.stats_data['position'])
+            
+        if 'damage_income' in self.stats_data:
+            self.create_damage_income_tab(notebook, self.stats_data['damage_income'])
+            
+        if 'enemy_lifespan' in self.stats_data:
+            self.create_enemy_lifespan_tab(notebook, self.stats_data['enemy_lifespan'])
+            
+        if 'deflected' in self.stats_data:
+            self.create_damage_deflected_tab(notebook, self.stats_data['deflected'])
+        
+        # Run the Tkinter main loop
+        root.mainloop()
+    
+    def create_dodge_stats_tab(self, notebook, data):
+        """Create a tab showing dodge statistics table"""
+        # Create frame for this tab
+        tab = ttk.Frame(notebook)
+        notebook.add(tab, text="Dodge Stats")
+        
+        if not data:
+            lbl = ttk.Label(tab, text="No dodge data available")
+            lbl.pack(pady=20)
+            return
+        
+        try:
+            # Create a figure for the table
+            fig = plt.Figure(figsize=(4, 3), dpi=80)
+            ax = fig.add_subplot(111)
+            ax.axis('tight')
+            ax.axis('off')
+            
+            # Table data
+            table_data = [
+                ['Statistic', 'Value'],
+                ['Minimum', f"{data['min']:.2f}"],
+                ['Maximum', f"{data['max']:.2f}"],
+                ['Average', f"{data['avg']:.2f}"],
+                ['Std Dev', f"{data['std']:.2f}"]
+            ]
+            
+            # Create the table
+            table = ax.table(cellText=table_data, loc='center', cellLoc='center')
+            table.auto_set_font_size(False)
+            table.set_fontsize(10)
+            table.scale(1, 1.5)
+            
+            # Display the figure
+            canvas = FigureCanvasTkAgg(fig, master=tab)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        except Exception as e:
+            lbl = ttk.Label(tab, text=f"Error creating chart: {e}")
+            lbl.pack(pady=20)
+    
+    def create_player_position_tab(self, notebook, df):
+        """Create a tab showing player position heatmap"""
+        # Create frame for this tab
+        tab = ttk.Frame(notebook)
+        notebook.add(tab, text="Player Position")
+        
+        if df.empty:
+            lbl = ttk.Label(tab, text="No player position data available")
+            lbl.pack(pady=20)
+            return
+            
+        try:
+            # Create figure for the heatmap
+            fig = plt.Figure(figsize=(4, 3), dpi=80)
+            ax = fig.add_subplot(111)
+            
+            # Create heatmap using seaborn
+            sns.kdeplot(
+                x=df['player_x'],
+                y=df['player_y'],
+                cmap="Reds",
+                fill=True,
+                ax=ax
+            )
+            
+            # Set plot limits to match game window
+            ax.set_xlim(0, C.WINDOW_WIDTH)
+            ax.set_ylim(0, C.WINDOW_HEIGHT)
+            
+            # Invert y-axis (because in pygame, y increases downward)
+            ax.invert_yaxis()
+            
+            # Set labels
+            ax.set_xlabel('X Position', fontsize=8)
+            ax.set_ylabel('Y Position', fontsize=8)
+            ax.set_title('Player Position Heatmap', fontsize=10)
+            
+            # Add a little marker for the floor
+            ax.axhline(y=C.WINDOW_HEIGHT - C.FLOOR_HEIGHT, color='gray', linestyle='--', alpha=0.7)
+            
+            # Display the figure
+            canvas = FigureCanvasTkAgg(fig, master=tab)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        except Exception as e:
+            lbl = ttk.Label(tab, text=f"Error creating chart: {e}")
+            lbl.pack(pady=20)
+    
+    def create_damage_income_tab(self, notebook, df):
+        """Create a tab showing damage income pie chart"""
+        # Create frame for this tab
+        tab = ttk.Frame(notebook)
+        notebook.add(tab, text="Damage Income")
+        
+        if df.empty:
+            lbl = ttk.Label(tab, text="No damage income data available")
+            lbl.pack(pady=20)
+            return
+            
+        try:
+            # Create figure for the pie chart
+            fig = plt.Figure(figsize=(4, 3), dpi=80)
+            ax = fig.add_subplot(111)
+            
+            # Create pie chart
+            wedges, texts, autotexts = ax.pie(
+                df['damage'],
+                labels=df['attack_name'],
+                autopct='%1.1f%%',
+                startangle=90,
+                shadow=False
+            )
+            
+            # Styling for better readability
+            for text in texts:
+                text.set_fontsize(6)
+            for autotext in autotexts:
+                autotext.set_fontsize(6)
+                autotext.set_color('white')
+            
+            ax.set_title('Damage by Attack Type', fontsize=10)
+            ax.axis('equal')  # Equal aspect ratio ensures the pie chart is circular
+            
+            # Display the figure
+            canvas = FigureCanvasTkAgg(fig, master=tab)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        except Exception as e:
+            lbl = ttk.Label(tab, text=f"Error creating chart: {e}")
+            lbl.pack(pady=20)
+    
+    def create_enemy_lifespan_tab(self, notebook, df):
+        """Create a tab showing enemy lifespan boxplot"""
+        # Create frame for this tab
+        tab = ttk.Frame(notebook)
+        notebook.add(tab, text="Enemy Lifespan")
+        
+        if df.empty:
+            lbl = ttk.Label(tab, text="No enemy lifespan data available")
+            lbl.pack(pady=20)
+            return
+            
+        try:
+            # Create figure
+            fig = plt.Figure(figsize=(4, 3), dpi=80)
+            ax = fig.add_subplot(111)
+            
+            # Create boxplot using seaborn
+            sns.boxplot(
+                x='enemy_type',
+                y='lifespan_sec',
+                data=df,
+                ax=ax,
+                palette='Set2'
+            )
+            
+            # Set labels
+            ax.set_xlabel('Enemy Type', fontsize=8)
+            ax.set_ylabel('Lifespan (sec)', fontsize=8)
+            ax.set_title('Enemy Lifespan', fontsize=10)
+            
+            # Make tick labels smaller
+            ax.tick_params(axis='both', which='major', labelsize=6)
+            
+            # Display the figure
+            canvas = FigureCanvasTkAgg(fig, master=tab)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        except Exception as e:
+            lbl = ttk.Label(tab, text=f"Error creating chart: {e}")
+            lbl.pack(pady=20)
+    
+    def create_damage_deflected_tab(self, notebook, df):
+        """Create a tab showing damage deflected histogram"""
+        # Create frame for this tab
+        tab = ttk.Frame(notebook)
+        notebook.add(tab, text="Damage Deflected")
+        
+        if df.empty:
+            lbl = ttk.Label(tab, text="No damage deflected data available")
+            lbl.pack(pady=20)
+            return
+            
+        try:
+            # Create figure
+            fig = plt.Figure(figsize=(4, 3), dpi=80)
+            ax = fig.add_subplot(111)
+            
+            # Create histogram using seaborn
+            sns.histplot(
+                data=df,
+                x='total_damage_dealt',
+                bins=10,  # Adjust number of bins as needed
+                kde=True,  # Add kernel density estimate
+                ax=ax,
+                color='steelblue'
+            )
+            
+            # Set labels
+            ax.set_xlabel('Damage Amount', fontsize=8)
+            ax.set_ylabel('Frequency', fontsize=8)
+            ax.set_title('Deflected Damage Distribution', fontsize=10)
+            
+            # Make tick labels smaller
+            ax.tick_params(axis='both', which='major', labelsize=6)
+            
+            # Display the figure
+            canvas = FigureCanvasTkAgg(fig, master=tab)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        except Exception as e:
+            lbl = ttk.Label(tab, text=f"Error creating chart: {e}")
+            lbl.pack(pady=20)
     
     def quit_game(self):
         """Quit the game - callback for Quit button"""
@@ -408,6 +774,10 @@ class Game:
             self.groups['pause'].update()
         elif self.game_state == Game.STATE_GAMEOVER:
             self.groups['gameover'].update()
+        elif self.game_state == Game.STATE_STATISTICS:
+            # Exit pygame event loop temporarily to show tkinter window
+            pg.event.pump()  # Process any pending events
+            self.create_stats_window()  # This will block until the window is closed
         elif self.game_state == Game.STATE_PLAYING:
             # freeze effect
             if not self.freeze_timer.is_completed:
