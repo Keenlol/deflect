@@ -12,11 +12,8 @@ from timer import Timer
 import sys
 from stats import Stats
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, font
 import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import seaborn as sns
 
 class Game:
     # Game States
@@ -80,7 +77,7 @@ class Game:
         left_margin = 150
         
         # Calculate starting Y position (center of screen)
-        start_y = (C.WINDOW_HEIGHT - (button_height * 3 + button_spacing * 2)) // 2
+        start_y = (C.WINDOW_HEIGHT - (button_height * 4 + button_spacing * 3)) // 2
         
         # Create Play button
         play_button = Button(
@@ -106,9 +103,21 @@ class Game:
             text_size=C.BUTTON_FONT_SIZE
         )
         
+        # Create Clear Data button
+        clear_button = Button(
+            position=Vector2(left_margin + button_width//2, start_y + 2 * (button_height + button_spacing) + button_height//2),
+            width=button_width,
+            height=button_height,
+            text="Clear Data",
+            callback=self.clear_all_stats,
+            idle_color=(207, 218, 227),
+            hover_color=(224, 79, 74),
+            text_size=C.BUTTON_FONT_SIZE
+        )
+        
         # Create Quit button
         quit_button = Button(
-            position=Vector2(left_margin + button_width//2, start_y + 2 * (button_height + button_spacing) + button_height//2),
+            position=Vector2(left_margin + button_width//2, start_y + 3 * (button_height + button_spacing) + button_height//2),
             width=button_width,
             height=button_height,
             text="Quit",
@@ -121,6 +130,7 @@ class Game:
         # Add buttons to menu group
         self.groups['menu'].add(play_button)
         self.groups['menu'].add(stats_button)
+        self.groups['menu'].add(clear_button)
         self.groups['menu'].add(quit_button)
     
     def setup_pause_menu(self):
@@ -382,6 +392,20 @@ class Game:
         root.resizable(True, True)
         root.configure(background='black')  # Set dark background
         
+        # Load custom fonts
+        title_font_path = "fonts/Coiny-Regular.ttf"
+        text_font_path = "fonts/Jua-Regular.ttf"
+        
+        # Try to load custom fonts
+        try:
+            # Add the fonts to Tkinter
+            font_id_title = font.Font(font=title_font_path, size=14, weight="bold")
+            font_id_text = font.Font(font=text_font_path, size=12)
+        except:
+            # Fallback to system fonts if custom fonts fail to load
+            font_id_title = font.Font(family="Arial", size=14, weight="bold")
+            font_id_text = font.Font(family="Arial", size=12)
+        
         # Configure ttk style for dark theme
         style = ttk.Style()
         style.theme_use('default')
@@ -400,25 +424,38 @@ class Game:
             
         root.protocol("WM_DELETE_WINDOW", on_window_close)
         
+        # Create a header with title font
+        header = tk.Label(root, text="Game Statistics", bg='black', fg='white')
+        try:
+            header.configure(font=font_id_title)
+        except:
+            pass
+        header.pack(pady=10)
+        
         # Create notebook for tabs
         notebook = ttk.Notebook(root)
         notebook.pack(fill='both', expand=True, padx=5, pady=5)
         
+        # Create Stats instance with font info
+        stats = Stats()
+        stats.title_font = font_id_title
+        stats.text_font = font_id_text
+        
         # Add tabs based on available data
         if 'dodge' in self.stats_data:
-            Stats().create_dodge_stats_tab(notebook, self.stats_data['dodge'])
+            stats.create_dodge_stats_tab(notebook, self.stats_data['dodge'])
             
         if 'position' in self.stats_data:
-            Stats().create_player_position_tab(notebook, self.stats_data['position'])
+            stats.create_player_position_tab(notebook, self.stats_data['position'])
             
         if 'damage_income' in self.stats_data:
-            Stats().create_damage_income_tab(notebook, self.stats_data['damage_income'])
+            stats.create_damage_income_tab(notebook, self.stats_data['damage_income'])
             
         if 'enemy_lifespan' in self.stats_data:
-            Stats().create_enemy_lifespan_tab(notebook, self.stats_data['enemy_lifespan'])
+            stats.create_enemy_lifespan_tab(notebook, self.stats_data['enemy_lifespan'])
             
         if 'deflected' in self.stats_data:
-            Stats().create_damage_deflected_tab(notebook, self.stats_data['deflected'])
+            stats.create_damage_deflected_tab(notebook, self.stats_data['deflected'])
         
         # Run the Tkinter main loop
         root.mainloop()
@@ -742,6 +779,18 @@ class Game:
         size = 0.3
         healthbar = HealthBar(healthbar_pos, 1000 * size, 300 * size, self.player)  # Adjust size as needed
         self.groups['ui'].add(healthbar)
+
+    def clear_all_stats(self):
+        """Clear all statistics data"""
+        stats = Stats()
+        stats.clear_stats()
+        for button in self.groups['menu']:
+            if button.text == 'Clear Data':
+                clear_button = button
+        
+        clear_button.text = 'Cleared!'
+        clear_button.idle_color = (111, 118, 130)
+        clear_button.hover_color = (111, 118, 130)
 
 if __name__ == "__main__":
     game = Game()

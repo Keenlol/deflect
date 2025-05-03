@@ -58,7 +58,8 @@ class Stats:
         'heatmap': 'plasma',  # A colormap that looks good on dark backgrounds
         'pie': {
             'edge_color': 'black',
-            'text_color': 'white'
+            'text_color': 'white',
+            'colors': ['#ff9999', '#66b3ff', '#99ff99', '#ffcc99', '#c2c2f0', '#ffb3e6', '#c4e17f', '#f7b6d2']  # Bright pastel colors
         },
         'boxplot': 'Set2',
         'histogram': '#1E90FF',  # Dodger blue
@@ -79,6 +80,10 @@ class Stats:
             
         self.__initialized = True
         self.stats_dir = "stats"
+        
+        # Custom fonts for charts (will be set by Game class)
+        self.title_font = None
+        self.text_font = None
         
         # Create the stats directory if it doesn't exist
         if not os.path.exists(self.stats_dir):
@@ -228,6 +233,8 @@ class Stats:
         
         if not data:
             lbl = ttk.Label(tab, text="No dodge data available")
+            if self.text_font:
+                lbl.configure(font=self.text_font)
             lbl.pack(pady=20)
             return
         
@@ -260,12 +267,17 @@ class Stats:
                 cell.set_facecolor(theme['table']['cell_bg'] if row > 0 else theme['table']['header_bg'])
                 cell.set_edgecolor(theme['table']['edge_color'])
             
+            # Set title with custom font
+            fig.suptitle('Dodge Statistics', fontsize=fsize['big'], color=theme['text'])
+            
             # Display the figure
             canvas = FigureCanvasTkAgg(fig, master=tab)
             canvas.draw()
             canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
         except Exception as e:
             lbl = ttk.Label(tab, text=f"Error creating chart: {e}")
+            if self.text_font:
+                lbl.configure(font=self.text_font)
             lbl.pack(pady=20)
 
     def create_player_position_tab(self, notebook, df):
@@ -279,6 +291,8 @@ class Stats:
         
         if df.empty:
             lbl = ttk.Label(tab, text="No player position data available")
+            if self.text_font:
+                lbl.configure(font=self.text_font)
             lbl.pack(pady=20)
             return
             
@@ -328,6 +342,8 @@ class Stats:
             canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
         except Exception as e:
             lbl = ttk.Label(tab, text=f"Error creating chart: {e}")
+            if self.text_font:
+                lbl.configure(font=self.text_font)
             lbl.pack(pady=20)
     
     def create_damage_income_tab(self, notebook, df):
@@ -341,6 +357,8 @@ class Stats:
         
         if df.empty:
             lbl = ttk.Label(tab, text="No damage income data available")
+            if self.text_font:
+                lbl.configure(font=self.text_font)
             lbl.pack(pady=20)
             return
             
@@ -350,13 +368,14 @@ class Stats:
             ax = fig.add_subplot(111)
             ax.set_facecolor(theme['background'])
             
-            # Create pie chart
+            # Create pie chart with custom colors
             wedges, texts, autotexts = ax.pie(
                 df['damage'],
                 labels=df['attack_name'],
                 autopct='%1.1f%%',
                 startangle=90,
                 shadow=False,
+                colors=theme['pie']['colors'],
                 wedgeprops={'edgecolor': theme['pie']['edge_color']}
             )
             
@@ -377,6 +396,8 @@ class Stats:
             canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
         except Exception as e:
             lbl = ttk.Label(tab, text=f"Error creating chart: {e}")
+            if self.text_font:
+                lbl.configure(font=self.text_font)
             lbl.pack(pady=20)
     
     def create_enemy_lifespan_tab(self, notebook, df):
@@ -390,6 +411,8 @@ class Stats:
         
         if df.empty:
             lbl = ttk.Label(tab, text="No enemy lifespan data available")
+            if self.text_font:
+                lbl.configure(font=self.text_font)
             lbl.pack(pady=20)
             return
             
@@ -427,6 +450,8 @@ class Stats:
             canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
         except Exception as e:
             lbl = ttk.Label(tab, text=f"Error creating chart: {e}")
+            if self.text_font:
+                lbl.configure(font=self.text_font)
             lbl.pack(pady=20)
     
     def create_damage_deflected_tab(self, notebook, df):
@@ -440,6 +465,8 @@ class Stats:
         
         if df.empty:
             lbl = ttk.Label(tab, text="No damage deflected data available")
+            if self.text_font:
+                lbl.configure(font=self.text_font)
             lbl.pack(pady=20)
             return
             
@@ -480,5 +507,7 @@ class Stats:
             canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
         except Exception as e:
             lbl = ttk.Label(tab, text=f"Error creating chart: {e}")
+            if self.text_font:
+                lbl.configure(font=self.text_font)
             lbl.pack(pady=20)
     
