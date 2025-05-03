@@ -73,8 +73,8 @@ The game window should now open and you can start playing.
 - [x] Improve the code for everything.
 - [ ] Balance Enemy and Players, refine spawning and scoring.
 - [x] Statistic tracking and visualization.
-    - [ ] Add tkinter window
-    - [ ] Add clean all button for all data
+    - [x] Add tkinter window
+    - [x] Add clean all button for all data
     - [x] Dodged attacks
     - [x] Player position
     - [x] Damage income type

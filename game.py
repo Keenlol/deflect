@@ -388,7 +388,7 @@ class Game:
         # Create the root window
         root = tk.Tk()
         root.title("Game Statistics")
-        root.geometry("400x400")
+        root.geometry("550x400")
         root.resizable(True, True)
         root.configure(background='black')  # Set dark background
         
@@ -401,10 +401,12 @@ class Game:
             # Add the fonts to Tkinter
             font_id_title = font.Font(font=title_font_path, size=14, weight="bold")
             font_id_text = font.Font(font=text_font_path, size=12)
+            print("custom font")
         except:
             # Fallback to system fonts if custom fonts fail to load
             font_id_title = font.Font(family="Arial", size=14, weight="bold")
             font_id_text = font.Font(family="Arial", size=12)
+            print("defualt")
         
         # Configure ttk style for dark theme
         style = ttk.Style()
@@ -746,7 +748,7 @@ class Game:
                 if font is None:
                     font = pg.font.Font(None, C.TITLE_FONT_SIZE)
                 
-                game_over_text = font.render('Game Over', True, (255, 255, 255))
+                game_over_text = font.render('GAME OVER', True, (255, 255, 255))
                 score_text = font.render(f'Score: {self.score}', True, (255, 255, 255))
                 
                 # Position text

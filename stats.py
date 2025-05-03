@@ -46,24 +46,24 @@ class Stats:
                  
     # Define color themes for charts
     CHART_THEME = {
-        'background': 'black',
-        'text': 'white',
-        'grid': '#333333',
+        'background': '#0c0c0f',
+        'title': '#f1f4fb',
+        'text': '#9aa0af',
+        'grid': '#2d313d',
+        'spine': '#464c5b',
         'table': {
-            'cell_bg': 'black',
-            'header_bg': '#222222',
-            'cell_text': 'white',
-            'edge_color': '#444444'
+            'cell_bg': '#0c0c0f',
+            'header_bg': '#2d313d',
+            'edge_color': '#464c5b'
         },
         'heatmap': 'plasma',  # A colormap that looks good on dark backgrounds
         'pie': {
             'edge_color': 'black',
-            'text_color': 'white',
-            'colors': ['#ff9999', '#66b3ff', '#99ff99', '#ffcc99', '#c2c2f0', '#ffb3e6', '#c4e17f', '#f7b6d2']  # Bright pastel colors
+            'colors': ['#9b2323', '#af5c1d', '#b6a520', '#18a04a', '#1f8fae', '#1c4fb5', '#1c4fb5', '#b83c70']  # Bright pastel colors
         },
         'boxplot': 'Set2',
-        'histogram': '#1E90FF',  # Dodger blue
-        'floor_line': 'white'
+        'histogram': '#1f8fae',  # Dodger blue
+        'floor_line': '#f1f4fb'
     }
 
     def __new__(cls):
@@ -263,12 +263,12 @@ class Stats:
             
             # Style the table cells
             for (row, col), cell in table.get_celld().items():
-                cell.set_text_props(color=theme['table']['cell_text'])
+                cell.set_text_props(color=theme['text'])
                 cell.set_facecolor(theme['table']['cell_bg'] if row > 0 else theme['table']['header_bg'])
                 cell.set_edgecolor(theme['table']['edge_color'])
             
             # Set title with custom font
-            fig.suptitle('Dodge Statistics', fontsize=fsize['big'], color=theme['text'])
+            fig.suptitle('Dodge Statistics', fontsize=fsize['big'], color=theme['title'])
             
             # Display the figure
             canvas = FigureCanvasTkAgg(fig, master=tab)
@@ -321,21 +321,19 @@ class Stats:
             # Set labels with light text color
             ax.set_xlabel('X Position', fontsize=fsize['medium'], color=theme['text'])
             ax.set_ylabel('Y Position', fontsize=fsize['medium'], color=theme['text'])
-            ax.set_title('Player Position Heatmap', fontsize=fsize['big'], color=theme['text'])
-            
+            ax.set_title('Player Position Heatmap', fontsize=fsize['big'], color=theme['title'])
             # Make the tick labels white
             ax.tick_params(axis='both', which='major', colors=theme['text'])
             
             # Set grid color for better visibility
-            ax.grid(color=theme['grid'], linestyle='-', linewidth=0.5, alpha=0.5)
-            
+            ax.grid(color=theme['grid'], linestyle='-', linewidth=1, alpha=0.5)
             # Add a little marker for the floor
             ax.axhline(y=C.WINDOW_HEIGHT - C.FLOOR_HEIGHT, color=theme['floor_line'], linestyle='--', alpha=0.7)
             
             # Style the spines
             for spine in ax.spines.values():
-                spine.set_color(theme['text'])
-            
+                spine.set_color(theme['spine'])
+
             # Display the figure
             canvas = FigureCanvasTkAgg(fig, master=tab)
             canvas.draw()
@@ -381,13 +379,13 @@ class Stats:
             
             # Styling for better readability on dark background
             for text in texts:
-                text.set_fontsize(fsize['small'])
-                text.set_color(theme['pie']['text_color'])
+                text.set_fontsize(fsize['medium'])
+                text.set_color(theme['text'])
             for autotext in autotexts:
-                autotext.set_fontsize(fsize['small'])
-                autotext.set_color(theme['pie']['text_color'])
+                autotext.set_fontsize(fsize['medium'])
+                autotext.set_color(theme['text'])
             
-            ax.set_title('Damage by Attack Type', fontsize=fsize['big'], color=theme['text'])
+            ax.set_title('Damage by Attack Type', fontsize=fsize['big'], color=theme['title'])
             ax.axis('equal')  # Equal aspect ratio ensures the pie chart is circular
             
             # Display the figure
@@ -434,15 +432,15 @@ class Stats:
             # Set labels with light text
             ax.set_xlabel('Enemy Type', fontsize=fsize['medium'], color=theme['text'])
             ax.set_ylabel('Lifespan (sec)', fontsize=fsize['medium'], color=theme['text'])
-            ax.set_title('Enemy Lifespan', fontsize=fsize['big'], color=theme['text'])
+            ax.set_title('Enemy Lifespan', fontsize=fsize['big'], color=theme['title'])
             
             # Style the tick labels and grid
             ax.tick_params(axis='both', which='major', labelsize=fsize['small'], colors=theme['text'])
-            ax.grid(color=theme['grid'], linestyle='-', linewidth=0.5, alpha=0.5)
+            ax.grid(color=theme['grid'], linestyle='-', linewidth=1, alpha=0.5, axis='y')
             
             # Style the spines
             for spine in ax.spines.values():
-                spine.set_color(theme['text'])
+                spine.set_color(theme['spine'])
             
             # Display the figure
             canvas = FigureCanvasTkAgg(fig, master=tab)
@@ -491,15 +489,15 @@ class Stats:
             # Set labels with light text
             ax.set_xlabel('Damage Amount', fontsize=fsize['medium'], color=theme['text'])
             ax.set_ylabel('Frequency', fontsize=fsize['medium'], color=theme['text'])
-            ax.set_title('Deflected Damage Distribution', fontsize=fsize['big'], color=theme['text'])
+            ax.set_title('Deflected Damage Distribution', fontsize=fsize['big'], color=theme['title'])
             
             # Style the tick labels and grid
             ax.tick_params(axis='both', which='major', labelsize=fsize['small'], colors=theme['text'])
-            ax.grid(color=theme['grid'], linestyle='-', linewidth=0.5, alpha=0.5)
+            ax.grid(color=theme['grid'], linestyle='-', linewidth=1, alpha=0.5, axis='y')
             
             # Style the spines
             for spine in ax.spines.values():
-                spine.set_color(theme['text'])
+                spine.set_color(theme['spine'])
             
             # Display the figure
             canvas = FigureCanvasTkAgg(fig, master=tab)
