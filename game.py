@@ -76,7 +76,7 @@ class Game:
         # Define button dimensions
         button_width = 300
         button_height = 80
-        button_spacing = 30
+        button_spacing = 10
         left_margin = 150
         
         # Calculate starting Y position (center of screen)
@@ -91,7 +91,7 @@ class Game:
             callback=self.start_game,
             idle_color=(207, 218, 227),
             hover_color=(94, 175, 255),
-            text_size=64
+            text_size=C.BUTTON_FONT_SIZE
         )
         
         # Create Statistics button
@@ -103,7 +103,7 @@ class Game:
             callback=self.show_statistics,
             idle_color=(207, 218, 227),
             hover_color=(255, 205, 120),
-            text_size=64
+            text_size=C.BUTTON_FONT_SIZE
         )
         
         # Create Quit button
@@ -115,7 +115,7 @@ class Game:
             callback=self.quit_game,
             idle_color=(207, 218, 227),
             hover_color=(224, 79, 74),
-            text_size=64
+            text_size=C.BUTTON_FONT_SIZE
         )
         
         # Add buttons to menu group
@@ -131,7 +131,7 @@ class Game:
         # Define button dimensions
         button_width = 300
         button_height = 70
-        button_spacing = 20
+        button_spacing = 10
         
         # Calculate starting Y position (center of screen)
         start_y = (C.WINDOW_HEIGHT - (button_height * 4 + button_spacing * 3)) // 2
@@ -145,7 +145,7 @@ class Game:
             callback=self.resume_game,
             idle_color=(207, 218, 227),
             hover_color=(94, 175, 255),
-            text_size=56
+            text_size=C.BUTTON_FONT_SIZE
         )
         
         # Create Retry button
@@ -157,7 +157,7 @@ class Game:
             callback=self.retry_game,
             idle_color=(207, 218, 227),
             hover_color=(94, 175, 255),
-            text_size=56
+            text_size=C.BUTTON_FONT_SIZE
         )
         
         # Create Statistics button
@@ -169,7 +169,7 @@ class Game:
             callback=self.show_statistics,
             idle_color=(207, 218, 227),
             hover_color=(255, 205, 120),
-            text_size=56
+            text_size=C.BUTTON_FONT_SIZE
         )
         
         # Create Menu button
@@ -181,7 +181,7 @@ class Game:
             callback=self.return_to_menu,
             idle_color=(207, 218, 227),
             hover_color=(224, 79, 74),
-            text_size=56
+            text_size=C.BUTTON_FONT_SIZE
         )
         
         # Add buttons to pause menu group
@@ -198,7 +198,7 @@ class Game:
         # Define button dimensions
         button_width = 300
         button_height = 70
-        button_spacing = 20
+        button_spacing = 10
         
         # Calculate starting Y position for buttons (below score text)
         start_y = C.WINDOW_HEIGHT//2 + 30
@@ -212,7 +212,7 @@ class Game:
             callback=self.retry_game,
             idle_color=(207, 218, 227),
             hover_color=(94, 175, 255),
-            text_size=56
+            text_size=C.BUTTON_FONT_SIZE
         )
         
         # Create Statistics button
@@ -224,7 +224,7 @@ class Game:
             callback=self.show_statistics,
             idle_color=(207, 218, 227),
             hover_color=(255, 205, 120),
-            text_size=56
+            text_size=C.BUTTON_FONT_SIZE
         )
         
         # Create Menu button
@@ -236,7 +236,7 @@ class Game:
             callback=self.return_to_menu,
             idle_color=(207, 218, 227),
             hover_color=(224, 79, 74),
-            text_size=56
+            text_size=C.BUTTON_FONT_SIZE
         )
         
         # Add buttons to game over menu group
@@ -618,9 +618,9 @@ class Game:
         if self.game_state == Game.STATE_MENU:
             # Draw menu background here if needed
             # For example, a title or artwork on the right side
-            title_font = pg.font.Font("fonts/Jua-Regular.ttf", 80)
+            title_font = pg.font.Font("fonts/Coiny-Regular.ttf", C.TITLE_FONT_SIZE)
             if title_font is None:
-                title_font = pg.font.Font(None, 80)
+                title_font = pg.font.Font(None, C.TITLE_FONT_SIZE)
             
             title_text = title_font.render("DEFLECT", True, (255, 255, 255))
             title_rect = title_text.get_rect(center=(C.WINDOW_WIDTH - 350, 200))
@@ -685,9 +685,9 @@ class Game:
                 self.screen.blit(overlay, (0, 0))
                 
                 # Draw "PAUSED" text
-                pause_font = pg.font.Font("fonts/Jua-Regular.ttf", 90)
+                pause_font = pg.font.Font("fonts/Coiny-Regular.ttf", C.TITLE_FONT_SIZE)
                 if pause_font is None:
-                    pause_font = pg.font.Font(None, 90)
+                    pause_font = pg.font.Font(None, C.TITLE_FONT_SIZE)
                 
                 pause_text = pause_font.render("PAUSED", True, (255, 255, 255))
                 pause_rect = pause_text.get_rect(center=(C.WINDOW_WIDTH // 2, 100))
@@ -705,9 +705,9 @@ class Game:
                 self.screen.blit(overlay, (0, 0))
                 
                 # Draw game over text and score
-                font = pg.font.Font("fonts/Jua-Regular.ttf", 74)
+                font = pg.font.Font("fonts/Coiny-Regular.ttf", C.TITLE_FONT_SIZE)
                 if font is None:
-                    font = pg.font.Font(None, 74)
+                    font = pg.font.Font(None, C.TITLE_FONT_SIZE)
                 
                 game_over_text = font.render('Game Over', True, (255, 255, 255))
                 score_text = font.render(f'Score: {self.score}', True, (255, 255, 255))
