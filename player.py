@@ -7,6 +7,7 @@ from knife import Knife
 import math
 from timer import Timer
 from stats import Stats
+from sounds import Sounds
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, game, x=0, y=0):
@@ -163,8 +164,9 @@ class Player(pygame.sprite.Sprite):
             
         keys = pygame.key.get_pressed()
         
-        # Deflecting (handle this first before movement)
+        # Deflecting
         if self.mouse_clicked and not self.is_dodging and self.can_deflect:
+            Sounds().play_sound('slash')
             mouse_pos = pygame.mouse.get_pos()
             self.knife.activate(mouse_pos)
             self.anim.change_state("deflect")
@@ -431,7 +433,7 @@ class Player(pygame.sprite.Sprite):
         if self.is_invincible or self.is_dead:
             return
         
-        # IT WOULDNT HAVE TO BE THIS MUCH IF THERE WERE NO STATS TRACKING
+        # IT WOULDN'T HAVE TO BE THIS MUCH IF THERE WERE NO STATS TRACKING
         # AHHHHH
 
         # Store values locally for better performance
@@ -467,9 +469,14 @@ class Player(pygame.sprite.Sprite):
                     
                     if dist_sq < collision_dist_sq:
                         self.take_damage(enemy.BODY_DAMAGE, enemy_pos)
-                        Stats().record('dmg_income',
-                                      attack_name=enemy.name + ' ' + 'Body',
-                                      damage=enemy.BODY_DAMAGE)
+                        if enemy.name == 'Fencer' and enemy.is_dashing:
+                            Stats().record('dmg_income',
+                                            attack_name='Fencer Slash',
+                                            damage=enemy.BODY_DAMAGE)
+                        else:
+                            Stats().record('dmg_income',
+                                            attack_name=enemy.name + ' ' + 'Body',
+                                            damage=enemy.BODY_DAMAGE)
 
     def update(self):
         """Update the player's state"""

@@ -185,7 +185,7 @@ class E3(Enemy):
               speed_multiplier=bomb_info['speed_mul'],
               laser_type='bomb',
               bomb_info=bomb_info,
-              attack_name='Exploding Laser')
+              attack_name='Gunman Exploding-Laser')
 
         self.shots_fired = 1
         return True
@@ -214,7 +214,7 @@ class E3(Enemy):
               laser_type='homing', 
               target=target,
               turn_rate=self.random(homing_info['turn_rate']),
-              attack_name='Homing Laser')
+              attack_name='Gunman Homing-Laser')
         
         self.shots_fired += 1
         self.attack_timer.start(homing_info['delay'])
@@ -240,7 +240,7 @@ class E3(Enemy):
               damage=bounce_info['damage'], 
               radius=bounce_info['size'], 
               bounce_limit=bounce_info['bounce_limit'],
-              attack_name='Bouncing Laser')
+              attack_name='Gunman Bouncing-Laser')
 
         self.shots_fired = 1
         return True

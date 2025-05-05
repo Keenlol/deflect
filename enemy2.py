@@ -145,7 +145,7 @@ class E2(Enemy):
                           velocity=Vector2(0, 0), 
                           game=self.game,
                           damage=self.ATTACK_INFO['damage'],
-                          attack_name='Forward Shards')
+                          attack_name='Fencer Forward-Shards')
             self.shards.append(shard)
         
         self.anim.change_state("attack1")
@@ -205,7 +205,7 @@ class E2(Enemy):
                  game=self.game,
                  damage=self.ATTACK_INFO['damage'],
                  gravity=0.3,
-                 attack_name='Raining Shards')
+                 attack_name='Fencer Raining-Shards')
             
             self.rain_index += 1
             

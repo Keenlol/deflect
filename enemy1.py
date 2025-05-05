@@ -84,7 +84,7 @@ class E1(Enemy):
                        game=self.game,
                        damage=self.ATTACK_INFO['damage'],
                        speed_multiplier=pr['speed_mul'],
-                       attack_name='Radial Cast')
+                       attack_name='Wizard Radial-Cast')
 
         # First layer
         if self.attack_phase == 0:
@@ -124,7 +124,7 @@ class E1(Enemy):
                    game=self.game,
                    damage=self.ATTACK_INFO['damage'],
                    speed_multiplier=pb['speed_mul'],
-                   attack_name='Burst Cast')
+                   attack_name='Wizard Burst-Cast ')
         
         self.shots_fired += 1
         self.attack_timer.start(pb['delay'])
@@ -150,7 +150,7 @@ class E1(Enemy):
                    game=self.game,
                    damage=self.ATTACK_INFO['damage'],
                    speed_multiplier=pf['speed_mul'],
-                   attack_name='Track Cast')
+                   attack_name='Wizard Track-Cast')
         
         self.shots_fired += 1
         self.attack_timer.start(pf['delay'])
