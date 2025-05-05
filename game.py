@@ -14,6 +14,7 @@ from stats import Stats
 import tkinter as tk
 from tkinter import ttk, font
 import pandas as pd
+from sounds import Sounds
 
 class Game:
     # Game States
@@ -549,9 +550,6 @@ class Game:
                         self.toggle_pause()
                 elif self.game_state == Game.STATE_PLAYING:
                     if event.key == pg.K_SPACE:
-                        if self.game_over:
-                            self.setup_game()  # Reset game on space when game over
-                        else:
                             self.player.space_pressed = True
                     elif event.key == pg.K_LSHIFT and not self.game_over:
                         self.player.shift_pressed = True
@@ -788,11 +786,9 @@ class Game:
         stats.clear_stats()
         for button in self.groups['menu']:
             if button.text == 'Clear Data':
-                clear_button = button
-        
-        clear_button.text = 'Cleared!'
-        clear_button.idle_color = (111, 118, 130)
-        clear_button.hover_color = (111, 118, 130)
+                button.text = 'Cleared!'
+                button.idle_color = (111, 118, 130)
+                button.hover_color = (111, 118, 130)
 
 if __name__ == "__main__":
     game = Game()
