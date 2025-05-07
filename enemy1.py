@@ -5,10 +5,9 @@ from sounds import Sounds
 class E1(Enemy):
     # Attack properties
     ATTACK_INFO = {
-        'radial': {'speed': 8, 'speed_mul': 1, 'delay': 5/60},
-        'burst': {'speed': 20, 'speed_mul': 0.95, 'delay': 10/60, 'spread': 20},
-        'follow': {'speed': 0.1, 'speed_mul': 1.05, 'delay': 5/60},
-        'damage': 33,
+        'radial': {'speed': 8, 'speed_mul': 1, 'delay': 5/60, 'damage': 25},
+        'burst': {'speed': 20, 'speed_mul': 0.95, 'delay': 10/60, 'spread': 20, 'damage': 30},
+        'follow': {'speed': 0.1, 'speed_mul': 1.05, 'delay': 5/60, 'damage': 35},
         'radius': 10
     }
     
@@ -84,7 +83,7 @@ class E1(Enemy):
                 P_Ball(position=copy.deepcopy(self.position), 
                        velocity=velocity, 
                        game=self.game,
-                       damage=self.ATTACK_INFO['damage'],
+                       damage=self.ATTACK_INFO['radial']['damage'],
                        speed_multiplier=pr['speed_mul'],
                        attack_name='Wizard Radial-Cast')
 
@@ -124,7 +123,7 @@ class E1(Enemy):
             P_Ball(position=copy.deepcopy(self.position), 
                    velocity=velocity, 
                    game=self.game,
-                   damage=self.ATTACK_INFO['damage'],
+                   damage=self.ATTACK_INFO['burst']['damage'],
                    speed_multiplier=pb['speed_mul'],
                    attack_name='Wizard Burst-Cast ')
         
@@ -151,7 +150,7 @@ class E1(Enemy):
             P_Ball(position=copy.deepcopy(self.position), 
                    velocity=velocity, 
                    game=self.game,
-                   damage=self.ATTACK_INFO['damage'],
+                   damage=self.ATTACK_INFO['follow']['damage'],
                    speed_multiplier=pf['speed_mul'],
                    attack_name='Wizard Track-Cast')
         

@@ -23,7 +23,7 @@ class E3(Enemy):
         'bounce': {
             'speed': 20, 
             'bounce_limit': 5, 
-            'damage': 20, 
+            'damage': 35, 
             'size': 8
         },
         'bomb': {
@@ -33,8 +33,8 @@ class E3(Enemy):
             'explosion_count': 18,  # Number of lasers in explosion
             'explosion_speed': 15,
             'explosion_speed_mul': 0.95,
-            'initial_damage': 15,
-            'explosion_damage': 10,
+            'initial_damage': 20,
+            'explosion_damage': 3,
             'initial_size': 12,
             'explosion_size': 8
         },

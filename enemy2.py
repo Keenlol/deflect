@@ -10,10 +10,9 @@ class E2(Enemy):
     
     # Attack data
     ATTACK_INFO = {
-        'slash': {'speed': 10, 'dash_dur': 0.5, 'charge_dur': 0.5},
-        'shard': {'count': 12, 'delay': 0.5, 'radius': 100, 'height': 150, 'speed': 10},
-        'rain': {'count': 15, 'delay': 3/60, 'height': 250, 'width': 600},
-        'damage': 30
+        'slash': {'speed': 10, 'dash_dur': 0.5, 'charge_dur': 0.5, 'damage': 40},
+        'shard': {'count': 12, 'delay': 0.5, 'radius': 100, 'height': 150, 'speed': 10, 'damage': 20},
+        'rain': {'count': 15, 'delay': 3/60, 'height': 250, 'width': 600, 'damage': 30},
     }
     
     def __init__(self, x, y, game):
@@ -161,7 +160,7 @@ class E2(Enemy):
             shard = Shard(position=spawn_pos, 
                           velocity=Vector2(0, 0), 
                           game=self.game,
-                          damage=self.ATTACK_INFO['damage'],
+                          damage=self.ATTACK_INFO['shard']['damage'],
                           attack_name='Fencer Forward-Shards')
             self.shards.append(shard)
         
@@ -222,7 +221,7 @@ class E2(Enemy):
             Shard(position=spawn_pos, 
                  velocity=Vector2(0, -4), 
                  game=self.game,
-                 damage=self.ATTACK_INFO['damage'],
+                 damage=self.ATTACK_INFO['rain']['damage'],
                  gravity=0.3,
                  attack_name='Fencer Raining-Shards')
             
@@ -297,6 +296,9 @@ class E2(Enemy):
                     self.end_dash_attack()
                     self.game.freeze_and_shake(10, 7, 7)
                     self.spawn_shards(player.position)
+                    self.game.add_score(20)
+                    Sounds().play_sound('deflect_hard')
+                    Sounds().play_sound('deflect_hard')
                     Sounds().play_sound_random(['deflect1', 'deflect2', 'deflect3'])
     
     def spawn_shards(self, player_position):
@@ -308,7 +310,5 @@ class E2(Enemy):
             Shard(position=midpoint + Vector2(0, -0), 
                  velocity=velocity, 
                  game=self.game,
-                 damage=self.ATTACK_INFO['damage'], 
+                 damage=self.ATTACK_INFO['shard']['damage'], 
                  deflected=True)
-            Sounds().play_sound('deflect_sword')
-

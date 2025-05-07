@@ -26,8 +26,8 @@ class Game:
     STATE_STATISTICS = 4  # New state for statistics window
     
     # Spawn rate configuration
-    INITIAL_SPAWN_RANGE = (10.0, 12.0)  # Initial spawn time range in seconds
-    FINAL_SPAWN_RANGE = (3.0, 5.0)      # Final spawn time range in seconds
+    INITIAL_SPAWN_RANGE = (8.0, 10.0)  # Initial spawn time range in seconds
+    FINAL_SPAWN_RANGE = (2.0, 4.0)      # Final spawn time range in seconds
     DIFFICULTY_PEAK_TIME = 120          # Time in seconds when difficulty reaches maximum (2 minutes)
     
     def __init__(self):
@@ -78,6 +78,21 @@ class Game:
         # Setup the home menu
         self.setup_home_menu()
 
+    def add_score(self, score_add):
+        self.score = round(self.score + score_add)
+
+    def toggle_audio(self):
+        """Toggle the audio volume between 0% and 100% in 10% increments"""
+        sounds = Sounds()
+        new_volume_percent = sounds.adjust_volume(0.1)
+        
+        # Update button text to show new volume
+        # Find and update volume buttons in all menus
+        for button in self.groups['menu'].sprites() + self.groups['pause'].sprites():
+            if hasattr(button, 'is_volume_button') and button.is_volume_button:
+                button.text = f"Audio {new_volume_percent}%"
+                button.render()
+
     def setup_home_menu(self):
         """Setup the home menu with buttons"""
         # Clear the menu group
@@ -90,9 +105,10 @@ class Game:
         left_margin = 150
         
         # Calculate starting Y position (center of screen)
-        start_y = (C.WINDOW_HEIGHT - (button_height * 4 + button_spacing * 3)) // 2 + 40
+        start_y = (C.WINDOW_HEIGHT - (button_height * 5 + button_spacing * 4)) // 2 + 40
         button_x = left_margin + button_width//2
         offset = button_height + button_spacing
+        
         # Create Play button
         play_button = Button(
             position=Vector2(button_x, start_y),
@@ -117,9 +133,23 @@ class Game:
             text_size=C.BUTTON_FONT_SIZE
         )
         
+        # Create Audio button
+        current_volume = Sounds().get_volume_percent()
+        audio_button = Button(
+            position=Vector2(button_x, start_y + 2 * offset),
+            width=button_width,
+            height=button_height,
+            text=f"Audio {current_volume}%",
+            callback=self.toggle_audio,
+            idle_color=C.BUTTON_IDLE_COLOR,
+            hover_color=C.BUTTON_HOVER_COLOR['green'],
+            text_size=C.BUTTON_FONT_SIZE
+        )
+        audio_button.is_volume_button = True  # Add custom attribute to identify volume buttons
+        
         # Create Clear Data button
         clear_button = Button(
-            position=Vector2(button_x, start_y + 2 * offset),
+            position=Vector2(button_x, start_y + 3 * offset),
             width=button_width,
             height=button_height,
             text="Clear Data",
@@ -131,7 +161,7 @@ class Game:
         
         # Create Quit button
         quit_button = Button(
-            position=Vector2(button_x, start_y + 3 * offset),
+            position=Vector2(button_x, start_y + 4 * offset),
             width=button_width,
             height=button_height,
             text="Quit",
@@ -144,6 +174,7 @@ class Game:
         # Add buttons to menu group
         self.groups['menu'].add(play_button)
         self.groups['menu'].add(stats_button)
+        self.groups['menu'].add(audio_button)
         self.groups['menu'].add(clear_button)
         self.groups['menu'].add(quit_button)
     
@@ -158,8 +189,9 @@ class Game:
         button_spacing = C.BUTTON_SPACING
         
         # Calculate starting Y position (center of screen)
-        start_y = (C.WINDOW_HEIGHT - (button_height * 4 + button_spacing * 3)) // 2 + 80
+        start_y = (C.WINDOW_HEIGHT - (button_height * 5 + button_spacing * 4)) // 2 + 80
         offset = button_height + button_spacing
+        
         # Create Resume button
         resume_button = Button(
             position=Vector2(C.WINDOW_WIDTH//2, start_y),
@@ -186,7 +218,7 @@ class Game:
         
         # Create Statistics button
         stats_button = Button(
-            position=Vector2(C.WINDOW_WIDTH//2, start_y + 2*offset),
+            position=Vector2(C.WINDOW_WIDTH//2, start_y + 2 * offset),
             width=button_width,
             height=button_height,
             text="Statistics",
@@ -196,9 +228,23 @@ class Game:
             text_size=C.BUTTON_FONT_SIZE
         )
         
+        # Create Audio button
+        current_volume = Sounds().get_volume_percent()
+        audio_button = Button(
+            position=Vector2(C.WINDOW_WIDTH//2, start_y + 3 * offset),
+            width=button_width,
+            height=button_height,
+            text=f"Audio {current_volume}%",
+            callback=self.toggle_audio,
+            idle_color=C.BUTTON_IDLE_COLOR,
+            hover_color=C.BUTTON_HOVER_COLOR['green'],
+            text_size=C.BUTTON_FONT_SIZE
+        )
+        audio_button.is_volume_button = True  # Add custom attribute to identify volume buttons
+        
         # Create Menu button
         menu_button = Button(
-            position=Vector2(C.WINDOW_WIDTH//2, start_y + 3*offset),
+            position=Vector2(C.WINDOW_WIDTH//2, start_y + 4 * offset),
             width=button_width,
             height=button_height,
             text="Menu",
@@ -211,6 +257,7 @@ class Game:
         # Add buttons to pause menu group
         self.groups['pause'].add(resume_button)
         self.groups['pause'].add(retry_button)
+        self.groups['pause'].add(audio_button)
         self.groups['pause'].add(stats_button)
         self.groups['pause'].add(menu_button)
     

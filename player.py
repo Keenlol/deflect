@@ -84,6 +84,7 @@ class Player(pygame.sprite.Sprite):
         
         # Combat attributes
         self.MAX_HEALTH = 100
+        self.self_heal_timer = Timer(duration=1.0, owner=self, paused=False, auto_reset=True)
         self.health = self.MAX_HEALTH
         self.is_invincible = False
         self.INVINCIBLE_DURATION = 3.0  # 3 seconds (was 180 frames)
@@ -404,7 +405,8 @@ class Player(pygame.sprite.Sprite):
                     collision_width_sq = collision_width * collision_width
                     
                     if dist_sq < collision_width_sq:
-                        self.take_damage(bullet.damage, bullet_pos)
+                        damage = bullet.damage * bullet.speed if bullet.attack_name == 'Gunman Exploding-Laser' else bullet.damage
+                        self.take_damage(damage, bullet_pos)
                         Stats().record('dmg_income',
                                       attack_name=bullet.attack_name,
                                       damage=bullet.damage)
@@ -415,7 +417,7 @@ class Player(pygame.sprite.Sprite):
                 elif dodge_pos:
                     try:
                         # Skip already counted projectiles
-                        if bullet._Projectile__tag.get('dodge_counted_by') != id(self):
+                        if bullet.dodge_counted_by != id(self):
                             dx = bullet_pos.x - dodge_pos.x
                             dy = bullet_pos.y - dodge_pos.y
                             dist_sq = dx*dx + dy*dy
@@ -423,7 +425,7 @@ class Player(pygame.sprite.Sprite):
                             
                             if dist_sq < dodge_width_sq:
                                 self.dodge_damage_evaded += bullet.damage
-                                bullet._Projectile__tag['dodge_counted_by'] = id(self)
+                                bullet.dodge_counted_by = id(self)
                                 # Add to processed set
                                 bullet_cache.add(bullet)
                     except (AttributeError, KeyError):
@@ -469,12 +471,13 @@ class Player(pygame.sprite.Sprite):
                     collision_dist_sq = collision_dist * collision_dist
                     
                     if dist_sq < collision_dist_sq:
-                        self.take_damage(enemy.BODY_DAMAGE, enemy_pos)
                         if enemy.name == 'Fencer' and enemy.is_dashing:
+                            self.take_damage(enemy.ATTACK_INFO['slash']['damage'], enemy_pos)
                             Stats().record('dmg_income',
                                             attack_name='Fencer Slash',
                                             damage=enemy.BODY_DAMAGE)
                         else:
+                            self.take_damage(enemy.BODY_DAMAGE, enemy_pos)
                             Stats().record('dmg_income',
                                             attack_name=enemy.name + ' ' + 'Body',
                                             damage=enemy.BODY_DAMAGE)
@@ -482,6 +485,10 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         """Update the player's state"""
         # Check for timer completions
+        if self.self_heal_timer.just_completed:
+            self.health += 1
+            self.health = min(self.health, self.MAX_HEALTH)
+
         if self.dodge_timer.is_completed and self.is_dodging:
             self.is_dodging = False
             self.velocity.y *= 0.5

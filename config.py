@@ -20,7 +20,8 @@ class Config:
     BUTTON_IDLE_COLOR = (154, 160, 175)
     BUTTON_HOVER_COLOR = {'blue':(94, 175, 255),
                           'yellow':(255, 205, 120),
-                          'red':(224, 79, 74)}
-    BUTTON_WIDTH = 300
+                          'red':(224, 79, 74),
+                          'green':(71, 201, 105)}
+    BUTTON_WIDTH = 320
     BUTTON_HEIGHT = 70
     BUTTON_SPACING = 8

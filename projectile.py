@@ -72,6 +72,34 @@ class Projectile(pygame.sprite.Sprite):
     def attack_name(self):
         return self.__tag['attack_name']
 
+    @property
+    def deflect_id(self):
+        return self.__tag['deflect_id']
+    
+    @deflect_id.setter
+    def deflect_id(self, value):
+        self.__tag['deflect_id'] = value
+    
+    @property
+    def damage_recorded(self):
+        return self.__tag['damage_recorded']
+    
+    @damage_recorded.setter
+    def damage_recorded(self, value:bool):
+        self.__tag['damage_recorded'] = value
+
+    @property
+    def dodge_counted_by(self):
+        return self.__tag['dodge_counted_by']
+    
+    @dodge_counted_by.setter
+    def dodge_counted_by(self, value):
+        self.__tag['dodge_counted_by'] = value
+
+    @property
+    def speed(self):
+        return self.velocity.length()
+
     def deflect_action(self):
         """ Do something when deflected, in case extra actions are needed"""
         pass
@@ -81,11 +109,11 @@ class Projectile(pygame.sprite.Sprite):
         # Check if projectile is out of screen bounds
         if (self.position.x < -100 or 
             self.position.x > C.WINDOW_WIDTH + 100 or 
-            self.position.y > C.WINDOW_HEIGHT + 100):  # Only check bottom and sides
+            self.position.y > C.WINDOW_HEIGHT + 100):
             return True
             
         # Check if projectile has hit the ground
-        if self.position.y + self.radius/2 > C.WINDOW_HEIGHT - C.FLOOR_HEIGHT:
+        if self.position.y + self.radius/2 > C.WINDOW_HEIGHT - C.FLOOR_HEIGHT + 100:
             return True
             
         return False
@@ -101,7 +129,7 @@ class Projectile(pygame.sprite.Sprite):
         self.position += self.velocity
         self.rect.center = self.position
 
-        if self.velocity.length() != 0:
+        if self.speed != 0:
             self.velocity.clamp_magnitude_ip(self.SPEED_RANGE[0], self.SPEED_RANGE[1])
 
     def update(self):
@@ -113,7 +141,8 @@ class Projectile(pygame.sprite.Sprite):
         #     self.kill()
 
         self.apply_physics()
-        self.check_bounds()
+        if self.check_bounds():
+            self.kill()
         self.draw()
 
 
@@ -158,10 +187,9 @@ class P_Ball(Projectile):
         # Clear the surface
         self.image.fill((0, 0, 0, 0))
         center = (self.surface_size // 2, self.surface_size // 2)
-        speed = self.velocity.length()
         
-        if speed > self.STRETCH_THRESHOLD and speed > 0.1:
-            stretch_factor = min(1.0 + (speed - self.STRETCH_THRESHOLD) / 10.0,
+        if self.speed > self.STRETCH_THRESHOLD and self.speed > 0.1:
+            stretch_factor = min(1.0 + (self.speed - self.STRETCH_THRESHOLD) / 10.0,
                                  self.MAX_STRETCH_RATIO)
             squash_factor = max(1.0 / stretch_factor,
                                 self.MIN_SQUASH_RATIO)
@@ -342,10 +370,9 @@ class Laser(Projectile):
         # Clear the surface
         self.image.fill((0, 0, 0, 0))
         center = (self.surface_size // 2, self.surface_size // 2)
-        speed = self.velocity.length()
         
         # Stretch and squash based on velocity
-        stretch_factor = (speed / self.STRETCH_THRESHOLD)
+        stretch_factor = (self.speed / self.STRETCH_THRESHOLD)
         
         angle_rad = math.atan2(self.velocity.y, self.velocity.x)
         angle_deg = math.degrees(angle_rad)
@@ -402,7 +429,6 @@ class Laser(Projectile):
                 
             # Check if max bounces reached
             if self.bounces <= 0:
-                self.kill()
                 return True
                 
         return False
@@ -431,8 +457,7 @@ class Laser(Projectile):
         
         # Update velocity direction
         new_angle = math.radians(current_angle + turn_amount)
-        speed = self.velocity.length()
-        self.velocity = Vector2(math.cos(new_angle), math.sin(new_angle)) * speed
+        self.velocity = Vector2(math.cos(new_angle), math.sin(new_angle)) * self.speed
 
     def explodes(self):
         """Create explosion effect for bomb-type lasers"""

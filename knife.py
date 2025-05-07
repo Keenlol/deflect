@@ -149,6 +149,7 @@ class Knife(pygame.sprite.Sprite):
             if not bullet.is_deflected:  # Only check non-deflected bullets
                 distance = (bullet.position - self.position).length()
                 if distance <= self.width/2:
+                    self.player.game.add_score(bullet.damage/2)
                     self.deflect_bullet(bullet)
     
     def deflect_bullet(self, bullet):
@@ -160,14 +161,16 @@ class Knife(pygame.sprite.Sprite):
         angle_rad = math.radians(self.angle + random.randrange(-error_deg, error_deg))
 
         # Set the deflect_id on the bullet to track which deflection batch it belongs to
-        bullet._Projectile__tag['deflect_id'] = self.current_deflect_id
-        bullet._Projectile__tag['damage_recorded'] = False
+        bullet.deflect_id = self.current_deflect_id
+        bullet.damage_recorded = False
 
         bullet.is_deflected = True
         bullet.SPEED_RANGE[0] *= self.DEFLECTED_SPEED_MUL
         bullet.SPEED_RANGE[1] *= self.DEFLECTED_SPEED_MUL
-        bullet.velocity = Vector2(math.cos(angle_rad), -math.sin(angle_rad)) * (bullet.velocity.length() * self.DEFLECTED_SPEED_MUL)
+        bullet.velocity = Vector2(math.cos(angle_rad), -math.sin(angle_rad)) * (bullet.speed * self.DEFLECTED_SPEED_MUL)
         bullet.draw()
+        if bullet.attack_name in ('Gunman Bouncing-Laser','Wizard Track-Cast'):
+            Sounds().play_sound('deflect_hard') # Make it sounds hard
         Sounds().play_sound_random(['deflect1', 'deflect2', 'deflect3'])
     
     def record_deflected_damage(self, deflect_id, damage):

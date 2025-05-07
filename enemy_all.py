@@ -162,7 +162,7 @@ class Enemy(pygame.sprite.Sprite):
                 distance = (bullet.position - self.position).length()
                 if distance < self.width/2:
                     self.take_damage(bullet.damage)
-                    self.start_knockback(bullet.velocity, bullet.velocity.length() * 0.1)
+                    self.start_knockback(bullet.velocity, bullet.speed * 0.1)
                     
                     # If the bullet has a deflect_id, record the damage for this deflection batch
                     if hasattr(bullet, '_Projectile__tag') and 'deflect_id' in bullet._Projectile__tag:
@@ -211,7 +211,7 @@ class Enemy(pygame.sprite.Sprite):
         self.update_animation()
 
     def kill(self):
-        self.game.score += 150
+        self.game.add_score(200)
         self.game.enemies_killed += 1
         Stats().record(stat_type='enemy_lifespan',
                      enemy_type=self.name,
