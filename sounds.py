@@ -23,12 +23,13 @@ class Sounds:
             
         self.__initialized = True
         
-        # Initialize pygame mixer
-        pg.mixer.init()
+        # Initialize pygame mixer with more channels
+        pg.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
+        pg.mixer.set_num_channels(32)  # Increase number of channels
         
         # Set default volumes
         self.music_volume = 0.5
-        self.sound_volume = 10.0
+        self.sound_volume = 0.7
         
         # Sound directories
         self.sound_dir = "sounds/effect"
@@ -37,6 +38,10 @@ class Sounds:
         # Create dictionaries to store loaded sounds
         self.sounds = {}
         self.music = {}
+        
+        # Channel management
+        self.channels = [pg.mixer.Channel(i) for i in range(pg.mixer.get_num_channels())]
+        self.channel_usage = {}  # Track which sounds are using which channels
         
         # Make sure directories exist
         os.makedirs(self.sound_dir, exist_ok=True)
@@ -60,7 +65,23 @@ class Sounds:
                 name = os.path.splitext(filename)[0]
                 self.music[name] = os.path.join(self.music_dir, filename)
     
+    def _get_available_channel(self):
+        """Get an available channel for playing a sound"""
+        # First try to find a completely free channel
+        for i, channel in enumerate(self.channels):
+            if not channel.get_busy():
+                return i
+        
+        # If no free channels, find the oldest playing sound and use its channel
+        if self.channel_usage:
+            oldest_channel = min(self.channel_usage.items(), key=lambda x: x[1])[0]
+            return oldest_channel
+        
+        # If all else fails, use channel 0
+        return 0
+    
     def play_sound_random(self, sound_names:list):
+        """Play a random sound from the given list of sound names"""
         sound = random.choice(sound_names)
         self.play_sound(sound)
 
@@ -71,7 +92,9 @@ class Sounds:
             sound_name (str): Name of the sound (filename without extension)
         """
         if sound_name in self.sounds:
-            self.sounds[sound_name].play()
+            channel_num = self._get_available_channel()
+            self.channels[channel_num].play(self.sounds[sound_name])
+            self.channel_usage[channel_num] = pg.time.get_ticks()
     
     def play_music(self, music_name, loops=-1):
         """Play music in loop or specified number of times
@@ -111,6 +134,7 @@ class Sounds:
         Args:
             volume (float): Volume from 0.0 to 1.0
         """
+        self.music_volume = max(0.0, min(1.0, volume))
         pg.mixer.music.set_volume(self.music_volume)
     
     def set_sound_volume(self, volume):
@@ -119,6 +143,7 @@ class Sounds:
         Args:
             volume (float): Volume from 0.0 to 1.0
         """
+        self.sound_volume = max(0.0, min(1.0, volume))
         for sound in self.sounds.values():
             sound.set_volume(self.sound_volume)
     

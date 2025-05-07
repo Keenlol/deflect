@@ -35,7 +35,7 @@ class Projectile(pygame.sprite.Sprite):
         self.DEFLECTED_VELOCITY = self.velocity * 1.1
         self.SPEED_RANGE = speed_range
         self.is_deflected = deflected
-        self.COLOR_SET = {'red': (255, 0, 0), 'blue': (0, 100, 255)}
+        self.COLOR_SET = {'red': (230, 49, 49), 'blue': (0, 100, 255)}
         self.color = self.COLOR_SET['blue'] if self.is_deflected else self.COLOR_SET['red']
         self.game = game
 
@@ -259,10 +259,8 @@ class Shard(Projectile):
         if self.is_deflected and self.GRAVITY == 0:
             self.GRAVITY = random.uniform(0.2, 0.5)
             self.spin_speed = self.DEFLECTED_SPIN
-        
-        # Update position
-        super().update()
 
+        super().update()
 
 class Laser(Projectile):
     def __init__(self, 

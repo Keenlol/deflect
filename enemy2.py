@@ -84,6 +84,7 @@ class E2(Enemy):
         
         # Start charge phase
         self.attack_timer.start(self.ATTACK_INFO['slash']['charge_dur'])
+        Sounds().play_sound('e2_charge')
 
     def end_dash_attack(self):
         self.weapon_active = False
@@ -109,6 +110,8 @@ class E2(Enemy):
                 # Start dash phase
                 self.attack_timer.start(self.ATTACK_INFO['slash']['dash_dur'])
                 self.is_dashing = True
+
+                Sounds().play_sound('e2_slash')
                 return False
                 
         elif self.is_dashing:  # Dashing phase
@@ -151,6 +154,7 @@ class E2(Enemy):
         
         self.anim.change_state("attack1")
         self.velocity.x = 0
+        Sounds().play_sound_random(['e2_shards_spawn1','e2_shards_spawn2'])
     
     def shard_attack(self, target):
         if not self.attack_timer.is_completed:
@@ -158,6 +162,7 @@ class E2(Enemy):
 
         if self.attack_timer.just_completed:
             # Launch all shards
+            Sounds().play_sound('e2_shards_push')
             for shard in self.shards:
                 to_target = (target.position - shard.position).normalize()
                 angle = math.degrees(math.atan2(to_target.y, to_target.x))
@@ -209,7 +214,7 @@ class E2(Enemy):
                  attack_name='Fencer Raining-Shards')
             
             self.rain_index += 1
-            
+            Sounds().play_sound_random(['e2_shards_spawn1','e2_shards_spawn2'])
             if self.rain_index < self.ATTACK_INFO['rain']['count']:
                 self.attack_timer.start(self.ATTACK_INFO['rain']['delay'])
         
