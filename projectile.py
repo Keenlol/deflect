@@ -4,6 +4,7 @@ from config import Config as C
 import math
 import random
 from datetime import datetime
+from sounds import Sounds
 
 class Projectile(pygame.sprite.Sprite):
     def __init__(self, 
@@ -346,12 +347,15 @@ class Laser(Projectile):
     def check_bounds(self):
         """Check if projectile is out of bounds and handle bouncing if enabled"""
         if self.bounces > 0:
+            bounces = self.position.x <= 0 or self.position.x >= C.WINDOW_WIDTH or self.position.y <= 0 or self.position.y >= C.WINDOW_HEIGHT - C.FLOOR_HEIGHT
+            if self.attack_name == 'Gunman Bouncing-Laser' and bounces:
+                Sounds().play_sound_random(['e3_bounce1', 'e3_bounce2'])
             # Bounce off left edge
             if self.position.x <= 0:
                 self.position.x = 0
                 self.velocity.x = abs(self.velocity.x)  # Bounce right
                 self.bounces -= 1
-                
+
             # Bounce off right edge
             elif self.position.x >= C.WINDOW_WIDTH:
                 self.position.x = C.WINDOW_WIDTH
@@ -437,4 +441,5 @@ class Laser(Projectile):
         """Handle special effects when laser is destroyed"""
         if self.laser_type == 'bomb':
             self.explodes()
+            Sounds().play_sound('e3_explode')
         return super().kill()        

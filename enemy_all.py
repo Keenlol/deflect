@@ -7,6 +7,7 @@ from animation import Animation
 from timer import Timer
 from datetime import datetime
 from stats import Stats
+from sounds import Sounds
 
 import random
 import math
@@ -116,6 +117,7 @@ class Enemy(pygame.sprite.Sprite):
         self.image = self.anim.get_current_frame(self.facing_right)
 
     def take_damage(self, amount):
+        Sounds().play_sound_random(['enemy_damaged1', 'enemy_damaged2'])
         self.health -= amount
         self.game.freeze_and_shake(0, 3, 5)
         if self.is_alive:

@@ -155,6 +155,7 @@ class Player(pygame.sprite.Sprite):
             #     self.velocity.y = self.DODGE_SPEED * 0.3 * (1 if self.velocity.y > 0 else -1)
             
             self.anim.change_state("dodge")
+            Sounds().play_sound_random(['dodge1', 'dodge2'])
     
     def handle_input(self):
         """Handle player input for movement and actions"""
@@ -166,7 +167,7 @@ class Player(pygame.sprite.Sprite):
         
         # Deflecting
         if self.mouse_clicked and not self.is_dodging and self.can_deflect:
-            Sounds().play_sound('slash')
+            Sounds().play_sound_random(['slash1', 'slash2', 'slash3'])
             mouse_pos = pygame.mouse.get_pos()
             self.knife.activate(mouse_pos)
             self.anim.change_state("deflect")

@@ -1,5 +1,6 @@
 from enemy_all import *
 from timer import Timer
+from sounds import Sounds
 
 class E1(Enemy):
     # Attack properties
@@ -76,6 +77,7 @@ class E1(Enemy):
         """Shoot projectiles in a radial pattern"""
         pr = self.ATTACK_INFO['radial']
         def shoot_radial_layer(inerval_deg, offset_deg=0):
+            Sounds().play_sound('e1_radial')
             for angle in range(0, 360, inerval_deg):
                 rad_angle = math.radians(angle + offset_deg)
                 velocity = Vector2(math.cos(rad_angle), math.sin(rad_angle)) * pr['speed']
@@ -128,6 +130,7 @@ class E1(Enemy):
         
         self.shots_fired += 1
         self.attack_timer.start(pb['delay'])
+        Sounds().play_sound_random(['e1_cast1', 'e1_cast2'])
         return False
     
     def shoot_follow(self, target):
@@ -154,6 +157,7 @@ class E1(Enemy):
         
         self.shots_fired += 1
         self.attack_timer.start(pf['delay'])
+        Sounds().play_sound_random(['e1_cast1', 'e1_cast2'])
         return False
     
     def start_attack(self):

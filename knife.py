@@ -168,7 +168,7 @@ class Knife(pygame.sprite.Sprite):
         bullet.SPEED_RANGE[1] *= self.DEFLECTED_SPEED_MUL
         bullet.velocity = Vector2(math.cos(angle_rad), -math.sin(angle_rad)) * (bullet.velocity.length() * self.DEFLECTED_SPEED_MUL)
         bullet.draw()
-        Sounds().play_sound('deflect')
+        Sounds().play_sound_random(['deflect1', 'deflect2', 'deflect3'])
     
     def record_deflected_damage(self, deflect_id, damage):
         """Record damage done by deflected projectiles in the same batch"""

@@ -4,6 +4,7 @@ from animation import Animation
 import math
 from config import Config as C
 from timer import Timer
+from sounds import Sounds
 
 class UI(pygame.sprite.Sprite):
     def __init__(self, position: Vector2, width: int, height: int):
@@ -253,6 +254,7 @@ class Button(UI):
         if self.is_hovered != previous_hover_state:
             # State changed
             if self.is_hovered:
+                Sounds().play_sound('button_hover')
                 self.hover_direction = 1
                 self.unhover_timer.stop()
                 self.hover_timer.start()
@@ -267,6 +269,7 @@ class Button(UI):
         # Handle mouse clicks - only register on button release
         mouse_buttons = pygame.mouse.get_pressed()
         if self.is_hovered and not mouse_buttons[0] and self.was_pressed and self.callback:
+            Sounds().play_sound('button_click')
             self.callback()
             
         # Track if button was pressed

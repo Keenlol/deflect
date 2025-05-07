@@ -1,5 +1,6 @@
 import pygame as pg
 import os
+import random
 
 class Sounds:
     """
@@ -27,7 +28,7 @@ class Sounds:
         
         # Set default volumes
         self.music_volume = 0.5
-        self.sound_volume = 0.7
+        self.sound_volume = 10.0
         
         # Sound directories
         self.sound_dir = "sounds/effect"
@@ -59,6 +60,10 @@ class Sounds:
                 name = os.path.splitext(filename)[0]
                 self.music[name] = os.path.join(self.music_dir, filename)
     
+    def play_sound_random(self, sound_names:list):
+        sound = random.choice(sound_names)
+        self.play_sound(sound)
+
     def play_sound(self, sound_name):
         """Play a sound effect once
         
@@ -106,7 +111,6 @@ class Sounds:
         Args:
             volume (float): Volume from 0.0 to 1.0
         """
-        self.music_volume = max(0.0, min(1.0, volume))
         pg.mixer.music.set_volume(self.music_volume)
     
     def set_sound_volume(self, volume):
@@ -115,7 +119,6 @@ class Sounds:
         Args:
             volume (float): Volume from 0.0 to 1.0
         """
-        self.sound_volume = max(0.0, min(1.0, volume))
         for sound in self.sounds.values():
             sound.set_volume(self.sound_volume)
     

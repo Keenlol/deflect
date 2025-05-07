@@ -163,6 +163,7 @@ class E3(Enemy):
             
             # Check if it's time to start aiming
             if self.aim_cooldown_timer.just_completed:
+                Sounds().play_sound('e3_aim')
                 self.is_aiming = True
                 self.aim_timer.start()
 
@@ -188,6 +189,7 @@ class E3(Enemy):
               attack_name='Gunman Exploding-Laser')
 
         self.shots_fired = 1
+        Sounds().play_sound_random(['e3_shoot1', 'e3_shoot2'])
         return True
 
     def fire_homing(self, target):
@@ -205,7 +207,7 @@ class E3(Enemy):
         
         gun_position = Vector2(self.position.x + (self.width/2 if self.facing_right else -self.width/2), 
                              self.position.y)
-        
+        Sounds().play_sound_random(['e3_shoot1', 'e3_shoot2'])
         Laser(position=gun_position, 
               velocity=direction * self.random(homing_info['speed']),
               game=self.game,
@@ -218,7 +220,7 @@ class E3(Enemy):
         
         self.shots_fired += 1
         self.attack_timer.start(homing_info['delay'])
-        
+        Sounds().play_sound_random(['e3_shoot1', 'e3_shoot2'])
         return False
 
     def fire_laser(self, target):
@@ -243,4 +245,5 @@ class E3(Enemy):
               attack_name='Gunman Bouncing-Laser')
 
         self.shots_fired = 1
+        Sounds().play_sound_random(['e3_shoot1', 'e3_shoot2'])
         return True

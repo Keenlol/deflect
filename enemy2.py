@@ -2,6 +2,7 @@ from enemy_all import *
 import math
 from player import *
 from timer import Timer
+from sounds import Sounds
 
 class E2(Enemy):
     # Constants
@@ -278,6 +279,7 @@ class E2(Enemy):
                     self.end_dash_attack()
                     self.game.freeze_and_shake(10, 7, 7)
                     self.spawn_shards(player.position)
+                    Sounds().play_sound_random(['deflect1', 'deflect2', 'deflect3'])
     
     def spawn_shards(self, player_position):
         midpoint = (self.position + player_position) / 2
@@ -290,4 +292,5 @@ class E2(Enemy):
                  game=self.game,
                  damage=self.ATTACK_INFO['damage'], 
                  deflected=True)
+            Sounds().play_sound('deflect_sword')
 
