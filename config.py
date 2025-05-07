@@ -21,3 +21,6 @@ class Config:
     BUTTON_HOVER_COLOR = {'blue':(94, 175, 255),
                           'yellow':(255, 205, 120),
                           'red':(224, 79, 74)}
+    BUTTON_WIDTH = 300
+    BUTTON_HEIGHT = 70
+    BUTTON_SPACING = 8

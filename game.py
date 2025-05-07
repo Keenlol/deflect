@@ -84,18 +84,18 @@ class Game:
         self.groups['menu'].empty()
         
         # Define button dimensions
-        button_width = 300
-        button_height = 80
-        button_spacing = 8
+        button_width = C.BUTTON_WIDTH
+        button_height = C.BUTTON_HEIGHT
+        button_spacing = C.BUTTON_SPACING
         left_margin = 150
         
         # Calculate starting Y position (center of screen)
-        start_y = (C.WINDOW_HEIGHT - (button_height * 4 + button_spacing * 3)) // 2
+        start_y = (C.WINDOW_HEIGHT - (button_height * 4 + button_spacing * 3)) // 2 + 40
         button_x = left_margin + button_width//2
         offset = button_height + button_spacing
         # Create Play button
         play_button = Button(
-            position=Vector2(button_x, start_y + button_height//2),
+            position=Vector2(button_x, start_y),
             width=button_width,
             height=button_height,
             text="Play",
@@ -107,7 +107,7 @@ class Game:
         
         # Create Statistics button
         stats_button = Button(
-            position=Vector2(button_x, start_y + offset + button_height//2),
+            position=Vector2(button_x, start_y + offset),
             width=button_width,
             height=button_height,
             text="Statistics",
@@ -119,7 +119,7 @@ class Game:
         
         # Create Clear Data button
         clear_button = Button(
-            position=Vector2(button_x, start_y + 2 * offset + button_height//2),
+            position=Vector2(button_x, start_y + 2 * offset),
             width=button_width,
             height=button_height,
             text="Clear Data",
@@ -131,7 +131,7 @@ class Game:
         
         # Create Quit button
         quit_button = Button(
-            position=Vector2(button_x, start_y + 3 * offset + button_height//2),
+            position=Vector2(button_x, start_y + 3 * offset),
             width=button_width,
             height=button_height,
             text="Quit",
@@ -153,16 +153,16 @@ class Game:
         self.groups['pause'].empty()
         
         # Define button dimensions
-        button_width = 300
-        button_height = 70
-        button_spacing = 10
+        button_width = C.BUTTON_WIDTH
+        button_height = C.BUTTON_HEIGHT
+        button_spacing = C.BUTTON_SPACING
         
         # Calculate starting Y position (center of screen)
-        start_y = (C.WINDOW_HEIGHT - (button_height * 4 + button_spacing * 3)) // 2 + 30
-        
+        start_y = (C.WINDOW_HEIGHT - (button_height * 4 + button_spacing * 3)) // 2 + 80
+        offset = button_height + button_spacing
         # Create Resume button
         resume_button = Button(
-            position=Vector2(C.WINDOW_WIDTH//2, start_y + button_height//2),
+            position=Vector2(C.WINDOW_WIDTH//2, start_y),
             width=button_width,
             height=button_height,
             text="Resume",
@@ -174,7 +174,7 @@ class Game:
         
         # Create Retry button
         retry_button = Button(
-            position=Vector2(C.WINDOW_WIDTH//2, start_y + button_height + button_spacing + button_height//2),
+            position=Vector2(C.WINDOW_WIDTH//2, start_y + offset),
             width=button_width,
             height=button_height,
             text="Retry",
@@ -186,7 +186,7 @@ class Game:
         
         # Create Statistics button
         stats_button = Button(
-            position=Vector2(C.WINDOW_WIDTH//2, start_y + 2*(button_height + button_spacing) + button_height//2),
+            position=Vector2(C.WINDOW_WIDTH//2, start_y + 2*offset),
             width=button_width,
             height=button_height,
             text="Statistics",
@@ -198,7 +198,7 @@ class Game:
         
         # Create Menu button
         menu_button = Button(
-            position=Vector2(C.WINDOW_WIDTH//2, start_y + 3*(button_height + button_spacing) + button_height//2),
+            position=Vector2(C.WINDOW_WIDTH//2, start_y + 3*offset),
             width=button_width,
             height=button_height,
             text="Menu",
@@ -223,13 +223,13 @@ class Game:
         self.groups['gameover'].empty()
         
         # Define button dimensions
-        button_width = 300
-        button_height = 70
-        button_spacing = 10
+        button_width = C.BUTTON_WIDTH
+        button_height = C.BUTTON_HEIGHT
+        button_spacing = C.BUTTON_SPACING
         
         # Calculate starting Y position for buttons (below score text)
         start_y = C.WINDOW_HEIGHT//2 + 80  # Move down to make room for more stats
-        
+        offset = button_height + button_spacing
         # Create Retry button
         retry_button = Button(
             position=Vector2(C.WINDOW_WIDTH//2, start_y),
@@ -244,7 +244,7 @@ class Game:
         
         # Create Statistics button
         stats_button = Button(
-            position=Vector2(C.WINDOW_WIDTH//2, start_y + button_height + button_spacing),
+            position=Vector2(C.WINDOW_WIDTH//2, start_y + offset),
             width=button_width,
             height=button_height,
             text="Statistics",
@@ -256,7 +256,7 @@ class Game:
         
         # Create Menu button
         menu_button = Button(
-            position=Vector2(C.WINDOW_WIDTH//2, start_y + 2*(button_height + button_spacing)),
+            position=Vector2(C.WINDOW_WIDTH//2, start_y + 2*offset),
             width=button_width,
             height=button_height,
             text="Menu",
@@ -747,8 +747,8 @@ class Game:
             if self.game_state == Game.STATE_PAUSED:
                 # Create semi-transparent overlay
                 overlay = pg.Surface((C.WINDOW_WIDTH, C.WINDOW_HEIGHT))
-                overlay.fill((0, 0, 0))
-                overlay.set_alpha(150)  # Semi-transparent
+                overlay.fill(C.BACKGROUND_COLOR)
+                overlay.set_alpha(200)
                 self.screen.blit(overlay, (0, 0))
                 
                 # Draw "PAUSED" text
@@ -767,8 +767,8 @@ class Game:
             if self.game_state == Game.STATE_GAMEOVER:
                 # Create dark overlay
                 overlay = pg.Surface((C.WINDOW_WIDTH, C.WINDOW_HEIGHT))
-                overlay.fill((0, 0, 0))
-                overlay.set_alpha(160)  # 60% transparency
+                overlay.fill(C.BACKGROUND_COLOR)
+                overlay.set_alpha(200)
                 self.screen.blit(overlay, (0, 0))
                 
                 # Draw game over text and stats
@@ -783,18 +783,18 @@ class Game:
                 score = self.score + (self.elapsed_time.seconds * 10)
 
                 game_over_text = title_font.render('GAME OVER', True, (255, 255, 255))
-                score_text = stats_font.render(f'SCORE       --       {score: <7}', True, (255, 255, 255))
-                time_text = stats_font.render(f'  TIME       --       {self.format_time(self.elapsed_time): <6}', True, (255, 255, 255))
-                kills_text = stats_font.render(f'KILLS       --       {self.enemies_killed: <8}', True, (255, 255, 255))
+                score_text = stats_font.render(f'SCORE  ----------  {score: <7}', True, (255, 255, 255))
+                time_text = stats_font.render(f'  TIME  ----------  {self.format_time(self.elapsed_time): <6}', True, (255, 255, 255))
+                kills_text = stats_font.render(f'KILLS  ----------  {self.enemies_killed: <8}', True, (255, 255, 255))
                 
                 # Position text
                 text_y = C.WINDOW_HEIGHT // 2 - 220
-                text_x = C.WINDOW_WIDTH // 2 + 10
+                text_x = C.WINDOW_WIDTH // 2
                 spacing = 50
                 self.screen.blit(game_over_text, game_over_text.get_rect(center=(text_x, text_y)))
-                self.screen.blit(score_text, score_text.get_rect(center=(text_x, text_y + spacing*1.5)))
-                self.screen.blit(time_text, time_text.get_rect(center=(text_x, text_y + spacing*2.5)))
-                self.screen.blit(kills_text, kills_text.get_rect(center=(text_x, text_y + spacing*3.5)))
+                self.screen.blit(score_text, score_text.get_rect(center=(text_x + 5, text_y + spacing*2)))
+                self.screen.blit(time_text, time_text.get_rect(center=(text_x + 5, text_y + spacing*3)))
+                self.screen.blit(kills_text, kills_text.get_rect(center=(text_x + 5, text_y + spacing*4)))
                 
                 # Draw game over menu buttons
                 self.groups['gameover'].draw(self.screen)

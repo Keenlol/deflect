@@ -59,7 +59,7 @@ class Stats:
         'heatmap': 'plasma',  # A colormap that looks good on dark backgrounds
         'pie': {
             'edge_color': 'black',
-            'colors': ['#9b2323', '#af5c1d', '#b6a520', '#18a04a', '#1f8fae', '#1c4fb5', '#1c4fb5', '#b83c70']  # Bright pastel colors
+            'colors': ['#5e2222', '#5e3a22', '#5e4922', '#5c5e22', '#225e3d', '#22485e', '#22315e', '#35225e', '#52225e', '#6b2947']  # Bright pastel colors
         },
         'boxplot': 'Set2',
         'histogram': '#1f8fae',  # Dodger blue
