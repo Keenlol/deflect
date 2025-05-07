@@ -11,7 +11,7 @@ class E2(Enemy):
     # Attack data
     ATTACK_INFO = {
         'slash': {'speed': 10, 'dash_dur': 0.5, 'charge_dur': 0.5},
-        'shard': {'count': 10, 'delay': 0.5, 'radius': 100, 'height': 100, 'speed': 10},
+        'shard': {'count': 12, 'delay': 0.5, 'radius': 100, 'height': 150, 'speed': 10},
         'rain': {'count': 15, 'delay': 3/60, 'height': 250, 'width': 600},
         'damage': 30
     }
@@ -136,14 +136,27 @@ class E2(Enemy):
         self.attack_timer.start(self.ATTACK_INFO['shard']['delay'])
         self.shards.clear()
         
-        # Spawn shards above head
-        height = self.ATTACK_INFO['shard']['height']
+        # Create shards in a circular formation
         radius = self.ATTACK_INFO['shard']['radius']
-        for _ in range(self.ATTACK_INFO['shard']['count']):
+        shard_count = self.ATTACK_INFO['shard']['count']
+        
+        # Calculate center position (above the enemy's head)
+        center_pos = Vector2(
+            self.position.x,
+            self.position.y - self.ATTACK_INFO['shard']['height']
+        )
+        
+        # Create shards arranged in a circle
+        for i in range(shard_count):
+            # Calculate angle for uniform distribution around the circle
+            angle = (2 * math.pi * i) / shard_count
+            
+            # Calculate position on the circle
             spawn_pos = Vector2(
-                self.position.x + self.random((-radius, radius)),
-                self.position.y - height + self.random((-radius, radius))
+                center_pos.x + radius * math.cos(angle),
+                center_pos.y + radius * math.sin(angle)
             )
+            
             # Initialize with zero velocity
             shard = Shard(position=spawn_pos, 
                           velocity=Vector2(0, 0), 

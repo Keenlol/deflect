@@ -5,7 +5,7 @@ from enemy_all import *
 from enemy1 import E1
 from enemy2 import E2
 from enemy3 import E3
-from ui import HealthBar, Button
+from ui import HealthBar, Button, TextDisplay
 from pygame.math import Vector2
 import random
 from timer import Timer
@@ -15,6 +15,7 @@ import tkinter as tk
 from tkinter import ttk, font
 import pandas as pd
 from sounds import Sounds
+from datetime import datetime, timedelta
 
 class Game:
     # Game States
@@ -23,6 +24,11 @@ class Game:
     STATE_GAMEOVER = 2
     STATE_PAUSED = 3  # New state for pause menu
     STATE_STATISTICS = 4  # New state for statistics window
+    
+    # Spawn rate configuration
+    INITIAL_SPAWN_RANGE = (10.0, 12.0)  # Initial spawn time range in seconds
+    FINAL_SPAWN_RANGE = (3.0, 5.0)      # Final spawn time range in seconds
+    DIFFICULTY_PEAK_TIME = 120          # Time in seconds when difficulty reaches maximum (2 minutes)
     
     def __init__(self):
         pg.init()
@@ -41,6 +47,12 @@ class Game:
         self.player_stats_timer = Timer(duration=5.0, owner=self, auto_reset=True)
         self.shake_intensity = 0
         self.camera_offset = Vector2(0, 0)
+        
+        # Stats tracking
+        self.enemies_killed = 0
+        self.start_time = None
+        self.elapsed_time = timedelta(seconds=0)
+        self.end_time = None
         
         # Enemy spawn system
         self.spawn_timer = Timer(duration=self.get_next_spawn_time(), owner=self)
@@ -74,57 +86,58 @@ class Game:
         # Define button dimensions
         button_width = 300
         button_height = 80
-        button_spacing = 10
+        button_spacing = 8
         left_margin = 150
         
         # Calculate starting Y position (center of screen)
         start_y = (C.WINDOW_HEIGHT - (button_height * 4 + button_spacing * 3)) // 2
-        
+        button_x = left_margin + button_width//2
+        offset = button_height + button_spacing
         # Create Play button
         play_button = Button(
-            position=Vector2(left_margin + button_width//2, start_y + button_height//2),
+            position=Vector2(button_x, start_y + button_height//2),
             width=button_width,
             height=button_height,
             text="Play",
             callback=self.start_game,
-            idle_color=(207, 218, 227),
-            hover_color=(94, 175, 255),
+            idle_color=C.BUTTON_IDLE_COLOR,
+            hover_color=C.BUTTON_HOVER_COLOR['blue'],
             text_size=C.BUTTON_FONT_SIZE
         )
         
         # Create Statistics button
         stats_button = Button(
-            position=Vector2(left_margin + button_width//2, start_y + button_height + button_spacing + button_height//2),
+            position=Vector2(button_x, start_y + offset + button_height//2),
             width=button_width,
             height=button_height,
             text="Statistics",
             callback=self.show_statistics,
-            idle_color=(207, 218, 227),
-            hover_color=(255, 205, 120),
+            idle_color=C.BUTTON_IDLE_COLOR,
+            hover_color=C.BUTTON_HOVER_COLOR['yellow'],
             text_size=C.BUTTON_FONT_SIZE
         )
         
         # Create Clear Data button
         clear_button = Button(
-            position=Vector2(left_margin + button_width//2, start_y + 2 * (button_height + button_spacing) + button_height//2),
+            position=Vector2(button_x, start_y + 2 * offset + button_height//2),
             width=button_width,
             height=button_height,
             text="Clear Data",
             callback=self.clear_all_stats,
-            idle_color=(207, 218, 227),
-            hover_color=(224, 79, 74),
+            idle_color=C.BUTTON_IDLE_COLOR,
+            hover_color=C.BUTTON_HOVER_COLOR['red'],
             text_size=C.BUTTON_FONT_SIZE
         )
         
         # Create Quit button
         quit_button = Button(
-            position=Vector2(left_margin + button_width//2, start_y + 3 * (button_height + button_spacing) + button_height//2),
+            position=Vector2(button_x, start_y + 3 * offset + button_height//2),
             width=button_width,
             height=button_height,
             text="Quit",
             callback=self.quit_game,
-            idle_color=(207, 218, 227),
-            hover_color=(224, 79, 74),
+            idle_color=C.BUTTON_IDLE_COLOR,
+            hover_color=C.BUTTON_HOVER_COLOR['red'],
             text_size=C.BUTTON_FONT_SIZE
         )
         
@@ -145,7 +158,7 @@ class Game:
         button_spacing = 10
         
         # Calculate starting Y position (center of screen)
-        start_y = (C.WINDOW_HEIGHT - (button_height * 4 + button_spacing * 3)) // 2
+        start_y = (C.WINDOW_HEIGHT - (button_height * 4 + button_spacing * 3)) // 2 + 30
         
         # Create Resume button
         resume_button = Button(
@@ -154,8 +167,8 @@ class Game:
             height=button_height,
             text="Resume",
             callback=self.resume_game,
-            idle_color=(207, 218, 227),
-            hover_color=(94, 175, 255),
+            idle_color=C.BUTTON_IDLE_COLOR,
+            hover_color=C.BUTTON_HOVER_COLOR['blue'],
             text_size=C.BUTTON_FONT_SIZE
         )
         
@@ -166,8 +179,8 @@ class Game:
             height=button_height,
             text="Retry",
             callback=self.retry_game,
-            idle_color=(207, 218, 227),
-            hover_color=(94, 175, 255),
+            idle_color=C.BUTTON_IDLE_COLOR,
+            hover_color=C.BUTTON_HOVER_COLOR['blue'],
             text_size=C.BUTTON_FONT_SIZE
         )
         
@@ -178,8 +191,8 @@ class Game:
             height=button_height,
             text="Statistics",
             callback=self.show_statistics,
-            idle_color=(207, 218, 227),
-            hover_color=(255, 205, 120),
+            idle_color=C.BUTTON_IDLE_COLOR,
+            hover_color=C.BUTTON_HOVER_COLOR['yellow'],
             text_size=C.BUTTON_FONT_SIZE
         )
         
@@ -190,8 +203,8 @@ class Game:
             height=button_height,
             text="Menu",
             callback=self.return_to_menu,
-            idle_color=(207, 218, 227),
-            hover_color=(224, 79, 74),
+            idle_color=C.BUTTON_IDLE_COLOR,
+            hover_color=C.BUTTON_HOVER_COLOR['red'],
             text_size=C.BUTTON_FONT_SIZE
         )
         
@@ -203,6 +216,9 @@ class Game:
     
     def setup_gameover_menu(self):
         """Setup the game over menu with buttons"""
+        # Record the end time
+        self.end_time = datetime.now()
+        
         # Clear the game over menu group
         self.groups['gameover'].empty()
         
@@ -212,7 +228,7 @@ class Game:
         button_spacing = 10
         
         # Calculate starting Y position for buttons (below score text)
-        start_y = C.WINDOW_HEIGHT//2 + 30
+        start_y = C.WINDOW_HEIGHT//2 + 80  # Move down to make room for more stats
         
         # Create Retry button
         retry_button = Button(
@@ -221,8 +237,8 @@ class Game:
             height=button_height,
             text="Retry",
             callback=self.retry_game,
-            idle_color=(207, 218, 227),
-            hover_color=(94, 175, 255),
+            idle_color=C.BUTTON_IDLE_COLOR,
+            hover_color=C.BUTTON_HOVER_COLOR['blue'],
             text_size=C.BUTTON_FONT_SIZE
         )
         
@@ -233,8 +249,8 @@ class Game:
             height=button_height,
             text="Statistics",
             callback=self.show_statistics,
-            idle_color=(207, 218, 227),
-            hover_color=(255, 205, 120),
+            idle_color=C.BUTTON_IDLE_COLOR,
+            hover_color=C.BUTTON_HOVER_COLOR['yellow'],
             text_size=C.BUTTON_FONT_SIZE
         )
         
@@ -245,8 +261,8 @@ class Game:
             height=button_height,
             text="Menu",
             callback=self.return_to_menu,
-            idle_color=(207, 218, 227),
-            hover_color=(224, 79, 74),
+            idle_color=C.BUTTON_IDLE_COLOR,
+            hover_color=C.BUTTON_HOVER_COLOR['red'],
             text_size=C.BUTTON_FONT_SIZE
         )
         
@@ -391,7 +407,7 @@ class Game:
         root.title("Game Statistics")
         root.geometry("550x400")
         root.resizable(True, True)
-        root.configure(background='black')  # Set dark background
+        root.configure(background=C.TTK_BLACK)  # Set dark background
         
         # Load custom fonts
         title_font_path = "fonts/Coiny-Regular.ttf"
@@ -412,11 +428,11 @@ class Game:
         # Configure ttk style for dark theme
         style = ttk.Style()
         style.theme_use('default')
-        style.configure('TNotebook', background='black', borderwidth=0)
-        style.configure('TNotebook.Tab', background='black', foreground='white', padding=[10, 2])
+        style.configure('TNotebook', background=C.TTK_BLACK, borderwidth=0)
+        style.configure('TNotebook.Tab', background=C.TTK_BLACK, foreground='white', padding=[10, 2])
         style.map('TNotebook.Tab', background=[('selected', '#333333')])
-        style.configure('TFrame', background='black')
-        style.configure('TLabel', background='black', foreground='white')
+        style.configure('TFrame', background=C.TTK_BLACK)
+        style.configure('TLabel', background=C.TTK_BLACK, foreground='white')
         
         # Set the window close event to restore the game state
         def on_window_close():
@@ -428,7 +444,7 @@ class Game:
         root.protocol("WM_DELETE_WINDOW", on_window_close)
         
         # Create a header with title font
-        header = tk.Label(root, text="Game Statistics", bg='black', fg='white')
+        header = tk.Label(root, text="Game Statistics", bg=C.TTK_BLACK, fg='white')
         try:
             header.configure(font=font_id_title)
         except:
@@ -474,6 +490,12 @@ class Game:
         self.game_over = False
         self.game_over_timer.reset()
         
+        # Reset stats tracking
+        self.enemies_killed = 0
+        self.start_time = datetime.now()
+        self.elapsed_time = timedelta(seconds=0)
+        self.end_time = None
+        
         # Reset spawn timer
         self.spawn_timer.duration = self.get_next_spawn_time()
         self.spawn_timer.start()
@@ -498,27 +520,38 @@ class Game:
         self.spawn_enemy()
     
     def get_next_spawn_time(self):
-        """Get random time for next enemy spawn"""
-        return random.uniform(3.0, 4.0)  # 10-20 seconds at 60 FPS
-    
-    def get_valid_spawn_position(self, enemy_type=1):
-        """Get random position for enemy spawn, away from player"""
-        # Spawning logic for E1 (floating enemy)
-        if enemy_type == 1 or enemy_type == 3:
-            y = random.randint(-200, C.WINDOW_HEIGHT - C.FLOOR_HEIGHT - 100)
-
-        # Spawning logic for E2 (ground enemy)
-        elif enemy_type == 2:
-            y = C.WINDOW_HEIGHT - C.FLOOR_HEIGHT - 50
-
-        middle_offset = C.WINDOW_WIDTH/2 + 100
-        if y <= -100:
-            x = random.randint(-100, C.WINDOW_WIDTH + 100)
+        """Calculate spawn time based on elapsed game time"""
+        if self.start_time is None:
+            return random.uniform(*self.INITIAL_SPAWN_RANGE)
+            
+        # Calculate elapsed time in seconds
+        elapsed_seconds = 0
+        if self.end_time:
+            elapsed_seconds = (self.end_time - self.start_time).total_seconds()
         else:
-            x = int(C.WINDOW_WIDTH/2 + random.choice((-middle_offset, middle_offset)))
-
-        return Vector2(x, y)
+            elapsed_seconds = (datetime.now() - self.start_time).total_seconds()
+            
+        # Calculate the difficulty progress (0 to 1)
+        difficulty_progress = min(1.0, elapsed_seconds / self.DIFFICULTY_PEAK_TIME)
+        
+        # Interpolate between initial and final spawn times
+        min_spawn = self.INITIAL_SPAWN_RANGE[0] - (self.INITIAL_SPAWN_RANGE[0] - self.FINAL_SPAWN_RANGE[0]) * difficulty_progress
+        max_spawn = self.INITIAL_SPAWN_RANGE[1] - (self.INITIAL_SPAWN_RANGE[1] - self.FINAL_SPAWN_RANGE[1]) * difficulty_progress
+        
+        return random.uniform(min_spawn, max_spawn)
     
+    def format_time(self, td):
+        """Format timedelta to 'MM:SS' format"""
+        total_seconds = int(td.total_seconds())
+        minutes = total_seconds // 60
+        seconds = total_seconds % 60
+        return f"{minutes:02}:{seconds:02}"
+    
+    def update_elapsed_time(self):
+        """Update the elapsed time based on current time"""
+        if self.start_time and not self.game_over:
+            self.elapsed_time = datetime.now() - self.start_time
+
     def spawn_enemy(self):
         """Spawn an enemy at a valid position"""
         enemy_type = random.choice([1,2,3])  # 1 for E1, 2 for E2, 3 for E3
@@ -533,10 +566,6 @@ class Game:
             
         self.groups['enemies'].add(enemy)
         self.groups['all'].add(enemy)
-    
-    def add_score(self, amount):
-        """Add to the player's score"""
-        self.score += amount
     
     def handle_events(self):
         """Handle game events"""
@@ -609,6 +638,9 @@ class Game:
             pg.event.pump()  # Process any pending events
             self.create_stats_window()  # This will block until the window is closed
         elif self.game_state == Game.STATE_PLAYING:
+            # Update elapsed time
+            self.update_elapsed_time()
+            
             # freeze effect
             if not self.freeze_timer.is_completed:
                 return
@@ -639,18 +671,16 @@ class Game:
             if not self.game_over and self.player.health <= 0:
                 self.game_over = True
                 self.game_over_timer.start()
+                self.end_time = datetime.now()  # Record the end time
             
             # Game over timer complete - switch to game over state
             if self.game_over and self.game_over_timer.is_completed:
                 self.game_state = Game.STATE_GAMEOVER
                 self.setup_gameover_menu()
-            elif not self.game_over:
-                # Only update score if game is not over
-                self.score += 1  # Score for surviving
     
     def draw(self):
         """Draw the game screen"""
-        self.screen.fill(C.BLACK)
+        self.screen.fill(C.BACKGROUND_COLOR)
         
         if self.game_state == Game.STATE_MENU:
             # Draw menu background here if needed
@@ -703,7 +733,7 @@ class Game:
             ) if not self.shake_timer.is_completed else (
                 0, C.WINDOW_HEIGHT - C.FLOOR_HEIGHT, C.WINDOW_WIDTH, C.FLOOR_HEIGHT
             )
-            pg.draw.rect(self.screen, C.GRAY, floor_rect)
+            pg.draw.rect(self.screen, C.FLOOR_COLOR, floor_rect)
             
             # Restore original positions
             if not self.shake_timer.is_completed:
@@ -727,7 +757,7 @@ class Game:
                     pause_font = pg.font.Font(None, C.TITLE_FONT_SIZE)
                 
                 pause_text = pause_font.render("PAUSED", True, (255, 255, 255))
-                pause_rect = pause_text.get_rect(center=(C.WINDOW_WIDTH // 2, 100))
+                pause_rect = pause_text.get_rect(center=(C.WINDOW_WIDTH // 2, C.WINDOW_HEIGHT // 2 - 220))
                 self.screen.blit(pause_text, pause_rect)
                 
                 # Draw pause menu buttons
@@ -741,19 +771,30 @@ class Game:
                 overlay.set_alpha(160)  # 60% transparency
                 self.screen.blit(overlay, (0, 0))
                 
-                # Draw game over text and score
-                font = pg.font.Font("fonts/Coiny-Regular.ttf", C.TITLE_FONT_SIZE)
-                if font is None:
-                    font = pg.font.Font(None, C.TITLE_FONT_SIZE)
+                # Draw game over text and stats
+                title_font = pg.font.Font("fonts/Coiny-Regular.ttf", C.TITLE_FONT_SIZE)
+                if title_font is None:
+                    title_font = pg.font.Font(None, C.TITLE_FONT_SIZE)
                 
-                game_over_text = font.render('GAME OVER', True, (255, 255, 255))
-                score_text = font.render(f'Score: {self.score}', True, (255, 255, 255))
+                stats_font = pg.font.Font("fonts/Jua-Regular.ttf", 36)
+                if stats_font is None:
+                    stats_font = pg.font.Font(None, 36)
+                
+                score = self.score + (self.elapsed_time.seconds * 10)
+
+                game_over_text = title_font.render('GAME OVER', True, (255, 255, 255))
+                score_text = stats_font.render(f'SCORE       --       {score: <7}', True, (255, 255, 255))
+                time_text = stats_font.render(f'  TIME       --       {self.format_time(self.elapsed_time): <6}', True, (255, 255, 255))
+                kills_text = stats_font.render(f'KILLS       --       {self.enemies_killed: <8}', True, (255, 255, 255))
                 
                 # Position text
-                text_y = C.WINDOW_HEIGHT // 2 - 150
-                self.screen.blit(game_over_text, game_over_text.get_rect(center=(C.WINDOW_WIDTH // 2, text_y)))
-                text_y += 80
-                self.screen.blit(score_text, score_text.get_rect(center=(C.WINDOW_WIDTH // 2, text_y)))
+                text_y = C.WINDOW_HEIGHT // 2 - 220
+                text_x = C.WINDOW_WIDTH // 2 + 10
+                spacing = 50
+                self.screen.blit(game_over_text, game_over_text.get_rect(center=(text_x, text_y)))
+                self.screen.blit(score_text, score_text.get_rect(center=(text_x, text_y + spacing*1.5)))
+                self.screen.blit(time_text, time_text.get_rect(center=(text_x, text_y + spacing*2.5)))
+                self.screen.blit(kills_text, kills_text.get_rect(center=(text_x, text_y + spacing*3.5)))
                 
                 # Draw game over menu buttons
                 self.groups['gameover'].draw(self.screen)
@@ -775,10 +816,53 @@ class Game:
     def setup_ui(self):
         """Setup UI elements"""
         # Create health bar
-        healthbar_pos = Vector2(170, 50)  # Center position
+        text_x = C.WINDOW_WIDTH//2 + 200
+        spacing = 200
+        text_y = C.WINDOW_HEIGHT - C.FLOOR_HEIGHT//2
+
+        healthbar_pos = Vector2(350, text_y)  # Center position
         size = 0.3
         healthbar = HealthBar(healthbar_pos, 1000 * size, 300 * size, self.player)  # Adjust size as needed
         self.groups['ui'].add(healthbar)
+
+        # Create score display
+        score_display = TextDisplay(
+            position=Vector2(text_x + spacing - 40, text_y),
+            width=200,
+            height=40,
+            text_prefix="SCORE ",
+            value_getter=lambda: str(self.score + (self.elapsed_time.seconds * 10)),
+            font_path="fonts/Jua-Regular.ttf",
+            font_size=32,
+            color=(255, 255, 255)
+        )
+        self.groups['ui'].add(score_display)
+        
+        # Create time display
+        time_display = TextDisplay(
+            position=Vector2(text_x - spacing, text_y),
+            width=200,
+            height=40,
+            text_prefix="TIME ",
+            value_getter=lambda: self.format_time(self.elapsed_time),
+            font_path="fonts/Jua-Regular.ttf",
+            font_size=32,
+            color=(255, 255, 255)
+        )
+        self.groups['ui'].add(time_display)
+        
+        # Create enemies killed display
+        kills_display = TextDisplay(
+            position=Vector2(text_x, text_y),
+            width=200,
+            height=40,
+            text_prefix="KILLS ",
+            value_getter=lambda: str(self.enemies_killed),
+            font_path="fonts/Jua-Regular.ttf",
+            font_size=32,
+            color=(255, 255, 255)
+        )
+        self.groups['ui'].add(kills_display)
 
     def clear_all_stats(self):
         """Clear all statistics data"""
@@ -789,6 +873,24 @@ class Game:
                 button.text = 'Cleared!'
                 button.idle_color = (111, 118, 130)
                 button.hover_color = (111, 118, 130)
+
+    def get_valid_spawn_position(self, enemy_type=1):
+        """Get random position for enemy spawn, away from player"""
+        # Spawning logic for E1 (floating enemy)
+        if enemy_type == 1 or enemy_type == 3:
+            y = random.randint(-200, C.WINDOW_HEIGHT - C.FLOOR_HEIGHT - 100)
+
+        # Spawning logic for E2 (ground enemy)
+        elif enemy_type == 2:
+            y = C.WINDOW_HEIGHT - C.FLOOR_HEIGHT - 50
+
+        middle_offset = C.WINDOW_WIDTH/2 + 100
+        if y <= -100:
+            x = random.randint(-100, C.WINDOW_WIDTH + 100)
+        else:
+            x = int(C.WINDOW_WIDTH/2 + random.choice((-middle_offset, middle_offset)))
+
+        return Vector2(x, y)
 
 if __name__ == "__main__":
     game = Game()

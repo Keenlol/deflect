@@ -225,7 +225,27 @@ class Shard(Projectile):
         self.DEFLECTED_SPIN = random.uniform(10, 15)
         self.spin_speed = self.NORMAL_SPIN
 
+        # Spawn animation attributes
+        self.spawn_animation = True
+        self.spawn_scale = 2.0  # Start 80% larger
+        self.scale_decrease_rate = 0.07  # How fast it returns to normal size
+        self.min_scale = 1.0  # Normal size
+        
+        # Save original base and height values
+        self.original_base = self.base
+        self.original_height = self.height
+        
+        # Apply initial scale
+        self._apply_scale()
+        
         self.draw()
+    
+    def _apply_scale(self):
+        """Apply the current scale to base and height"""
+        self.base = self.original_base * self.spawn_scale
+        self.height = self.original_height * self.spawn_scale
+        # Update radius based on new dimensions
+        self.radius = (self.base + self.height) / 4
     
     def draw(self):
         """Draw the shard as a triangle"""
@@ -259,6 +279,14 @@ class Shard(Projectile):
         if self.is_deflected and self.GRAVITY == 0:
             self.GRAVITY = random.uniform(0.2, 0.5)
             self.spin_speed = self.DEFLECTED_SPIN
+        
+        # Update spawn animation
+        if self.spawn_animation:
+            self.spawn_scale -= self.scale_decrease_rate
+            if self.spawn_scale <= self.min_scale:
+                self.spawn_scale = self.min_scale
+                self.spawn_animation = False
+            self._apply_scale()
 
         super().update()
 

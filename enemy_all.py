@@ -211,10 +211,33 @@ class Enemy(pygame.sprite.Sprite):
         self.update_animation()
 
     def kill(self):
-        if hasattr(self, 'game') and self.is_alive:
-            self.game.add_score(100)
+        self.game.score += 150
+        self.game.enemies_killed += 1
         Stats().record(stat_type='enemy_lifespan',
                      enemy_type=self.name,
                      lifespan_sec=self.lifespan)
         super().kill()
+
+    # def die(self):
+    #     """Die and perform cleanup"""
+    #     self.alive = False
+    #     self.health = 0
+    #     self.anim.change_state("death")
+        
+    #     # Record death time for lifespan statistics
+    #     if not self.death_recorded:
+    #         self.death_recorded = True
+            
+    #         # Record death time and calculate lifespan
+    #         now = datetime.now()
+    #         lifespan_sec = (now - self.spawn_time).total_seconds()
+            
+    #         # Record statistics
+    #         Stats().record('enemy_lifespan', 
+    #                       enemy_type=self.name,
+    #                       lifespan_sec=lifespan_sec)
+            
+    #         # Register the kill with the game
+    #         if self.game:
+    #             self.game.enemies_killed += 1
 

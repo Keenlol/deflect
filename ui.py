@@ -51,6 +51,68 @@ class UI(pygame.sprite.Sprite):
         self.position = Vector2(position)
         self.rect.center = self.position
 
+class TextDisplay(UI):
+    """UI element that displays dynamic text with a value that can change over time"""
+    def __init__(self, position: Vector2, width: int, height: int, 
+                 text_prefix: str, value_getter: callable, 
+                 font_path: str = None, font_size: int = 24,
+                 color=(255, 255, 255), align="left"):
+        super().__init__(position, width, height)
+        
+        # Text attributes
+        self.text_prefix = text_prefix
+        self.value_getter = value_getter  # Function to call to get current value
+        self.color = color
+        self.align = align
+        
+        # Load font
+        try:
+            self.font = pygame.font.Font(font_path, font_size)
+        except:
+            # Fallback to default font
+            self.font = pygame.font.Font(None, font_size)
+        
+        # Setup initial render
+        self.last_value = None
+        self.render()
+    
+    def render(self):
+        """Render the text with current value"""
+        # Get current value
+        current_value = self.value_getter()
+        
+        # Only re-render if value changed
+        if current_value != self.last_value:
+            self.last_value = current_value
+            
+            # Clear the surface
+            self.image.fill((0, 0, 0, 0))
+            
+            # Render text
+            full_text = f"{self.text_prefix}{current_value}"
+            text_surface = self.font.render(full_text, True, self.color)
+            
+            # Position text based on alignment
+            if self.align == "left":
+                text_pos = (0, self.height // 2 - text_surface.get_height() // 2)
+            elif self.align == "center":
+                text_pos = (self.width // 2 - text_surface.get_width() // 2, 
+                           self.height // 2 - text_surface.get_height() // 2)
+            elif self.align == "right":
+                text_pos = (self.width - text_surface.get_width(), 
+                           self.height // 2 - text_surface.get_height() // 2)
+            
+            # Draw text
+            self.image.blit(text_surface, text_pos)
+    
+    def update(self):
+        """Update the text display"""
+        if not self.active:
+            return
+        
+        # Re-render with latest value
+        self.render()
+
 class HealthBar(UI):
     def __init__(self, position: Vector2, width: int, height: int, target=None):
         super().__init__(position, width, height)

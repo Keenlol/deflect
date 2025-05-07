@@ -360,8 +360,8 @@ class Player(pygame.sprite.Sprite):
             
             self.is_dodging = False
             self.dodge_timer.stop()
-
             self.game.freeze_and_shake(10, 10, 20)
+            Sounds().play_sound('player_damaged')
     
     def check_projectile_collisions(self):
         """Check for collisions with enemy bullets"""
