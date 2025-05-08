@@ -37,6 +37,10 @@ class Game:
         self.clock = pg.time.Clock()
         self.running = True
         
+        # Load background images
+        self.bg_game = pg.image.load("sprites/others/background.png").convert()
+        self.bg_controls = pg.image.load("sprites/others/controls.png").convert()
+        
         # Game state
         self.game_state = Game.STATE_MENU  # Start in menu state
         self.score = 0
@@ -107,7 +111,7 @@ class Game:
         left_margin = 150
         
         # Calculate starting Y position (center of screen)
-        start_y = (C.WINDOW_HEIGHT - (button_height * 5 + button_spacing * 4)) // 2 + 40
+        start_y = (C.WINDOW_HEIGHT - (button_height * 5 + button_spacing * 4)) // 2 + 80
         button_x = left_margin + button_width//2
         offset = button_height + button_spacing
         
@@ -743,20 +747,32 @@ class Game:
         self.screen.fill(C.BACKGROUND_COLOR)
         
         if self.game_state == Game.STATE_MENU:
+            # Draw controls background
+            self.screen.blit(self.bg_controls, (0, 0))
+            
             # Draw menu background here if needed
             # For example, a title or artwork on the right side
             title_font = pg.font.Font("fonts/Coiny-Regular.ttf", C.TITLE_FONT_SIZE)
             if title_font is None:
                 title_font = pg.font.Font(None, C.TITLE_FONT_SIZE)
-            
+
+            button_width = C.BUTTON_WIDTH
+            left_margin = 150
+
             title_text = title_font.render("DEFLECT", True, (255, 255, 255))
-            title_rect = title_text.get_rect(center=(C.WINDOW_WIDTH - 350, 200))
+            title_rect = title_text.get_rect(center=(left_margin + button_width//2, C.WINDOW_HEIGHT // 2 - 250))
             self.screen.blit(title_text, title_rect)
             
             # Draw menu buttons
             self.groups['menu'].draw(self.screen)
         
         elif self.game_state == Game.STATE_PLAYING or self.game_state == Game.STATE_GAMEOVER or self.game_state == Game.STATE_PAUSED:
+            # Draw game background (with camera shake if active)
+            if not self.shake_timer.is_completed:
+                self.screen.blit(self.bg_game, (self.camera_offset.x, self.camera_offset.y))
+            else:
+                self.screen.blit(self.bg_game, (0, 0))
+            
             # Save the original positions of all sprites
             original_positions = {}
             if not self.shake_timer.is_completed:

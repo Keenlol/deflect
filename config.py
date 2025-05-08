@@ -8,7 +8,7 @@ class Config:
 
     # Colors
     BACKGROUND_COLOR = (12, 12, 15)
-    FLOOR_COLOR = (45, 49, 61)
+    FLOOR_COLOR = (22, 22, 33)
     TTK_BLACK = '#0c0c0f'
 
     # Game Settings
