@@ -68,7 +68,8 @@ class Game:
             'ui': pg.sprite.Group(),
             'menu': pg.sprite.Group(),  # Menu elements
             'pause': pg.sprite.Group(),  # Pause menu elements
-            'gameover': pg.sprite.Group()  # Game over menu elements
+            'gameover': pg.sprite.Group(),  # Game over menu elements
+            'sparks': pg.sprite.Group()  # Spark effects that ignore freeze
         }
         
         # Stats related attributes
@@ -678,6 +679,9 @@ class Game:
         # Update all timers
         Timer.update_all(dt)
         
+        # Always update sparks regardless of game state or freeze
+        self.groups['sparks'].update()
+        
         # Update based on game state
         if self.game_state == Game.STATE_MENU:
             self.groups['menu'].update()
@@ -693,8 +697,10 @@ class Game:
             # Update elapsed time
             self.update_elapsed_time()
             
-            # freeze effect
+            # freeze effect - but always update sparks
             if not self.freeze_timer.is_completed:
+                # Still need to draw the screen during freeze
+                self.draw()
                 return
             
             # Start shake after freeze ends
@@ -793,6 +799,27 @@ class Game:
             if not self.shake_timer.is_completed:
                 for sprite, pos in original_positions.items():
                     sprite.rect.center = (pos.x, pos.y)
+            
+            # Draw sparks with camera shake (always drawn even during freeze)
+            # Save and apply shake to sparks if needed
+            spark_positions = {}
+            if not self.shake_timer.is_completed:
+                for spark in self.groups['sparks']:
+                    if hasattr(spark, 'rect') and hasattr(spark, 'position'):
+                        spark_positions[spark] = Vector2(spark.rect.center)
+                        # Apply camera shake offset to spark's position
+                        spark.rect.center = (
+                            spark.rect.center[0] + self.camera_offset.x,
+                            spark.rect.center[1] + self.camera_offset.y
+                        )
+                        
+            # Draw all sparks
+            self.groups['sparks'].draw(self.screen)
+            
+            # Restore spark positions
+            if not self.shake_timer.is_completed:
+                for spark, pos in spark_positions.items():
+                    spark.rect.center = (pos.x, pos.y)
             
             # Draw UI elements on top - UI doesn't shake to avoid disorienting the player
             self.groups['ui'].draw(self.screen)

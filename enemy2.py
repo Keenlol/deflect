@@ -3,6 +3,7 @@ import math
 from player import *
 from timer import Timer
 from sounds import Sounds
+from knife import Spark
 
 class E2(Enemy):
     # Constants
@@ -11,7 +12,7 @@ class E2(Enemy):
     # Attack data
     ATTACK_INFO = {
         'slash': {'speed': 10, 'dash_dur': 0.5, 'charge_dur': 0.5, 'damage': 40},
-        'shard': {'count': 12, 'delay': 0.5, 'radius': 100, 'height': 150, 'speed': 10, 'damage': 20},
+        'shard': {'count': 12, 'delay': 0.5, 'radius': 75, 'height': 150, 'speed': 10, 'damage': 20},
         'rain': {'count': 15, 'delay': 3/60, 'height': 250, 'width': 600, 'damage': 30},
     }
     
@@ -300,10 +301,12 @@ class E2(Enemy):
                     Sounds().play_sound('deflect_hard')
                     Sounds().play_sound('deflect_hard')
                     Sounds().play_sound_random(['deflect1', 'deflect2', 'deflect3'])
+                    
     
     def spawn_shards(self, player_position):
         midpoint = (self.position + player_position) / 2
-
+        Spark(midpoint, midpoint-self.position, self.game)
+        Spark(midpoint, midpoint-player_position, self.game)
         for _ in range(self.ATTACK_INFO['shard']['count']):
             angle_rad = math.radians(self.random((0.0, 360.0)))
             velocity = Vector2(math.cos(angle_rad), math.sin(angle_rad)) * self.random((15.0, 25.0))

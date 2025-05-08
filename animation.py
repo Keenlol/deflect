@@ -48,14 +48,15 @@ class Animation:
                         
                 # Create default frame if no frames were loaded
                 if not self.animations[state]:
-                    default_frame = pygame.Surface((self.owner.width, self.owner.height))
-                    default_frame.fill((255, 255, 255))  # White default
+                    print(f"No frames found for animation state: {state} in {path}")
+                    default_frame = pygame.Surface((self.owner.width, self.owner.height), pygame.SRCALPHA)
+                    default_frame.fill((255, 0, 0, 128))  # Red semi-transparent default for visibility
                     self.animations[state].append(default_frame)
                     
             except FileNotFoundError:
                 print(f"Animation folder not found: {path}")
-                default_frame = pygame.Surface((self.owner.width, self.owner.height))
-                default_frame.fill((255, 255, 255))  # White default
+                default_frame = pygame.Surface((self.owner.width, self.owner.height), pygame.SRCALPHA)
+                default_frame.fill((255, 0, 0, 128))  # Red semi-transparent default for visibility
                 self.animations[state].append(default_frame)
     
     def change_state(self, new_state):

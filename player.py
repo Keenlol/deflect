@@ -29,13 +29,13 @@ class Player(pygame.sprite.Sprite):
             "idle": True,
             "run": True,
             "jump": False,
-            "fall": True,
+            "fall": False,
             "dodge": False,
             "deflect": False,
             "hurt": False,  # Hurt animation is non-looping
             "dead": False   # Death animation is non-looping
         }
-        self.anim = Animation(self, "sprites/player", animation_states, animation_speed=0.15)
+        self.anim = Animation(self, "sprites/player", animation_states, animation_speed=0.08)
         self.facing_right = True
         
         # Physics attributes
@@ -261,6 +261,7 @@ class Player(pygame.sprite.Sprite):
                 if self.health <= 0:
                     self.is_dead = True
                     self.anim.change_state("dead")
+                    self.self_heal_timer.pause()
                 else:
                     self.anim.change_state("idle")
             elif self.anim.current_state == "fall":
@@ -485,7 +486,7 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         """Update the player's state"""
         # Check for timer completions
-        if self.self_heal_timer.just_completed:
+        if self.self_heal_timer.just_completed and not self.is_dead:
             self.health += 1
             self.health = min(self.health, self.MAX_HEALTH)
 

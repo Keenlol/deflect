@@ -119,7 +119,7 @@ class Enemy(pygame.sprite.Sprite):
     def take_damage(self, amount):
         Sounds().play_sound_random(['enemy_damaged1', 'enemy_damaged2'])
         self.health -= amount
-        self.game.freeze_and_shake(0, 3, 5)
+        self.game.freeze_and_shake(0, 5, 5)
         if self.is_alive:
             if self.health <= 0:
                 self.health = 0

@@ -10,6 +10,58 @@ from stats import Stats
 from datetime import datetime
 from sounds import Sounds
 
+class Spark(pygame.sprite.Sprite):
+    """
+    Visual effect that plays when a bullet is deflected.
+    Ignores freeze effects and destroys itself after animation finishes.
+    """
+    def __init__(self, position, velocity, game):
+        super().__init__()
+        self.position = Vector2(position)
+        self.velocity = Vector2(velocity)
+        self.game = game
+        self.width = 120
+        self.height = 120
+        
+        # Calculate the angle to face the velocity direction
+        if self.velocity.length() > 0:
+            self.angle = math.degrees(math.atan2(self.velocity.y, self.velocity.x))
+        else:
+            self.angle = 0
+            
+        # Animation states - spark is a non-looping animation
+        animation_states = {
+            "sparks": False  # Non-looping
+        }
+        
+        # Create animation controller
+        self.anim = Animation(self, "sprites/sparks", animation_states, animation_speed=0.05)
+        self.anim.change_state("sparks")
+        
+        # Initialize image and rect
+        self.image = self.anim.get_current_frame(True)  # Default facing right
+        self.rect = self.image.get_rect(center=self.position)
+        
+        # Add to the dedicated sparks group
+        self.game.groups['sparks'].add(self)
+    
+    def update(self):
+        """Update spark animation and check if it's finished"""
+        # Update animation
+        self.anim.update()
+        
+        # Get the current frame and rotate it to match velocity direction
+        original_image = self.anim.get_current_frame(True)
+        
+        # Rotate to match velocity direction
+        # In Pygame, rotation is clockwise from the original orientation
+        self.image = pygame.transform.rotate(original_image, -self.angle)
+        self.rect = self.image.get_rect(center=self.position)
+        
+        # Remove if animation is finished
+        if self.anim.animation_finished:
+            self.kill()
+
 class Knife(pygame.sprite.Sprite):
     def __init__(self, player):
         super().__init__()
@@ -159,6 +211,9 @@ class Knife(pygame.sprite.Sprite):
         error_deg = 10
         if isinstance(bullet, Shard): error_deg = 45
         angle_rad = math.radians(self.angle + random.randrange(-error_deg, error_deg))
+        
+        # Calculate new velocity for the deflected bullet
+        new_velocity = Vector2(math.cos(angle_rad), -math.sin(angle_rad)) * (bullet.speed * self.DEFLECTED_SPEED_MUL)
 
         # Set the deflect_id on the bullet to track which deflection batch it belongs to
         bullet.deflect_id = self.current_deflect_id
@@ -167,8 +222,12 @@ class Knife(pygame.sprite.Sprite):
         bullet.is_deflected = True
         bullet.SPEED_RANGE[0] *= self.DEFLECTED_SPEED_MUL
         bullet.SPEED_RANGE[1] *= self.DEFLECTED_SPEED_MUL
-        bullet.velocity = Vector2(math.cos(angle_rad), -math.sin(angle_rad)) * (bullet.speed * self.DEFLECTED_SPEED_MUL)
+        bullet.velocity = new_velocity
         bullet.draw()
+        
+        # Create spark effect at the bullet's position
+        Spark(bullet.position, new_velocity, self.player.game)
+        
         if bullet.attack_name in ('Gunman Bouncing-Laser','Wizard Track-Cast'):
             Sounds().play_sound('deflect_hard') # Make it sounds hard
         Sounds().play_sound_random(['deflect1', 'deflect2', 'deflect3'])
