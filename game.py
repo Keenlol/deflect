@@ -51,6 +51,7 @@ class Game:
         # Stats tracking
         self.enemies_killed = 0
         self.start_time = None
+        self.elapsed_timer = Timer(duration=0, owner=self, mode=Timer.MODE_COUNTUP)
         self.elapsed_time = timedelta(seconds=0)
         self.end_time = None
         
@@ -322,13 +323,16 @@ class Game:
         """Toggle between playing and paused states"""
         if self.game_state == Game.STATE_PLAYING:
             self.game_state = Game.STATE_PAUSED
+            self.elapsed_timer.pause()
             self.setup_pause_menu()
         elif self.game_state == Game.STATE_PAUSED:
             self.game_state = Game.STATE_PLAYING
+            self.elapsed_timer.resume()
     
     def resume_game(self):
         """Resume the game from pause - callback for Resume button"""
         self.game_state = Game.STATE_PLAYING
+        self.elapsed_timer.resume()
     
     def retry_game(self):
         """Restart the current game - callback for Retry button"""
@@ -540,6 +544,10 @@ class Game:
         # Reset stats tracking
         self.enemies_killed = 0
         self.start_time = datetime.now()
+        
+        # Reset and start the elapsed timer
+        self.elapsed_timer.reset()
+        self.elapsed_timer.start()
         self.elapsed_time = timedelta(seconds=0)
         self.end_time = None
         
@@ -571,12 +579,8 @@ class Game:
         if self.start_time is None:
             return random.uniform(*self.INITIAL_SPAWN_RANGE)
             
-        # Calculate elapsed time in seconds
-        elapsed_seconds = 0
-        if self.end_time:
-            elapsed_seconds = (self.end_time - self.start_time).total_seconds()
-        else:
-            elapsed_seconds = (datetime.now() - self.start_time).total_seconds()
+        # Calculate elapsed seconds from timer instead of datetime
+        elapsed_seconds = self.elapsed_timer.elapsed
             
         # Calculate the difficulty progress (0 to 1)
         difficulty_progress = min(1.0, elapsed_seconds / self.DIFFICULTY_PEAK_TIME)
@@ -595,9 +599,10 @@ class Game:
         return f"{minutes:02}:{seconds:02}"
     
     def update_elapsed_time(self):
-        """Update the elapsed time based on current time"""
-        if self.start_time and not self.game_over:
-            self.elapsed_time = datetime.now() - self.start_time
+        """Update the elapsed time based on timer"""
+        if not self.game_over:
+            # Convert seconds to timedelta
+            self.elapsed_time = timedelta(seconds=self.elapsed_timer.elapsed)
 
     def spawn_enemy(self):
         """Spawn an enemy at a valid position"""
@@ -719,6 +724,8 @@ class Game:
                 self.game_over = True
                 self.game_over_timer.start()
                 self.end_time = datetime.now()  # Record the end time
+                # Pause the elapsed timer when game is over
+                self.elapsed_timer.pause()
             
             # Game over timer complete - switch to game over state
             if self.game_over and self.game_over_timer.is_completed:
