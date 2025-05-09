@@ -1,7 +1,4 @@
 from enemy_all import *
-import math
-from projectile import Laser
-from timer import Timer
 
 class E3(Enemy):
     # Movement constants

@@ -1,6 +1,4 @@
 from enemy_all import *
-from timer import Timer
-from sounds import Sounds
 
 class E1(Enemy):
     # Attack properties

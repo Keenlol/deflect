@@ -1,7 +1,6 @@
 import pygame
 from pygame.math import Vector2
 from animation import Animation
-from config import *
 import math
 import random
 from projectile import *

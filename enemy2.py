@@ -1,9 +1,4 @@
 from enemy_all import *
-import math
-from player import *
-from timer import Timer
-from sounds import Sounds
-from knife import Spark
 
 class E2(Enemy):
     # Constants

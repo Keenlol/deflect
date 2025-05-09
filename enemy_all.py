@@ -1,5 +1,4 @@
 import pygame
-import os
 from pygame.math import Vector2
 from config import Config as C
 from projectile import *
@@ -8,10 +7,12 @@ from timer import Timer
 from datetime import datetime
 from stats import Stats
 from sounds import Sounds
+from player import Player
+from knife import Spark
+import copy
+import math
 
 import random
-import math
-import copy
 
 class Enemy(pygame.sprite.Sprite):
     MOVE_DURATION = (1.0, 3.0)  

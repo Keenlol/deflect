@@ -1,5 +1,4 @@
 import pygame
-import os
 from pygame.math import Vector2
 from config import Config as C
 from animation import Animation

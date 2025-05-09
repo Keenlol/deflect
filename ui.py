@@ -24,10 +24,8 @@ class UI(pygame.sprite.Sprite):
         self.visible = True
         self.active = True
     
-    def add_layer(self, surface: pygame.Surface, position: Vector2 = None):
+    def add_layer(self, surface: pygame.Surface, position: Vector2=Vector2(0, 0)):
         """Add a new layer to be rendered"""
-        if position is None:
-            position = Vector2(0, 0)
         self.layers.append((surface, position))
     
     def clear_layers(self):

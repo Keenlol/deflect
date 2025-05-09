@@ -1,4 +1,3 @@
-import pygame
 
 class Config:
     # Window Settings
