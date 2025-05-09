@@ -29,7 +29,7 @@ class E2(Enemy):
         anim_info = {'path': 'sprites/enemies/e2', 
                      'loops': loops,
                      'speed': 0.2}
-        super().__init__(x, y, game, maxhp=60, anim=anim_info, name='Fencer')
+        super().__init__(x, y, game, maxhp=40, anim=anim_info, name='Fencer')
         
         # Override base attributes
         self.MOVE_SPEED = (0.0, 3.0)
