@@ -148,11 +148,15 @@ class Sounds:
             sound.set_volume(self.sound_volume)
             
     def get_volume_percent(self):
-        """Get the current volume as a percentage (0-100)"""
+        """Get the current sound volume as a percentage (0-100)"""
         return round(self.sound_volume * 100)
     
+    def get_music_percent(self):
+        """Get the current music volume as a percentage (0-100)"""
+        return round(self.music_volume * 100)
+    
     def adjust_volume(self, increment=0.1):
-        """Adjust volume by increment and cycle back to 0 if over 1.0
+        """Adjust sound volume by increment and cycle back to 0 if over 1.0
         
         Args:
             increment (float): Amount to increase volume by (0.0 to 1.0)
@@ -161,8 +165,19 @@ class Sounds:
         if new_volume > 1.0:
             new_volume = 0.0
         self.set_sound_volume(new_volume)
-        self.set_music_volume(new_volume)  # Keep music and sound effects in sync
         return self.get_volume_percent()
+    
+    def adjust_music_volume(self, increment=0.1):
+        """Adjust music volume by increment and cycle back to 0 if over 1.0
+        
+        Args:
+            increment (float): Amount to increase volume by (0.0 to 1.0)
+        """
+        new_volume = self.music_volume + increment
+        if new_volume > 1.0:
+            new_volume = 0.0
+        self.set_music_volume(new_volume)
+        return self.get_music_percent()
     
     def load_new_sound(self, name, file_path):
         """Load a new sound file during gameplay

@@ -41,6 +41,9 @@ class Game:
         self.bg_game = pg.image.load("sprites/others/background.png").convert()
         self.bg_controls = pg.image.load("sprites/others/controls.png").convert()
         
+        # Music : management
+        self.current_music = None
+        
         # Game state
         self.game_state = Game.STATE_MENU  # Start in menu state
         self.score = 0
@@ -83,6 +86,9 @@ class Game:
         
         # Setup the home menu
         self.setup_home_menu()
+        
+        # Start menu music
+        self.play_menu_music()
 
     def add_score(self, score_add):
         self.score = round(self.score + score_add)
@@ -96,26 +102,55 @@ class Game:
         # Find and update volume buttons in all menus
         for button in self.groups['menu'].sprites() + self.groups['pause'].sprites():
             if hasattr(button, 'is_volume_button') and button.is_volume_button:
-                button.text = f"Audio {new_volume_percent}%"
+                button.text = f"SFX : {new_volume_percent}%"
                 button.render()
+    
+    def toggle_music_volume(self):
+        """Toggle the music volume between 0% and 100% in 10% increments"""
+        sounds = Sounds()
+        new_volume_percent = sounds.adjust_music_volume(0.1)
+        
+        # Update button text to show new volume
+        for button in self.groups['menu'].sprites() + self.groups['pause'].sprites():
+            if hasattr(button, 'is_music_button') and button.is_music_button:
+                button.text = f"Music : {new_volume_percent}%"
+                button.render()
+    
+    def play_menu_music(self):
+        """Play the menu music"""
+        if self.current_music != "Spire":
+            sounds = Sounds()
+            sounds.play_music("Spire", loops=-1)  # Loop indefinitely
+            self.current_music = "Spire"
+    
+    def play_game_music(self):
+        """Play the gameplay music"""
+        if self.current_music != "Clover":
+            sounds = Sounds()
+            sounds.play_music("Clover", loops=-1)  # Loop indefinitely
+            self.current_music = "Clover"
+    
+    def stop_music(self):
+        """Stop the currently playing music"""
+        sounds = Sounds()
+        sounds.stop_music()
+        self.current_music = None
 
     def setup_home_menu(self):
         """Setup the home menu with buttons"""
         # Clear the menu group
         self.groups['menu'].empty()
         
-        # Define button dimensions
         button_width = C.BUTTON_WIDTH
         button_height = C.BUTTON_HEIGHT
         button_spacing = C.BUTTON_SPACING
         left_margin = 150
-        
-        # Calculate starting Y position (center of screen)
-        start_y = (C.WINDOW_HEIGHT - (button_height * 5 + button_spacing * 4)) // 2 + 80
+        start_y = (C.WINDOW_HEIGHT - (button_height * 6 + button_spacing * 5)) // 2 + 80
         button_x = left_margin + button_width//2
         offset = button_height + button_spacing
         
-        # Create Play button
+        # BUTTONS
+        # Play
         play_button = Button(
             position=Vector2(button_x, start_y),
             width=button_width,
@@ -127,7 +162,7 @@ class Game:
             text_size=C.BUTTON_FONT_SIZE
         )
         
-        # Create Statistics button
+        # Statistics
         stats_button = Button(
             position=Vector2(button_x, start_y + offset),
             width=button_width,
@@ -139,13 +174,13 @@ class Game:
             text_size=C.BUTTON_FONT_SIZE
         )
         
-        # Create Audio button
+        # SFX :
         current_volume = Sounds().get_volume_percent()
         audio_button = Button(
             position=Vector2(button_x, start_y + 2 * offset),
             width=button_width,
             height=button_height,
-            text=f"Audio {current_volume}%",
+            text=f"SFX : {current_volume}%",
             callback=self.toggle_audio,
             idle_color=C.BUTTON_IDLE_COLOR,
             hover_color=C.BUTTON_HOVER_COLOR['green'],
@@ -153,9 +188,23 @@ class Game:
         )
         audio_button.is_volume_button = True  # Add custom attribute to identify volume buttons
         
-        # Create Clear Data button
-        clear_button = Button(
+        # Music :
+        current_music_volume = Sounds().get_music_percent()
+        music_button = Button(
             position=Vector2(button_x, start_y + 3 * offset),
+            width=button_width,
+            height=button_height,
+            text=f"Music : {current_music_volume}%",
+            callback=self.toggle_music_volume,
+            idle_color=C.BUTTON_IDLE_COLOR,
+            hover_color=C.BUTTON_HOVER_COLOR['green'],
+            text_size=C.BUTTON_FONT_SIZE
+        )
+        music_button.is_music_button = True  # Add custom attribute to identify music buttons
+        
+        # Clear Data
+        clear_button = Button(
+            position=Vector2(button_x, start_y + 4 * offset),
             width=button_width,
             height=button_height,
             text="Clear Data",
@@ -165,9 +214,9 @@ class Game:
             text_size=C.BUTTON_FONT_SIZE
         )
         
-        # Create Quit button
+        # Quit
         quit_button = Button(
-            position=Vector2(button_x, start_y + 4 * offset),
+            position=Vector2(button_x, start_y + 5 * offset),
             width=button_width,
             height=button_height,
             text="Quit",
@@ -181,24 +230,26 @@ class Game:
         self.groups['menu'].add(play_button)
         self.groups['menu'].add(stats_button)
         self.groups['menu'].add(audio_button)
+        self.groups['menu'].add(music_button)
         self.groups['menu'].add(clear_button)
         self.groups['menu'].add(quit_button)
-    
+        
+        # Play menu music
+        self.play_menu_music()
+
     def setup_pause_menu(self):
         """Setup the pause menu with buttons"""
         # Clear the pause menu group
         self.groups['pause'].empty()
         
-        # Define button dimensions
         button_width = C.BUTTON_WIDTH
         button_height = C.BUTTON_HEIGHT
         button_spacing = C.BUTTON_SPACING
-        
-        # Calculate starting Y position (center of screen)
-        start_y = (C.WINDOW_HEIGHT - (button_height * 5 + button_spacing * 4)) // 2 + 80
+        start_y = (C.WINDOW_HEIGHT - (button_height * 6 + button_spacing * 5)) // 2 + 80
         offset = button_height + button_spacing
         
-        # Create Resume button
+        # BUTTONS
+        # Resume
         resume_button = Button(
             position=Vector2(C.WINDOW_WIDTH//2, start_y),
             width=button_width,
@@ -210,7 +261,7 @@ class Game:
             text_size=C.BUTTON_FONT_SIZE
         )
         
-        # Create Retry button
+        # Retry
         retry_button = Button(
             position=Vector2(C.WINDOW_WIDTH//2, start_y + offset),
             width=button_width,
@@ -222,7 +273,7 @@ class Game:
             text_size=C.BUTTON_FONT_SIZE
         )
         
-        # Create Statistics button
+        # Statistics
         stats_button = Button(
             position=Vector2(C.WINDOW_WIDTH//2, start_y + 2 * offset),
             width=button_width,
@@ -234,13 +285,13 @@ class Game:
             text_size=C.BUTTON_FONT_SIZE
         )
         
-        # Create Audio button
+        # SFX :
         current_volume = Sounds().get_volume_percent()
         audio_button = Button(
             position=Vector2(C.WINDOW_WIDTH//2, start_y + 3 * offset),
             width=button_width,
             height=button_height,
-            text=f"Audio {current_volume}%",
+            text=f"SFX : {current_volume}%",
             callback=self.toggle_audio,
             idle_color=C.BUTTON_IDLE_COLOR,
             hover_color=C.BUTTON_HOVER_COLOR['green'],
@@ -248,9 +299,23 @@ class Game:
         )
         audio_button.is_volume_button = True  # Add custom attribute to identify volume buttons
         
-        # Create Menu button
-        menu_button = Button(
+        # Music :
+        current_music_volume = Sounds().get_music_percent()
+        music_button = Button(
             position=Vector2(C.WINDOW_WIDTH//2, start_y + 4 * offset),
+            width=button_width,
+            height=button_height,
+            text=f"Music : {current_music_volume}%",
+            callback=self.toggle_music_volume,
+            idle_color=C.BUTTON_IDLE_COLOR,
+            hover_color=C.BUTTON_HOVER_COLOR['green'],
+            text_size=C.BUTTON_FONT_SIZE
+        )
+        music_button.is_music_button = True  # Add custom attribute to identify music buttons
+        
+        # Menu
+        menu_button = Button(
+            position=Vector2(C.WINDOW_WIDTH//2, start_y + 5 * offset),
             width=button_width,
             height=button_height,
             text="Menu",
@@ -263,8 +328,9 @@ class Game:
         # Add buttons to pause menu group
         self.groups['pause'].add(resume_button)
         self.groups['pause'].add(retry_button)
-        self.groups['pause'].add(audio_button)
         self.groups['pause'].add(stats_button)
+        self.groups['pause'].add(audio_button)
+        self.groups['pause'].add(music_button)
         self.groups['pause'].add(menu_button)
     
     def setup_gameover_menu(self):
@@ -279,11 +345,11 @@ class Game:
         button_width = C.BUTTON_WIDTH
         button_height = C.BUTTON_HEIGHT
         button_spacing = C.BUTTON_SPACING
-        
-        # Calculate starting Y position for buttons (below score text)
-        start_y = C.WINDOW_HEIGHT//2 + 80  # Move down to make room for more stats
+        start_y = C.WINDOW_HEIGHT//2 + 80
         offset = button_height + button_spacing
-        # Create Retry button
+
+        # BUTTONS
+        # Retry
         retry_button = Button(
             position=Vector2(C.WINDOW_WIDTH//2, start_y),
             width=button_width,
@@ -295,7 +361,7 @@ class Game:
             text_size=C.BUTTON_FONT_SIZE
         )
         
-        # Create Statistics button
+        # Statistics
         stats_button = Button(
             position=Vector2(C.WINDOW_WIDTH//2, start_y + offset),
             width=button_width,
@@ -307,7 +373,7 @@ class Game:
             text_size=C.BUTTON_FONT_SIZE
         )
         
-        # Create Menu button
+        # Menu
         menu_button = Button(
             position=Vector2(C.WINDOW_WIDTH//2, start_y + 2*offset),
             width=button_width,
@@ -330,29 +396,41 @@ class Game:
             self.game_state = Game.STATE_PAUSED
             self.elapsed_timer.pause()
             self.setup_pause_menu()
+            # Pause music when game is paused
+            Sounds().pause_music()
         elif self.game_state == Game.STATE_PAUSED:
             self.game_state = Game.STATE_PLAYING
             self.elapsed_timer.resume()
+            # Resume music when game is resumed
+            Sounds().unpause_music()
     
     def resume_game(self):
         """Resume the game from pause - callback for Resume button"""
         self.game_state = Game.STATE_PLAYING
         self.elapsed_timer.resume()
+        # Resume music
+        Sounds().unpause_music()
     
     def retry_game(self):
         """Restart the current game - callback for Retry button"""
         self.game_state = Game.STATE_PLAYING
         self.setup_game()
+        # Play game music
+        self.play_game_music()
     
     def return_to_menu(self):
         """Return to main menu - callback for Menu button"""
         self.game_state = Game.STATE_MENU
         self.setup_home_menu()
+        # Switch to menu music
+        self.play_menu_music()
     
     def start_game(self):
         """Start the game - callback for Play button"""
         self.game_state = Game.STATE_PLAYING
         self.setup_game()
+        # Switch to game music
+        self.play_game_music()
     
     def show_statistics(self):
         """Prepare statistics data and schedule window creation for next frame"""
@@ -689,6 +767,9 @@ class Game:
         # Update based on game state
         if self.game_state == Game.STATE_MENU:
             self.groups['menu'].update()
+            # Ensure menu music is playing
+            if self.current_music != "Spire":
+                self.play_menu_music()
         elif self.game_state == Game.STATE_PAUSED:
             self.groups['pause'].update()
         elif self.game_state == Game.STATE_GAMEOVER:
@@ -698,6 +779,10 @@ class Game:
             pg.event.pump()  # Process any pending events
             self.create_stats_window()  # This will block until the window is closed
         elif self.game_state == Game.STATE_PLAYING:
+            # Ensure game music is playing if not game over
+            if not self.game_over and self.current_music != "Clover":
+                self.play_game_music()
+                
             # Update elapsed time
             self.update_elapsed_time()
             
@@ -736,6 +821,8 @@ class Game:
                 self.end_time = datetime.now()  # Record the end time
                 # Pause the elapsed timer when game is over
                 self.elapsed_timer.pause()
+                # Stop music when game over
+                self.stop_music()
             
             # Game over timer complete - switch to game over state
             if self.game_over and self.game_over_timer.is_completed:

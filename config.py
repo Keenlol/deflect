@@ -15,13 +15,13 @@ class Config:
     FLOOR_HEIGHT = 100
 
     # UI
-    TITLE_FONT_SIZE = 80
-    BUTTON_FONT_SIZE = 60
+    TITLE_FONT_SIZE = 72
+    BUTTON_FONT_SIZE = 52
     BUTTON_IDLE_COLOR = (154, 160, 175)
     BUTTON_HOVER_COLOR = {'blue':(94, 175, 255),
                           'yellow':(255, 205, 120),
                           'red':(224, 79, 74),
                           'green':(71, 201, 105)}
-    BUTTON_WIDTH = 320
-    BUTTON_HEIGHT = 70
+    BUTTON_WIDTH = 400
+    BUTTON_HEIGHT = 52
     BUTTON_SPACING = 8
