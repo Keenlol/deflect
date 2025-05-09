@@ -2,6 +2,7 @@
 
 **A 2D action survival game where defense is your only offense.**  
 By Chetphisuth Tongpa (ID: 6710545491)
+> 💡 Final project of SKE   Computer Programming II 2025 course at Kasetsart University, made for educational purposes only.
 
 ## 🎮 Game Overview
 
@@ -65,6 +66,4 @@ The game window should now open and you can start playing. It can take sometime 
 - **Sound Effects**: from the game [*Absolver*](https://store.steampowered.com/app/473690/Absolver/) and [*Mortal Kombat X*](https://store.steampowered.com/app/307780/Mortal_Kombat_X/). (use with modifications)
 - **Music**: [*"Colver" by Amos Roddy*](https://open.spotify.com/track/0OKm1zL4sWhwa7yi6aEKQ0?si=9d205133b47d4a62) and [*"Spire" by ToyTree*](https://open.spotify.com/track/1cIVDBzfDZ8wFYPDNxqR5d?si=1e099d260b0d4eed). (direct use)
 - **Fonts**: [*"Jua"*](https://fonts.google.com/specimen/Jua) and [*"Coiny"*](https://fonts.google.com/specimen/Coiny). (direct use)
----
-> 💡 This is a student project made for educational purposes.
 
