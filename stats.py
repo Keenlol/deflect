@@ -420,7 +420,7 @@ class Stats:
                 cell.set_edgecolor(theme['table']['edge_color'])
             
             # Set title with custom font
-            fig.suptitle('Dodge Statistics', fontsize=fsize['big'], color=theme['title'])
+            fig.suptitle('Damage Dodged Statistics', fontsize=fsize['big'], color=theme['title'])
             
             # Display the figure
             canvas = FigureCanvasTkAgg(fig, master=tab)
@@ -537,7 +537,7 @@ class Stats:
                 autotext.set_fontsize(fsize['medium'])
                 autotext.set_color(theme['text'])
             
-            ax.set_title('Damage by Attack Type', fontsize=fsize['big'], color=theme['title'])
+            ax.set_title('Damage Income by Attack Type', fontsize=fsize['big'], color=theme['title'])
             ax.axis('equal')  # Equal aspect ratio ensures the pie chart is circular
             
             # Display the figure
@@ -641,7 +641,7 @@ class Stats:
             # Set labels with light text
             ax.set_xlabel('Damage Amount', fontsize=fsize['medium'], color=theme['text'])
             ax.set_ylabel('Frequency', fontsize=fsize['medium'], color=theme['text'])
-            ax.set_title('Deflected Damage Distribution', fontsize=fsize['big'], color=theme['title'])
+            ax.set_title('Deflected Damage', fontsize=fsize['big'], color=theme['title'])
             
             # Style the tick labels and grid
             ax.tick_params(axis='both', which='major', labelsize=fsize['small'], colors=theme['text'])
