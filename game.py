@@ -22,13 +22,13 @@ class Game:
     STATE_MENU = 0
     STATE_PLAYING = 1
     STATE_GAMEOVER = 2
-    STATE_PAUSED = 3  # New state for pause menu
-    STATE_STATISTICS = 4  # New state for statistics window
+    STATE_PAUSED = 3
+    STATE_STATISTICS = 4
     
     # Spawn rate configuration
-    INITIAL_SPAWN_RANGE = (8.0, 10.0)  # Initial spawn time range in seconds
-    FINAL_SPAWN_RANGE = (2.0, 4.0)      # Final spawn time range in seconds
-    DIFFICULTY_PEAK_TIME = 120          # Time in seconds when difficulty reaches maximum (2 minutes)
+    INITIAL_SPAWN_RANGE = (8.0, 10.0) # Seconds
+    FINAL_SPAWN_RANGE = (2.0, 4.0) # Seconds
+    DIFFICULTY_PEAK_TIME = 120 # Seconds
     
     def __init__(self):
         pg.init()
@@ -73,21 +73,18 @@ class Game:
             'bullets': pg.sprite.Group(),
             'players': pg.sprite.Group(),
             'ui': pg.sprite.Group(),
-            'menu': pg.sprite.Group(),  # Menu elements
-            'pause': pg.sprite.Group(),  # Pause menu elements
-            'gameover': pg.sprite.Group(),  # Game over menu elements
-            'sparks': pg.sprite.Group()  # Spark effects that ignore freeze
+            'menu': pg.sprite.Group(),
+            'pause': pg.sprite.Group(),
+            'gameover': pg.sprite.Group(),
+            'sparks': pg.sprite.Group()
         }
         
         # Stats related attributes
         self.stats_button = None
-        self.stats_data = {}  # To hold processed statistical data
+        self.stats_data = {}
         self.pending_stats_window = False
         
-        # Setup the home menu
         self.setup_home_menu()
-        
-        # Start menu music
         self.play_menu_music()
 
     def add_score(self, score_add):
@@ -267,7 +264,7 @@ class Game:
             width=button_width,
             height=button_height,
             text="Retry",
-            callback=self.retry_game,
+            callback=self.start_game,
             idle_color=C.BUTTON_IDLE_COLOR,
             hover_color=C.BUTTON_HOVER_COLOR['blue'],
             text_size=C.BUTTON_FONT_SIZE
@@ -355,7 +352,7 @@ class Game:
             width=button_width,
             height=button_height,
             text="Retry",
-            callback=self.retry_game,
+            callback=self.start_game,
             idle_color=C.BUTTON_IDLE_COLOR,
             hover_color=C.BUTTON_HOVER_COLOR['blue'],
             text_size=C.BUTTON_FONT_SIZE
@@ -396,40 +393,28 @@ class Game:
             self.game_state = Game.STATE_PAUSED
             self.elapsed_timer.pause()
             self.setup_pause_menu()
-            # Pause music when game is paused
             Sounds().pause_music()
         elif self.game_state == Game.STATE_PAUSED:
             self.game_state = Game.STATE_PLAYING
             self.elapsed_timer.resume()
-            # Resume music when game is resumed
             Sounds().unpause_music()
     
     def resume_game(self):
         """Resume the game from pause - callback for Resume button"""
         self.game_state = Game.STATE_PLAYING
         self.elapsed_timer.resume()
-        # Resume music
         Sounds().unpause_music()
-    
-    def retry_game(self):
-        """Restart the current game - callback for Retry button"""
-        self.game_state = Game.STATE_PLAYING
-        self.setup_game()
-        # Play game music
-        self.play_game_music()
     
     def return_to_menu(self):
         """Return to main menu - callback for Menu button"""
         self.game_state = Game.STATE_MENU
         self.setup_home_menu()
-        # Switch to menu music
         self.play_menu_music()
     
     def start_game(self):
         """Start the game - callback for Play button"""
         self.game_state = Game.STATE_PLAYING
         self.setup_game()
-        # Switch to game music
         self.play_game_music()
     
     def show_statistics(self):
@@ -452,31 +437,16 @@ class Game:
         if self.game_state != Game.STATE_STATISTICS:
             self.previous_state = self.game_state
             self.game_state = Game.STATE_STATISTICS
-            
-            # Change button text to "X"
-            if self.stats_button:
-                self.stats_button.text = "X"
-            
-            # Render the waiting message first and then process data
-            self.render_stats_waiting_message()
-            # Update the display to show message before processing data (which might cause lag)
-            pg.display.flip()
-            
-            # Pre-load data to avoid lag
+
             try:
-                # Get stats data from Stats class
                 self.stats_data = Stats().preprocess_stats_data()
             except Exception as e:
                 print(f"Error loading statistics data: {e}")
                 self.game_state = self.previous_state
                 return
         else:
-            # If already in stats mode, exit it
             self.game_state = self.previous_state
-            
-            # Reset button text
-            if self.stats_button:
-                self.stats_button.text = "Statistics"
+
     
     def render_stats_waiting_message(self):
         """Render a message that statistics are being opened in another window"""
@@ -963,8 +933,6 @@ class Game:
         """Create and show the statistics window"""
         # Define the callback for when the window is closed
         def on_stats_window_close():
-            if self.stats_button:
-                self.stats_button.text = "Statistics"
             self.game_state = self.previous_state
         
         # Create and show the statistics window
