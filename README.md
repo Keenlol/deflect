@@ -14,7 +14,8 @@ _Deflect_ is a fast-paced 2D side-scrolling survival game where players can't di
 
 - **Deflect**: Return the enemies's attack by slashing them.
 - **Dodge**: Dash forward and avoid every attacks in the way.
-- **Double Jump**: Perform a jump once in the air.
+- **Double Jump**: Perform another jump in the air.
+- **Passive Healing**: Stay out of the fight and recover.
 - **Endless**: Survive for as long as you can!
 
 ## 🕹️ Controls
