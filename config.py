@@ -23,5 +23,5 @@ class Config:
                           'red':(224, 79, 74),
                           'green':(71, 201, 105)}
     BUTTON_WIDTH = 400
-    BUTTON_HEIGHT = 52
+    BUTTON_HEIGHT = 55
     BUTTON_SPACING = 8

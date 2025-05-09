@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import seaborn as sns
 from config import Config as C
+import pandas as pd
 
 class Stats:
     """
@@ -85,6 +86,9 @@ class Stats:
         self.title_font = None
         self.text_font = None
         
+        # Processed statistics data cache
+        self.processed_data = {}
+        
         # Create the stats directory if it doesn't exist
         if not os.path.exists(self.stats_dir):
             os.makedirs(self.stats_dir)
@@ -95,6 +99,66 @@ class Stats:
             if not os.path.exists(file_path):
                 self._create_csv(file_path, config['headers'])
     
+    def preprocess_stats_data(self):
+        """Pre-process all statistics data to avoid lag when creating charts"""
+        self.processed_data = {}
+        
+        # Process dodge attack data
+        dodge_data = self.get_stats('dodged_attack')
+        if dodge_data:
+            df = pd.DataFrame(dodge_data)
+            df['damage_evaded'] = pd.to_numeric(df['damage_evaded'])
+            self.processed_data['dodge'] = {
+                'min': df['damage_evaded'].min(),
+                'max': df['damage_evaded'].max(),
+                'avg': df['damage_evaded'].mean(),
+                'std': df['damage_evaded'].std()
+            }
+        
+        # Process player position data
+        pos_data = self.get_stats('player_pos')
+        if pos_data:
+            df = pd.DataFrame(pos_data)
+            df['player_x'] = pd.to_numeric(df['player_x'])
+            df['player_y'] = pd.to_numeric(df['player_y'])
+            self.processed_data['position'] = df
+        
+        # Process damage income data
+        dmg_data = self.get_stats('dmg_income')
+        if dmg_data:
+            df = pd.DataFrame(dmg_data)
+            df['damage'] = pd.to_numeric(df['damage'])
+            damage_by_attack = df.groupby('attack_name')['damage'].sum().reset_index()
+            damage_by_attack = damage_by_attack.sort_values('damage', ascending=False)
+            
+            # Limit to top categories
+            if len(damage_by_attack) > 8:
+                other_damage = damage_by_attack.iloc[8:]['damage'].sum()
+                top_attacks = damage_by_attack.iloc[:8]
+                # Create a new row for "Other"
+                other_row = pd.DataFrame([{'attack_name': 'Other', 'damage': other_damage}])
+                top_attacks = pd.concat([top_attacks, other_row], ignore_index=True)
+            else:
+                top_attacks = damage_by_attack
+                
+            self.processed_data['damage_income'] = top_attacks
+        
+        # Process enemy lifespan data
+        lifespan_data = self.get_stats('enemy_lifespan')
+        if lifespan_data:
+            df = pd.DataFrame(lifespan_data)
+            df['lifespan_sec'] = pd.to_numeric(df['lifespan_sec'])
+            self.processed_data['enemy_lifespan'] = df
+        
+        # Process damage deflected data
+        deflect_data = self.get_stats('dmg_deflected')
+        if deflect_data:
+            df = pd.DataFrame(deflect_data)
+            df['total_damage_dealt'] = pd.to_numeric(df['total_damage_dealt'])
+            self.processed_data['deflected'] = df
+            
+        return self.processed_data
+            
     def _create_csv(self, file_path, headers):
         """Create a new CSV file with the specified headers"""
         with open(file_path, 'w', newline='') as csvfile:
@@ -221,6 +285,94 @@ class Stats:
             list: List of available statistic types
         """
         return list(self.CSV_CONFIGS.keys())
+    
+    def create_stats_window(self, on_close_callback=None):
+        """Create and show the statistics window using the preprocessed data
+        
+        Args:
+            on_close_callback: Function to call when the window is closed
+        """
+        import matplotlib
+        matplotlib.use('Agg')  # Use Agg backend to avoid threading issues
+        
+        # Make sure we have data
+        if not hasattr(self, 'processed_data') or not self.processed_data:
+            self.preprocess_stats_data()
+        
+        # Create the root window
+        root = tk.Tk()
+        root.title("Game Statistics")
+        root.geometry("550x400")
+        root.resizable(True, True)
+        root.configure(background=C.TTK_BLACK)  # Set dark background
+        
+        # Load custom fonts
+        title_font_path = "fonts/Coiny-Regular.ttf"
+        text_font_path = "fonts/Jua-Regular.ttf"
+        
+        # Try to load custom fonts
+        try:
+            # Add the fonts to Tkinter
+            font_id_title = tk.font.Font(font=title_font_path, size=14, weight="bold")
+            font_id_text = tk.font.Font(font=text_font_path, size=12)
+            print("custom font")
+        except:
+            # Fallback to system fonts if custom fonts fail to load
+            font_id_title = tk.font.Font(family="Arial", size=14, weight="bold")
+            font_id_text = tk.font.Font(family="Arial", size=12)
+            print("default")
+        
+        # Configure ttk style for dark theme
+        style = ttk.Style()
+        style.theme_use('default')
+        style.configure('TNotebook', background=C.TTK_BLACK, borderwidth=0)
+        style.configure('TNotebook.Tab', background=C.TTK_BLACK, foreground='white', padding=[10, 2])
+        style.map('TNotebook.Tab', background=[('selected', '#333333')])
+        style.configure('TFrame', background=C.TTK_BLACK)
+        style.configure('TLabel', background=C.TTK_BLACK, foreground='white')
+        
+        # Set the window close event
+        def on_window_close():
+            if on_close_callback:
+                on_close_callback()
+            root.destroy()
+            
+        root.protocol("WM_DELETE_WINDOW", on_window_close)
+        
+        # Create a header with title font
+        header = tk.Label(root, text="Game Statistics", bg=C.TTK_BLACK, fg='white')
+        try:
+            header.configure(font=font_id_title)
+        except:
+            pass
+        header.pack(pady=10)
+        
+        # Create notebook for tabs
+        notebook = ttk.Notebook(root)
+        notebook.pack(fill='both', expand=True, padx=5, pady=5)
+        
+        # Set fonts for charts
+        self.title_font = font_id_title
+        self.text_font = font_id_text
+        
+        # Add tabs based on available data
+        if 'dodge' in self.processed_data:
+            self.create_dodge_stats_tab(notebook, self.processed_data['dodge'])
+            
+        if 'position' in self.processed_data:
+            self.create_player_position_tab(notebook, self.processed_data['position'])
+            
+        if 'damage_income' in self.processed_data:
+            self.create_damage_income_tab(notebook, self.processed_data['damage_income'])
+            
+        if 'enemy_lifespan' in self.processed_data:
+            self.create_enemy_lifespan_tab(notebook, self.processed_data['enemy_lifespan'])
+            
+        if 'deflected' in self.processed_data:
+            self.create_damage_deflected_tab(notebook, self.processed_data['deflected'])
+        
+        # Run the Tkinter main loop
+        root.mainloop()
 
     def create_dodge_stats_tab(self, notebook, data):
         """Create a tab showing dodge statistics table"""

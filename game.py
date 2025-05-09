@@ -457,9 +457,15 @@ class Game:
             if self.stats_button:
                 self.stats_button.text = "X"
             
+            # Render the waiting message first and then process data
+            self.render_stats_waiting_message()
+            # Update the display to show message before processing data (which might cause lag)
+            pg.display.flip()
+            
             # Pre-load data to avoid lag
             try:
-                self.preload_stats_data()
+                # Get stats data from Stats class
+                self.stats_data = Stats().preprocess_stats_data()
             except Exception as e:
                 print(f"Error loading statistics data: {e}")
                 self.game_state = self.previous_state
@@ -472,146 +478,31 @@ class Game:
             if self.stats_button:
                 self.stats_button.text = "Statistics"
     
-    def preload_stats_data(self):
-        """Pre-process all statistics data to avoid lag when creating charts"""
-        stats = Stats()
-        self.stats_data = {}
+    def render_stats_waiting_message(self):
+        """Render a message that statistics are being opened in another window"""
+        # Create dark background
+        self.screen.fill(C.BACKGROUND_COLOR)
         
-        # Process dodge attack data
-        dodge_data = stats.get_stats('dodged_attack')
-        if dodge_data:
-            df = pd.DataFrame(dodge_data)
-            df['damage_evaded'] = pd.to_numeric(df['damage_evaded'])
-            self.stats_data['dodge'] = {
-                'min': df['damage_evaded'].min(),
-                'max': df['damage_evaded'].max(),
-                'avg': df['damage_evaded'].mean(),
-                'std': df['damage_evaded'].std()
-            }
-        
-        # Process player position data
-        pos_data = stats.get_stats('player_pos')
-        if pos_data:
-            df = pd.DataFrame(pos_data)
-            df['player_x'] = pd.to_numeric(df['player_x'])
-            df['player_y'] = pd.to_numeric(df['player_y'])
-            self.stats_data['position'] = df
-        
-        # Process damage income data
-        dmg_data = stats.get_stats('dmg_income')
-        if dmg_data:
-            df = pd.DataFrame(dmg_data)
-            df['damage'] = pd.to_numeric(df['damage'])
-            damage_by_attack = df.groupby('attack_name')['damage'].sum().reset_index()
-            damage_by_attack = damage_by_attack.sort_values('damage', ascending=False)
-            
-            # Limit to top categories
-            if len(damage_by_attack) > 8:
-                other_damage = damage_by_attack.iloc[8:]['damage'].sum()
-                top_attacks = damage_by_attack.iloc[:8]
-                # Create a new row for "Other"
-                other_row = pd.DataFrame([{'attack_name': 'Other', 'damage': other_damage}])
-                top_attacks = pd.concat([top_attacks, other_row], ignore_index=True)
-            else:
-                top_attacks = damage_by_attack
-                
-            self.stats_data['damage_income'] = top_attacks
-        
-        # Process enemy lifespan data
-        lifespan_data = stats.get_stats('enemy_lifespan')
-        if lifespan_data:
-            df = pd.DataFrame(lifespan_data)
-            df['lifespan_sec'] = pd.to_numeric(df['lifespan_sec'])
-            self.stats_data['enemy_lifespan'] = df
-        
-        # Process damage deflected data
-        deflect_data = stats.get_stats('dmg_deflected')
-        if deflect_data:
-            df = pd.DataFrame(deflect_data)
-            df['total_damage_dealt'] = pd.to_numeric(df['total_damage_dealt'])
-            self.stats_data['deflected'] = df
-    
-    def create_stats_window(self):
-        """Create and show the statistics window using the preloaded data"""
-        import matplotlib
-        matplotlib.use('Agg')  # Use Agg backend to avoid threading issues
-        
-        # Create the root window
-        root = tk.Tk()
-        root.title("Game Statistics")
-        root.geometry("550x400")
-        root.resizable(True, True)
-        root.configure(background=C.TTK_BLACK)  # Set dark background
-        
-        # Load custom fonts
-        title_font_path = "fonts/Coiny-Regular.ttf"
-        text_font_path = "fonts/Jua-Regular.ttf"
-        
-        # Try to load custom fonts
+        # Load font
         try:
-            # Add the fonts to Tkinter
-            font_id_title = font.Font(font=title_font_path, size=14, weight="bold")
-            font_id_text = font.Font(font=text_font_path, size=12)
-            print("custom font")
+            font = pg.font.Font("fonts/Jua-Regular.ttf", 32)
         except:
-            # Fallback to system fonts if custom fonts fail to load
-            font_id_title = font.Font(family="Arial", size=14, weight="bold")
-            font_id_text = font.Font(family="Arial", size=12)
-            print("defualt")
+            font = pg.font.Font(None, 32)
         
-        # Configure ttk style for dark theme
-        style = ttk.Style()
-        style.theme_use('default')
-        style.configure('TNotebook', background=C.TTK_BLACK, borderwidth=0)
-        style.configure('TNotebook.Tab', background=C.TTK_BLACK, foreground='white', padding=[10, 2])
-        style.map('TNotebook.Tab', background=[('selected', '#333333')])
-        style.configure('TFrame', background=C.TTK_BLACK)
-        style.configure('TLabel', background=C.TTK_BLACK, foreground='white')
+        # Create message text
+        message = "Statistics are opened in another window"
+        sub_message = "Close it to continue the game"
         
-        # Set the window close event to restore the game state
-        def on_window_close():
-            if self.stats_button:
-                self.stats_button.text = "Statistics"
-            self.game_state = self.previous_state
-            root.destroy()
-            
-        root.protocol("WM_DELETE_WINDOW", on_window_close)
+        text_surface = font.render(message, True, (255, 255, 255))
+        sub_text_surface = font.render(sub_message, True, (200, 200, 200))
         
-        # Create a header with title font
-        header = tk.Label(root, text="Game Statistics", bg=C.TTK_BLACK, fg='white')
-        try:
-            header.configure(font=font_id_title)
-        except:
-            pass
-        header.pack(pady=10)
+        # Position the text in the center of the screen
+        text_rect = text_surface.get_rect(center=(C.WINDOW_WIDTH // 2, C.WINDOW_HEIGHT // 2 - 20))
+        sub_text_rect = sub_text_surface.get_rect(center=(C.WINDOW_WIDTH // 2, C.WINDOW_HEIGHT // 2 + 20))
         
-        # Create notebook for tabs
-        notebook = ttk.Notebook(root)
-        notebook.pack(fill='both', expand=True, padx=5, pady=5)
-        
-        # Create Stats instance with font info
-        stats = Stats()
-        stats.title_font = font_id_title
-        stats.text_font = font_id_text
-        
-        # Add tabs based on available data
-        if 'dodge' in self.stats_data:
-            stats.create_dodge_stats_tab(notebook, self.stats_data['dodge'])
-            
-        if 'position' in self.stats_data:
-            stats.create_player_position_tab(notebook, self.stats_data['position'])
-            
-        if 'damage_income' in self.stats_data:
-            stats.create_damage_income_tab(notebook, self.stats_data['damage_income'])
-            
-        if 'enemy_lifespan' in self.stats_data:
-            stats.create_enemy_lifespan_tab(notebook, self.stats_data['enemy_lifespan'])
-            
-        if 'deflected' in self.stats_data:
-            stats.create_damage_deflected_tab(notebook, self.stats_data['deflected'])
-        
-        # Run the Tkinter main loop
-        root.mainloop()
+        # Draw the text
+        self.screen.blit(text_surface, text_rect)
+        self.screen.blit(sub_text_surface, sub_text_rect)
 
     def quit_game(self):
         """Quit the game - callback for Quit button"""
@@ -741,7 +632,6 @@ class Game:
         # Set up shake timer
         self.shake_timer.duration = shake_sec
         self.shake_intensity = shake_intensity
-        # Shake timer will start after freeze ends
     
     def update_camera_shake(self, dt):
         """Update the camera shake effect"""
@@ -761,13 +651,12 @@ class Game:
         # Update all timers
         Timer.update_all(dt)
         
-        # Always update sparks regardless of game state or freeze
+        # Sparks effect play beyond freeze effect
         self.groups['sparks'].update()
         
         # Update based on game state
         if self.game_state == Game.STATE_MENU:
             self.groups['menu'].update()
-            # Ensure menu music is playing
             if self.current_music != "Spire":
                 self.play_menu_music()
         elif self.game_state == Game.STATE_PAUSED:
@@ -775,28 +664,23 @@ class Game:
         elif self.game_state == Game.STATE_GAMEOVER:
             self.groups['gameover'].update()
         elif self.game_state == Game.STATE_STATISTICS:
-            # Exit pygame event loop temporarily to show tkinter window
-            pg.event.pump()  # Process any pending events
-            self.create_stats_window()  # This will block until the window is closed
+            self.render_stats_waiting_message()
+            pg.event.pump()  
+            self.create_stats_window()
+            return
         elif self.game_state == Game.STATE_PLAYING:
-            # Ensure game music is playing if not game over
             if not self.game_over and self.current_music != "Clover":
                 self.play_game_music()
                 
-            # Update elapsed time
             self.update_elapsed_time()
             
-            # freeze effect - but always update sparks
             if not self.freeze_timer.is_completed:
-                # Still need to draw the screen during freeze
                 self.draw()
                 return
             
-            # Start shake after freeze ends
             if self.freeze_timer.just_completed:
                 self.shake_timer.start()
 
-            # Enemy spawn timer
             if self.spawn_timer.is_completed and not self.game_over:
                 self.spawn_enemy()
                 self.spawn_timer.duration = self.get_next_spawn_time()
@@ -819,9 +703,7 @@ class Game:
                 self.game_over = True
                 self.game_over_timer.start()
                 self.end_time = datetime.now()  # Record the end time
-                # Pause the elapsed timer when game is over
                 self.elapsed_timer.pause()
-                # Stop music when game over
                 self.stop_music()
             
             # Game over timer complete - switch to game over state
@@ -1060,14 +942,15 @@ class Game:
 
     def get_valid_spawn_position(self, enemy_type=1):
         """Get random position for enemy spawn, away from player"""
-        # Spawning logic for E1 (floating enemy)
+        # E1
         if enemy_type == 1 or enemy_type == 3:
             y = random.randint(-200, C.WINDOW_HEIGHT - C.FLOOR_HEIGHT - 100)
 
-        # Spawning logic for E2 (ground enemy)
+        # E2
         elif enemy_type == 2:
             y = C.WINDOW_HEIGHT - C.FLOOR_HEIGHT - 50
 
+        # Spawn outside canvas
         middle_offset = C.WINDOW_WIDTH/2 + 100
         if y <= -100:
             x = random.randint(-100, C.WINDOW_WIDTH + 100)
@@ -1075,6 +958,18 @@ class Game:
             x = int(C.WINDOW_WIDTH/2 + random.choice((-middle_offset, middle_offset)))
 
         return Vector2(x, y)
+
+    def create_stats_window(self):
+        """Create and show the statistics window"""
+        # Define the callback for when the window is closed
+        def on_stats_window_close():
+            if self.stats_button:
+                self.stats_button.text = "Statistics"
+            self.game_state = self.previous_state
+        
+        # Create and show the statistics window
+        stats = Stats()
+        stats.create_stats_window(on_close_callback=on_stats_window_close)
 
 if __name__ == "__main__":
     game = Game()
