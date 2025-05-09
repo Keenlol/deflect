@@ -33,7 +33,7 @@ Follow these steps to set up and run the game locally:
 1.  **Prerequisites:**
     *   Ensure you have Python 3.7 or later installed. You can download it from [python.org](https://www.python.org/).
     *   Ensure you have `pip` (Python's package installer) available. It usually comes with Python.
-    *   Note that the game is developed **on Windows**, so macOS users might potentailly have some side effects.
+    *   Note that the game is developed **on Windows**, so macOS users might potentailly have unintended side effects.
 
 2.  **Clone the Repository:**
     Clone the project repository to your local machine:
@@ -71,7 +71,7 @@ The game window should now open and you can start playing.
 - [x] Implement the new timer system for Player and Game.
 - [x] Implement the new timer system for enemy.
 - [x] Improve the code for everything.
-- [ ] Balance Enemy and Players, refine spawning and scoring.
+- [x] Balance Enemy and Players, refine spawning and scoring.
 - [x] Statistic tracking and visualization.
     - [x] Add tkinter window
     - [x] Add clean all button for all data
@@ -80,15 +80,20 @@ The game window should now open and you can start playing.
     - [x] Damage income type
     - [x] Enemy lifespan
     - [x] Total damage deflected
-- [ ] Redo the assets. Do background
-- [ ] Sound effects.
+- [x] Redo the assets. Do background
+- [x] Sound effects.
 - [x] Main menu and extra UIs.
 
 
 ## 📎 Links
 - [Full Project Proposal V4](https://docs.google.com/document/d/1NTz00DZZyBh48hizPht9d8jJEmeq7qE31ddM4IOAoks/edit?usp=sharing)
+- [Demo Video](links)
 
+
+## ℹ️ Credits
+- **Sound Effects**: from the game [*Absolver*](https://store.steampowered.com/app/473690/Absolver/) and [*Mortal Kombat X*](https://store.steampowered.com/app/307780/Mortal_Kombat_X/). (use with modifications)
+- **Music**: [*"Colver" by Amos Roddy*](https://open.spotify.com/track/0OKm1zL4sWhwa7yi6aEKQ0?si=9d205133b47d4a62) and [*"Spire" by ToyTree*](https://open.spotify.com/track/1cIVDBzfDZ8wFYPDNxqR5d?si=1e099d260b0d4eed). (direct use)
+- I used the font [*"Jua"*](https://fonts.google.com/specimen/Jua) and [*"Coiny"*](https://fonts.google.com/specimen/Coiny). (direct use)
 ---
-
 > 💡 This is a student project made for educational purposes.
 
