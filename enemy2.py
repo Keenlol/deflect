@@ -51,23 +51,23 @@ class Fencer(Enemy):
         # Start in waiting state
         self._start_waiting()
         
-    def start_attack(self, target):
+    def __start_attack(self, target):
         if abs(target.position.x - self.position.x) < self.MAX_DISTANCE:
-            self.current_attack = self.random((self.dash_attack, self.shard_attack), choice=True)
+            self.current_attack = self.random((self.__dash_attack, self.__shard_attack), choice=True)
         else:
-            self.current_attack = self.random((self.shard_attack, self.rain_attack), choice=True)
+            self.current_attack = self.random((self.__shard_attack, self.__rain_attack), choice=True)
 
         self.is_attacking = True
         self.is_dashing = False
         
-        if self.current_attack == self.dash_attack:
-            self.start_dash_attack(target)
-        elif self.current_attack == self.shard_attack:
-            self.start_shard_attack(target)
+        if self.current_attack == self.__dash_attack:
+            self.__start_dash_attack(target)
+        elif self.current_attack == self.__shard_attack:
+            self.__start_shard_attack(target)
         else:
-            self.start_shard_rain(target)
+            self.__start_shard_rain(target)
 
-    def start_dash_attack(self, target):
+    def __start_dash_attack(self, target):
         # Set direction and facing based on target
         self.direction = 1 if target.position.x > self.position.x else -1
         self.facing_right = self.direction > 0
@@ -81,14 +81,14 @@ class Fencer(Enemy):
         self._attack_timer.start(self.ATTACK_INFO['slash']['charge_dur'])
         Sounds().play_sound('e2_charge')
 
-    def end_dash_attack(self):
+    def __end_dash_attack(self):
         self.weapon_active = False
         self.velocity.x = 0
         self.is_attacking = False
         self.current_attack = None
         self._start_waiting()
 
-    def dash_attack(self, target):
+    def __dash_attack(self, target):
         # Maintain the original dash direction
         self.facing_right = self.direction > 0
         
@@ -111,7 +111,7 @@ class Fencer(Enemy):
                 
         elif self.is_dashing:  # Dashing phase
             if self._attack_timer.is_completed:
-                self.end_dash_attack()
+                self.__end_dash_attack()
                 return True
                 
         return False
@@ -127,7 +127,7 @@ class Fencer(Enemy):
             weapon_rect = weapon_frame.get_rect(center=weapon_pos)
             surface.blit(weapon_frame, weapon_rect)
     
-    def start_shard_attack(self, target):
+    def __start_shard_attack(self, target):
         self._attack_timer.start(self.ATTACK_INFO['shard']['delay'])
         self.shards.clear()
         
@@ -164,7 +164,7 @@ class Fencer(Enemy):
         self.velocity.x = 0
         Sounds().play_sound_random(['e2_shards_spawn1','e2_shards_spawn2'])
     
-    def shard_attack(self, target):
+    def __shard_attack(self, target):
         if not self._attack_timer.is_completed:
             return False
 
@@ -190,7 +190,7 @@ class Fencer(Enemy):
             
         return False
     
-    def start_shard_rain(self, target):
+    def __start_shard_rain(self, target):
         self.rain_index = 0
         self._attack_timer.start(self.ATTACK_INFO['rain']['delay'])
 
@@ -209,7 +209,7 @@ class Fencer(Enemy):
         self._anim.change_state("attack1")
         self.velocity.x = 0
     
-    def rain_attack(self, target):
+    def __rain_attack(self, target):
         # Spawn new shard when delay timer completes
         if self._attack_timer.just_completed and self.rain_index < self.ATTACK_INFO['rain']['count']:
             spawn_pos = self.rain_positions[self.rain_index]
@@ -236,7 +236,7 @@ class Fencer(Enemy):
             
         return False
     
-    def update_movement(self, target):
+    def __update_movement(self, target):
         # If too far from player, override direction to move towards player
         distance_to_player = target.position.x - self.position.x
         if abs(distance_to_player) > self.MAX_DISTANCE:
@@ -248,11 +248,11 @@ class Fencer(Enemy):
     
     def _ai_logic(self, target):
         self.weapon_anim.update()
-        self.check_deflect_collision(target)
+        self.__check_deflect_collision(target)
         
         # Handle attack state
         if self.is_attacking and self.current_attack:
-            if self.current_attack != self.dash_attack:
+            if self.current_attack != self.__dash_attack:
                 self.facing_right = target.position.x > self.position.x
             self.current_attack(target)
             return
@@ -275,30 +275,30 @@ class Fencer(Enemy):
         
         # Moving
         elif not self._move_timer.is_completed:
-            self.update_movement(target)
+            self.__update_movement(target)
         
         # Finished moving
         elif self._move_timer.just_completed:
-            self.start_attack(target)
+            self.__start_attack(target)
 
-    def check_deflect_collision(self, player:Player):
-        if (self.is_attacking and self.current_attack == self.dash_attack and
+    def __check_deflect_collision(self, player:Player):
+        if (self.is_attacking and self.current_attack == self.__dash_attack and
             self.weapon_active and self.is_dashing and not self.is_knocked_back):
             if player.knife.active and player.is_deflecting:
                 if (self.position - player.knife.position).length() <= player.knife.width:
                     knockback_dir = self.position - player.position
                     knockback_amount = self.ATTACK_INFO['slash']['speed']
                     self.start_knockback(knockback_dir, knockback_amount)
-                    self.end_dash_attack()
+                    self.__end_dash_attack()
                     self.game.freeze_and_shake(10, 7, 7)
-                    self.spawn_shards(player.position)
+                    self.__spawn_shards(player.position)
                     self.game.add_score(20)
                     Sounds().play_sound('deflect_hard')
                     Sounds().play_sound('deflect_hard')
                     Sounds().play_sound_random(['deflect1', 'deflect2', 'deflect3'])
                     
     
-    def spawn_shards(self, player_position):
+    def __spawn_shards(self, player_position):
         midpoint = (self.position + player_position) / 2
         Spark(midpoint, midpoint-self.position, self.game)
         Spark(midpoint, midpoint-player_position, self.game)

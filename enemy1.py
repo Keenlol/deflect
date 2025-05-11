@@ -41,11 +41,11 @@ class Wizard(Enemy):
         # Start in waiting state
         self._start_waiting()
 
-    def ease_in_out_sine(self, t):
+    def __ease_in_out_sine(self, t):
         """Sine easing function for smooth movement"""
         return -(math.cos(math.pi * t) - 1) / 2
     
-    def pick_new_position(self, target):
+    def __pick_new_position(self, target):
         """Pick a new random position near the target"""
         while True:
             base_y = target.position.y - self.random((100, 300))  # Tend to stay above player
@@ -70,7 +70,7 @@ class Wizard(Enemy):
         
         self.needs_new_pos = False
     
-    def shoot_radial(self, target=None):
+    def __shoot_radial(self, target=None):
         """Shoot projectiles in a radial pattern"""
         pr = self.ATTACK_INFO['radial']
         def shoot_radial_layer(inerval_deg, offset_deg=0):
@@ -100,7 +100,7 @@ class Wizard(Enemy):
             
             return True
     
-    def shoot_burst(self, target):
+    def __shoot_burst(self, target):
         """Shoot burst of projectiles towards target"""
         if self.shots_fired >= 3:
             return True
@@ -130,7 +130,7 @@ class Wizard(Enemy):
         Sounds().play_sound_random(['e1_cast1', 'e1_cast2'])
         return False
     
-    def shoot_follow(self, target):
+    def __shoot_follow(self, target):
         """Rapid fire projectiles that follow the target"""
         if self.shots_fired >= 10:
             return True
@@ -157,13 +157,13 @@ class Wizard(Enemy):
         Sounds().play_sound_random(['e1_cast1', 'e1_cast2'])
         return False
     
-    def start_attack(self):
+    def __start_attack(self):
         """Initialize a random attack pattern"""
         self.is_attacking = True
         self.attack_phase = 0
         self._attack_timer.reset()
         self.shots_fired = 0
-        self.current_attack = self.random((self.shoot_radial, self.shoot_burst, self.shoot_follow), choice=True)
+        self.current_attack = self.random((self.__shoot_radial, self.__shoot_burst, self.__shoot_follow), choice=True)
         self._anim.change_state("attack")
     
     def _ai_logic(self, target):
@@ -185,7 +185,7 @@ class Wizard(Enemy):
         
         # Start Moving
         if self.needs_new_pos:
-            self.pick_new_position(target)
+            self.__pick_new_position(target)
             self.start_pos = Vector2(self.position)
             self._start_movement()
             self.needs_new_pos = False
@@ -193,14 +193,14 @@ class Wizard(Enemy):
         # Moving
         if not self._move_timer.is_completed:
             t = self._move_timer.progress
-            eased_t = self.ease_in_out_sine(t)
+            eased_t = self.__ease_in_out_sine(t)
             self.position = self.start_pos.lerp(self.target_pos, eased_t)
             self.velocity = (self.target_pos - self.start_pos).normalize() * self.MOVE_SPEED
             self._anim.change_state("move")
             
         # Finished moving
         if self._move_timer.is_completed and not self.is_attacking:
-            self.start_attack()
+            self.__start_attack()
         
         self.rect.center = self.position
 

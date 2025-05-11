@@ -147,6 +147,10 @@ class Projectile(pygame.sprite.Sprite):
 
 
 class Ball(Projectile):
+    STRETCH_THRESHOLD = 8
+    MAX_STRETCH_RATIO = 2.5
+    MIN_SQUASH_RATIO = 0.85
+
     def __init__(self, 
                  position=Vector2(0, 0),
                  velocity=Vector2(0, 0),
@@ -156,10 +160,6 @@ class Ball(Projectile):
                  speed_multiplier=1.0,
                  deflected=False,
                  attack_name=''):
-        
-        self.STRETCH_THRESHOLD = 8
-        self.MAX_STRETCH_RATIO = 2.5
-        self.MIN_SQUASH_RATIO = 0.85
 
         surfacesize = int(radius * 2 * self.MAX_STRETCH_RATIO)
         
@@ -217,6 +217,8 @@ class Ball(Projectile):
 
 
 class Shard(Projectile):
+    SCALE_DECREASE_RATE = 0.07  # How fast it returns to normal size
+    NORMAL_SPIN = 3
     def __init__(self, 
                  position=Vector2(0, 0),
                  velocity=Vector2(0, 0),
@@ -249,14 +251,12 @@ class Shard(Projectile):
         
         # Rotation attributes
         self.angle = random.uniform(0, 360)
-        self.NORMAL_SPIN = 3
         self.DEFLECTED_SPIN = random.uniform(10, 15)
         self.spin_speed = self.NORMAL_SPIN
 
         # Spawn animation attributes
         self.spawn_animation = True
         self.spawn_scale = 2.0  # Start 80% larger
-        self.scale_decrease_rate = 0.07  # How fast it returns to normal size
         self.min_scale = 1.0  # Normal size
         
         # Save original base and height values
@@ -310,7 +310,7 @@ class Shard(Projectile):
         
         # Update spawn animation
         if self.spawn_animation:
-            self.spawn_scale -= self.scale_decrease_rate
+            self.spawn_scale -= self.SCALE_DECREASE_RATE
             if self.spawn_scale <= self.min_scale:
                 self.spawn_scale = self.min_scale
                 self.spawn_animation = False
@@ -319,6 +319,8 @@ class Shard(Projectile):
         super().update()
 
 class Laser(Projectile):
+    STRETCH_THRESHOLD = 5
+
     def __init__(self, 
                  position=Vector2(0, 0),
                  velocity=Vector2(0, 0),
@@ -335,7 +337,6 @@ class Laser(Projectile):
                  attack_name=''):
         
         # Laser-specific attributes
-        self.STRETCH_THRESHOLD = 5
         self.bounces = bounce_limit + 1
         self.target = target
         self.laser_type = laser_type

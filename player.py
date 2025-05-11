@@ -20,6 +20,7 @@ class Player(pygame.sprite.Sprite):
     MAX_HEALTH = 100
     DOUBLE_JUMP_FORCE = -12
     KNOCKBACK_FORCE = Vector2(-3, -8)
+    DODGE_SPEED = 25
 
     def __init__(self, game, x=0, y=0):
         super().__init__()
@@ -61,7 +62,6 @@ class Player(pygame.sprite.Sprite):
         self.mouse_clicked = False  # New input state for mouse click
 
         # Dodge attributes
-        self.DODGE_SPEED = 25
         self.__dodge_timer = Timer(duration=0.14, owner=self)
         self.is_dodging = False
         self.__can_dodge = True

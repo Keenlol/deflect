@@ -112,7 +112,7 @@ class Gunman(Enemy):
                 # Reset shots_fired before selecting an attack
                 self.shots_fired = 0
                 # Randomly choose between the three attacks
-                self.current_attack = self.random((self.fire_laser, self.fire_bomb, self.fire_homing), choice=True)
+                self.current_attack = self.random((self.__fire_laser, self.__fire_bomb, self.__fire_homing), choice=True)
                 self.current_attack(target)
         elif self.is_attacking:
             # Stay still during attack
@@ -164,7 +164,7 @@ class Gunman(Enemy):
                 self.is_aiming = True
                 self.aim_timer.start()
 
-    def fire_bomb(self, target):
+    def __fire_bomb(self, target):
         if self.shots_fired > 0:
             return True
             
@@ -189,7 +189,7 @@ class Gunman(Enemy):
         Sounds().play_sound_random(['e3_shoot1', 'e3_shoot2'])
         return True
 
-    def fire_homing(self, target):
+    def __fire_homing(self, target):
         homing_info = self.ATTACK_INFO['homing']
         
         if not self._attack_timer.is_completed:
@@ -220,7 +220,7 @@ class Gunman(Enemy):
         Sounds().play_sound_random(['e3_shoot1', 'e3_shoot2'])
         return False
 
-    def fire_laser(self, target):
+    def __fire_laser(self, target):
         if self.shots_fired > 0:
             return True
 
