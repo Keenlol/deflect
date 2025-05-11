@@ -166,7 +166,7 @@ class E1(Enemy):
         self.current_attack = self.random((self.shoot_radial, self.shoot_burst, self.shoot_follow), choice=True)
         self._anim.change_state("attack")
     
-    def ai_logic(self, target):
+    def _ai_logic(self, target):
         """Move towards target position with easing"""
         self.facing_right = target.position.x > self.position.x
         

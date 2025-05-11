@@ -246,7 +246,7 @@ class E2(Enemy):
             self.velocity.x = self.random((self.MOVE_SPEED[0], self.MOVE_SPEED[1])) * self.direction
         self._anim.change_state("move")
     
-    def ai_logic(self, target):
+    def _ai_logic(self, target):
         self.weapon_anim.update()
         self.check_deflect_collision(target)
         

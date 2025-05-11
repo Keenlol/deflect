@@ -130,12 +130,8 @@ class Enemy(pygame.sprite.Sprite):
                 self.is_hurt = True
                 self.__hurt_timer.start()
                 self._anim.change_state("hurt")
-        
-    def attack(self, target):
-        """Base attack method to be overridden by child classes"""
-        pass
-    
-    def ai_logic(self, target):
+
+    def _ai_logic(self, target):
         """Base movement method to be overridden by child classes"""
         pass
     
@@ -204,7 +200,7 @@ class Enemy(pygame.sprite.Sprite):
             self._anim.change_state("idle")
         
         if self.target and not self.is_hurt:
-            self.ai_logic(self.target)
+            self._ai_logic(self.target)
         
         self.__update_knockback()
         self.__apply_physics()

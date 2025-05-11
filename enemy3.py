@@ -94,7 +94,7 @@ class E3(Enemy):
             # Apply bobbing to position only for rendering, not physics
             self.rect.center = (self.position.x, self.position.y + self.bob_offset)
 
-    def ai_logic(self, target):
+    def _ai_logic(self, target):
         self.facing_right = True if target.position.x > self.position.x else False
         
         # Handle aiming and attacking
