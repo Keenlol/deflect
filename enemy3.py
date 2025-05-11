@@ -1,6 +1,6 @@
 from enemy_all import *
 
-class E3(Enemy):
+class Gunman(Enemy):
     # Movement constants
     TARGET_DISTANCE = (300, 500)
     DISTANCE_TOLERANCE = 75

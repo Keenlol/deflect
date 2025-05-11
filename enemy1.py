@@ -1,6 +1,6 @@
 from enemy_all import *
 
-class E1(Enemy):
+class Wizard(Enemy):
     # Attack properties
     ATTACK_INFO = {
         'radial': {'speed': 8, 'speed_mul': 1, 'delay': 5/60, 'damage': 25},

@@ -2,9 +2,9 @@ import pygame as pg
 from config import Config as C
 from player import Player
 from enemy_all import *
-from enemy1 import E1
-from enemy2 import E2
-from enemy3 import E3
+from enemy1 import Wizard
+from enemy2 import Fencer
+from enemy3 import Gunman
 from ui import HealthBar, Button, TextDisplay
 from pygame.math import Vector2
 import random
@@ -539,15 +539,15 @@ class Game:
 
     def spawn_enemy(self):
         """Spawn an enemy at a valid position"""
-        enemy_type = random.choice([1,2,3])  # 1 for E1, 2 for E2, 3 for E3
+        enemy_type = random.choice([1,2,3])  # 1 for Wizard, 2 for Fencer, 3 for Gunman
         spawn_pos = self.get_valid_spawn_position(enemy_type)
 
         if enemy_type == 1:
-            enemy = E1(spawn_pos.x, spawn_pos.y, self)
+            enemy = Wizard(spawn_pos.x, spawn_pos.y, self)
         elif enemy_type == 2:
-            enemy = E2(spawn_pos.x, spawn_pos.y, self)
+            enemy = Fencer(spawn_pos.x, spawn_pos.y, self)
         elif enemy_type == 3:
-            enemy = E3(spawn_pos.x, spawn_pos.y, self)
+            enemy = Gunman(spawn_pos.x, spawn_pos.y, self)
             
         self.groups['enemies'].add(enemy)
         self.groups['all'].add(enemy)
@@ -715,9 +715,9 @@ class Game:
             # Draw all game sprites
             self.groups['all'].draw(self.screen)
             
-            # Draw E2 weapons with camera shake
+            # Draw Fencer weapons with camera shake
             for enemy in self.groups['enemies']:
-                if isinstance(enemy, E2):
+                if isinstance(enemy, Fencer):
                     if not self.shake_timer.is_completed:
                         # Apply shake to weapon drawing
                         original_pos = enemy.position
@@ -900,11 +900,11 @@ class Game:
 
     def get_valid_spawn_position(self, enemy_type=1):
         """Get random position for enemy spawn, away from player"""
-        # E1
+        # Wizard
         if enemy_type == 1 or enemy_type == 3:
             y = random.randint(-200, C.WINDOW_HEIGHT - C.FLOOR_HEIGHT - 100)
 
-        # E2
+        # Fencer
         elif enemy_type == 2:
             y = C.WINDOW_HEIGHT - C.FLOOR_HEIGHT - 50
 

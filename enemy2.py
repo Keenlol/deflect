@@ -1,6 +1,6 @@
 from enemy_all import *
 
-class E2(Enemy):
+class Fencer(Enemy):
     # Constants
     MAX_DISTANCE = 400   # Maximum allowed distance from player
     
