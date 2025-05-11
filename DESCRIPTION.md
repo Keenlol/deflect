@@ -1,6 +1,6 @@
 # 🗡️ Deflect
 - [Original Project Proposal V4](other\Project_Proposal_v4.pdf)
-- [Demo Video](links)
+- [Presentation Video](https://youtu.be/6RRtU3iS4Ks)
 ## 🎮 Overview
 _Deflect_ is a fast-paced 2D side-scrolling survival game where players can't directly attack — instead, they must **deflect** enemy attacks to damage them. 
 
