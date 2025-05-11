@@ -57,10 +57,8 @@ class Game:
         
         # Stats tracking
         self.enemies_killed = 0
-        self.start_time = None
         self.elapsed_timer = Timer(duration=0, owner=self, mode=Timer.MODE_COUNTUP)
         self.elapsed_time = timedelta(seconds=0)
-        self.end_time = None
         
         # Enemy spawn system
         self.spawn_timer = Timer(duration=self.get_next_spawn_time(), owner=self)
@@ -332,9 +330,6 @@ class Game:
     
     def setup_gameover_menu(self):
         """Setup the game over menu with buttons"""
-        # Record the end time
-        self.end_time = datetime.now()
-        
         # Clear the game over menu group
         self.groups['gameover'].empty()
         
@@ -487,13 +482,11 @@ class Game:
         
         # Reset stats tracking
         self.enemies_killed = 0
-        self.start_time = datetime.now()
         
         # Reset and start the elapsed timer
         self.elapsed_timer.reset()
         self.elapsed_timer.start()
         self.elapsed_time = timedelta(seconds=0)
-        self.end_time = None
         
         # Reset spawn timer
         self.spawn_timer.duration = self.get_next_spawn_time()
@@ -520,9 +513,6 @@ class Game:
     
     def get_next_spawn_time(self):
         """Calculate spawn time based on elapsed game time"""
-        if self.start_time is None:
-            return random.uniform(*self.INITIAL_SPAWN_RANGE)
-            
         # Calculate elapsed seconds from timer instead of datetime
         elapsed_seconds = self.elapsed_timer.elapsed
             
@@ -672,7 +662,6 @@ class Game:
             if not self.game_over and self.player.health <= 0:
                 self.game_over = True
                 self.game_over_timer.start()
-                self.end_time = datetime.now()  # Record the end time
                 self.elapsed_timer.pause()
                 self.stop_music()
             
