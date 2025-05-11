@@ -89,12 +89,12 @@ class E1(Enemy):
         if self.attack_phase == 0:
             shoot_radial_layer(15, 0)
             self.attack_phase = 1
-            self.attack_timer.start(pr['delay'])
+            self._attack_timer.start(pr['delay'])
             return False
         
         # Second layer
         elif self.attack_phase == 1:
-            if not self.attack_timer.is_completed:
+            if not self._attack_timer.is_completed:
                 return False
             shoot_radial_layer(15, 7.5)
             
@@ -105,7 +105,7 @@ class E1(Enemy):
         if self.shots_fired >= 3:
             return True
             
-        if not self.attack_timer.is_completed:
+        if not self._attack_timer.is_completed:
             return False
             
         # Calculate base direction to target
@@ -126,7 +126,7 @@ class E1(Enemy):
                    attack_name='Wizard Burst-Cast ')
         
         self.shots_fired += 1
-        self.attack_timer.start(pb['delay'])
+        self._attack_timer.start(pb['delay'])
         Sounds().play_sound_random(['e1_cast1', 'e1_cast2'])
         return False
     
@@ -135,7 +135,7 @@ class E1(Enemy):
         if self.shots_fired >= 10:
             return True
             
-        if not self.attack_timer.is_completed:
+        if not self._attack_timer.is_completed:
             return False
 
         # Calculate direction to target's current position
@@ -153,7 +153,7 @@ class E1(Enemy):
                    attack_name='Wizard Track-Cast')
         
         self.shots_fired += 1
-        self.attack_timer.start(pf['delay'])
+        self._attack_timer.start(pf['delay'])
         Sounds().play_sound_random(['e1_cast1', 'e1_cast2'])
         return False
     
@@ -161,10 +161,10 @@ class E1(Enemy):
         """Initialize a random attack pattern"""
         self.is_attacking = True
         self.attack_phase = 0
-        self.attack_timer.reset()
+        self._attack_timer.reset()
         self.shots_fired = 0
         self.current_attack = self.random((self.shoot_radial, self.shoot_burst, self.shoot_follow), choice=True)
-        self.anim.change_state("attack")
+        self._anim.change_state("attack")
     
     def ai_logic(self, target):
         """Move towards target position with easing"""
@@ -179,8 +179,8 @@ class E1(Enemy):
             return
         
         # Waiting
-        if not self.wait_timer.is_completed:
-            self.anim.change_state("idle")
+        if not self._wait_timer.is_completed:
+            self._anim.change_state("idle")
             return
         
         # Start Moving
@@ -191,15 +191,15 @@ class E1(Enemy):
             self.needs_new_pos = False
             
         # Moving
-        if not self.move_timer.is_completed:
-            t = self.move_timer.progress
+        if not self._move_timer.is_completed:
+            t = self._move_timer.progress
             eased_t = self.ease_in_out_sine(t)
             self.position = self.start_pos.lerp(self.target_pos, eased_t)
             self.velocity = (self.target_pos - self.start_pos).normalize() * self.MOVE_SPEED
-            self.anim.change_state("move")
+            self._anim.change_state("move")
             
         # Finished moving
-        if self.move_timer.is_completed and not self.is_attacking:
+        if self._move_timer.is_completed and not self.is_attacking:
             self.start_attack()
         
         self.rect.center = self.position

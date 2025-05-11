@@ -102,13 +102,13 @@ class E3(Enemy):
             # Stop movement while aiming
             self.current_speed = 0
             self.velocity = Vector2(0, 0)
-            self.anim.change_state("aim")
+            self._anim.change_state("aim")
             
             # Check if aim duration is complete
             if self.aim_timer.just_completed:
                 self.is_aiming = False
                 self.is_attacking = True
-                self.anim.change_state("attack")
+                self._anim.change_state("attack")
                 # Reset shots_fired before selecting an attack
                 self.shots_fired = 0
                 # Randomly choose between the three attacks
@@ -124,7 +124,7 @@ class E3(Enemy):
                 return
                 
             # Attack animation will play and then return to idle
-            if self.anim.animation_finished:
+            if self._anim.animation_finished:
                 self.is_attacking = False
                 self.aim_cooldown_timer.start(self.random(self.AIM_COOLDOWN))
                 self.current_attack = None
@@ -145,7 +145,7 @@ class E3(Enemy):
                 self.velocity = direction * self.current_speed
                 self.position += self.velocity
                 
-                self.anim.change_state("idle")
+                self._anim.change_state("idle")
             else:
                 self.current_speed *= (1 - self.DECELERATION)
                 
@@ -156,7 +156,7 @@ class E3(Enemy):
                     self.velocity = self.velocity.normalize() * self.current_speed
                     self.position += self.velocity
                     
-                self.anim.change_state("idle")
+                self._anim.change_state("idle")
             
             # Check if it's time to start aiming
             if self.aim_cooldown_timer.just_completed:
@@ -192,7 +192,7 @@ class E3(Enemy):
     def fire_homing(self, target):
         homing_info = self.ATTACK_INFO['homing']
         
-        if not self.attack_timer.is_completed:
+        if not self._attack_timer.is_completed:
             return False
         
         if self.shots_fired >= homing_info['count']:
@@ -216,7 +216,7 @@ class E3(Enemy):
               attack_name='Gunman Homing-Laser')
         
         self.shots_fired += 1
-        self.attack_timer.start(homing_info['delay'])
+        self._attack_timer.start(homing_info['delay'])
         Sounds().play_sound_random(['e3_shoot1', 'e3_shoot2'])
         return False
 

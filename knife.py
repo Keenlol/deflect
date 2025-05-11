@@ -34,11 +34,11 @@ class Spark(pygame.sprite.Sprite):
         }
         
         # Create animation controller
-        self.anim = Animation(self, "sprites/sparks", animation_states, animation_speed=0.05)
-        self.anim.change_state("sparks")
+        self._anim = Animation(self, "sprites/sparks", animation_states, animation_speed=0.05)
+        self._anim.change_state("sparks")
         
         # Initialize image and rect
-        self.image = self.anim.get_current_frame(True)  # Default facing right
+        self.image = self._anim.get_current_frame(True)  # Default facing right
         self.rect = self.image.get_rect(center=self.position)
         
         # Add to the dedicated sparks group
@@ -47,10 +47,10 @@ class Spark(pygame.sprite.Sprite):
     def update(self):
         """Update spark animation and check if it's finished"""
         # Update animation
-        self.anim.update()
+        self._anim.update()
         
         # Get the current frame and rotate it to match velocity direction
-        original_image = self.anim.get_current_frame(True)
+        original_image = self._anim.get_current_frame(True)
         
         # Rotate to match velocity direction
         # In Pygame, rotation is clockwise from the original orientation
@@ -58,7 +58,7 @@ class Spark(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.position)
         
         # Remove if animation is finished
-        if self.anim.animation_finished:
+        if self._anim.animation_finished:
             self.kill()
 
 class Knife(pygame.sprite.Sprite):
@@ -72,11 +72,11 @@ class Knife(pygame.sprite.Sprite):
         animation_states = {
             "deflect": False
         }
-        self.anim = Animation(self, "sprites/knife", animation_states, animation_speed=0.05)
+        self._anim = Animation(self, "sprites/knife", animation_states, animation_speed=0.05)
         self.facing_right = True
         
         # Set initial image and rect
-        self.image = self.anim.get_current_frame(self.facing_right)
+        self.image = self._anim.get_current_frame(self.facing_right)
         self.original_image = self.image
         self.rect = self.image.get_rect()
         
@@ -97,8 +97,8 @@ class Knife(pygame.sprite.Sprite):
     def update(self):
         """Update the knife's state and position"""
         if self.active:
-            self.anim.update()
-            self.original_image = self.anim.get_current_frame(self.facing_right)
+            self._anim.update()
+            self.original_image = self._anim.get_current_frame(self.facing_right)
             
             # Calculate display angle (Pygame rotation is clockwise from up)
             display_angle = self.angle
@@ -111,7 +111,7 @@ class Knife(pygame.sprite.Sprite):
             
             self.check_projectile_collisions()
             
-            if self.anim.animation_finished:
+            if self._anim.animation_finished:
                 self.active = False
                 self.current_deflect_id = None
         else:
@@ -163,7 +163,7 @@ class Knife(pygame.sprite.Sprite):
         """Activate the knife and set its position and rotation towards the mouse"""
         if not self.active:
             self.active = True
-            self.anim.change_state("deflect")
+            self._anim.change_state("deflect")
             
             self.current_deflect_id = str(uuid.uuid4())
             self.deflection_damage[self.current_deflect_id] = {
@@ -185,12 +185,12 @@ class Knife(pygame.sprite.Sprite):
             self.facing_right = self.angle < 90 or self.angle > 270
             
             # Reset animation
-            self.anim.animation_finished = False
-            self.anim.current_frame = 0
+            self._anim.animation_finished = False
+            self._anim.current_frame = 0
 
     def check_projectile_collisions(self):
         """Check for collisions with bullets using circle hitbox"""
-        if not self.active or self.anim.animation_finished:
+        if not self.active or self._anim.animation_finished:
             return
         
         # Get center point of knife for circle collision

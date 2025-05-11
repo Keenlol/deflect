@@ -72,13 +72,13 @@ class E2(Enemy):
         self.direction = 1 if target.position.x > self.position.x else -1
         self.facing_right = self.direction > 0
 
-        self.anim.change_state("dash")
+        self._anim.change_state("dash")
         self.weapon_anim.change_state("charge")
         self.weapon_active = True
         self.velocity.x = 0
         
         # Start charge phase
-        self.attack_timer.start(self.ATTACK_INFO['slash']['charge_dur'])
+        self._attack_timer.start(self.ATTACK_INFO['slash']['charge_dur'])
         Sounds().play_sound('e2_charge')
 
     def end_dash_attack(self):
@@ -93,24 +93,24 @@ class E2(Enemy):
         self.facing_right = self.direction > 0
         
         if not self.is_dashing:  # Charging phase
-            if not self.attack_timer.is_completed:
+            if not self._attack_timer.is_completed:
                 return False
                 
-            if self.attack_timer.just_completed:
+            if self._attack_timer.just_completed:
                 # Just finished charging - start dash
                 self.weapon_anim.change_state("slash")
-                self.anim.change_state("attack2")
+                self._anim.change_state("attack2")
                 self.velocity.x = self.ATTACK_INFO['slash']['speed'] * self.direction
                 
                 # Start dash phase
-                self.attack_timer.start(self.ATTACK_INFO['slash']['dash_dur'])
+                self._attack_timer.start(self.ATTACK_INFO['slash']['dash_dur'])
                 self.is_dashing = True
 
                 Sounds().play_sound('e2_slash')
                 return False
                 
         elif self.is_dashing:  # Dashing phase
-            if self.attack_timer.is_completed:
+            if self._attack_timer.is_completed:
                 self.end_dash_attack()
                 return True
                 
@@ -128,7 +128,7 @@ class E2(Enemy):
             surface.blit(weapon_frame, weapon_rect)
     
     def start_shard_attack(self, target):
-        self.attack_timer.start(self.ATTACK_INFO['shard']['delay'])
+        self._attack_timer.start(self.ATTACK_INFO['shard']['delay'])
         self.shards.clear()
         
         # Create shards in a circular formation
@@ -160,15 +160,15 @@ class E2(Enemy):
                           attack_name='Fencer Forward-Shards')
             self.shards.append(shard)
         
-        self.anim.change_state("attack1")
+        self._anim.change_state("attack1")
         self.velocity.x = 0
         Sounds().play_sound_random(['e2_shards_spawn1','e2_shards_spawn2'])
     
     def shard_attack(self, target):
-        if not self.attack_timer.is_completed:
+        if not self._attack_timer.is_completed:
             return False
 
-        if self.attack_timer.just_completed:
+        if self._attack_timer.just_completed:
             # Launch all shards
             Sounds().play_sound('e2_shards_push')
             for shard in self.shards:
@@ -184,7 +184,7 @@ class E2(Enemy):
             self.is_attacking = False
             self.current_attack = None
             
-            self.anim.change_state("idle")
+            self._anim.change_state("idle")
             self.start_waiting()
             return True
             
@@ -192,7 +192,7 @@ class E2(Enemy):
     
     def start_shard_rain(self, target):
         self.rain_index = 0
-        self.attack_timer.start(self.ATTACK_INFO['rain']['delay'])
+        self._attack_timer.start(self.ATTACK_INFO['rain']['delay'])
 
         self.rain_positions = []
         shard_spacing = self.ATTACK_INFO['rain']['width'] / (self.ATTACK_INFO['rain']['count'] - 1) if self.ATTACK_INFO['rain']['count'] > 1 else 0
@@ -206,12 +206,12 @@ class E2(Enemy):
         if not self.position.x > target.position.x:
             self.rain_positions.reverse()
         
-        self.anim.change_state("attack1")
+        self._anim.change_state("attack1")
         self.velocity.x = 0
     
     def rain_attack(self, target):
         # Spawn new shard when delay timer completes
-        if self.attack_timer.just_completed and self.rain_index < self.ATTACK_INFO['rain']['count']:
+        if self._attack_timer.just_completed and self.rain_index < self.ATTACK_INFO['rain']['count']:
             spawn_pos = self.rain_positions[self.rain_index]
             
             Shard(position=spawn_pos, 
@@ -224,11 +224,11 @@ class E2(Enemy):
             self.rain_index += 1
             Sounds().play_sound_random(['e2_shards_spawn1','e2_shards_spawn2'])
             if self.rain_index < self.ATTACK_INFO['rain']['count']:
-                self.attack_timer.start(self.ATTACK_INFO['rain']['delay'])
+                self._attack_timer.start(self.ATTACK_INFO['rain']['delay'])
         
         # End attack when all shards have been spawned
         if self.rain_index >= self.ATTACK_INFO['rain']['count']:
-            self.anim.change_state("idle")
+            self._anim.change_state("idle")
             self.start_waiting()
             self.is_attacking = False
             self.current_attack = None
@@ -244,7 +244,7 @@ class E2(Enemy):
         
         if abs(self.velocity.x) < 0.1:
             self.velocity.x = self.random((self.MOVE_SPEED[0], self.MOVE_SPEED[1])) * self.direction
-        self.anim.change_state("move")
+        self._anim.change_state("move")
     
     def ai_logic(self, target):
         self.weapon_anim.update()
@@ -260,12 +260,12 @@ class E2(Enemy):
         self.facing_right = target.position.x > self.position.x
         
         # Waiting
-        if not self.wait_timer.is_completed:
+        if not self._wait_timer.is_completed:
             self.velocity.x = 0
             return
         
         # Start to move
-        if self.wait_timer.just_completed:
+        if self._wait_timer.just_completed:
             distance_to_player = target.position.x - self.position.x
             if abs(distance_to_player) > self.MAX_DISTANCE:
                 self.direction = 1 if distance_to_player > 0 else -1
@@ -274,17 +274,17 @@ class E2(Enemy):
             self.start_movement()
         
         # Moving
-        elif not self.move_timer.is_completed:
+        elif not self._move_timer.is_completed:
             self.update_movement(target)
         
         # Finished moving
-        elif self.move_timer.just_completed:
+        elif self._move_timer.just_completed:
             self.start_attack(target)
 
     def check_deflect_collision(self, player:Player):
         if (self.is_attacking and self.current_attack == self.dash_attack and
             self.weapon_active and self.is_dashing and not self.is_knocked_back):
-            if player.knife.active and player.knife.anim.current_state == "deflect":
+            if player.knife.active and player.is_deflecting:
                 if (self.position - player.knife.position).length() <= player.knife.width:
                     knockback_dir = self.position - player.position
                     knockback_amount = self.ATTACK_INFO['slash']['speed']
