@@ -21,19 +21,6 @@ class UI(pygame.sprite.Sprite):
         self.visible = True
         self.active = True
 
-    def update(self):
-        """Update UI element"""
-        if not self.active:
-            return
-            
-        # Clear surface
-        self.image.fill((0, 0, 0, 0))
-    
-    def set_position(self, position: Vector2):
-        """Set UI element position (center)"""
-        self.position = Vector2(position)
-        self.rect.center = self.position
-
 class TextDisplay(UI):
     """UI element that displays dynamic text with a value that can change over time"""
     def __init__(self, position: Vector2, width: int, height: int, 
@@ -121,9 +108,9 @@ class HealthBar(UI):
         self.BAR_MASK_CORRECTION = (0.2,0.988)
 
         # Initial setup
-        self.update_health_mask()
+        self.__update_health_mask()
     
-    def update_health_mask(self):
+    def __update_health_mask(self):
         """Update the mask surface based on current health percentage"""
         if not self.target:
             return
@@ -164,7 +151,7 @@ class HealthBar(UI):
         masked_fg = fg_frame.copy()
         
         # Update and apply the mask
-        self.update_health_mask()
+        self.__update_health_mask()
         masked_fg.blit(self.mask_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
         
         # Draw the masked foreground
@@ -215,7 +202,7 @@ class Button(UI):
         # Initial render
         self.render()
     
-    def easing(self, progress, direction):
+    def __easing(self, progress, direction):
         """Circular easing out function for smooth animations"""
         progress = max(0, min(1, progress))
         return math.sqrt(1 - pow(progress - 1, 2))  # Hover
@@ -231,10 +218,10 @@ class Button(UI):
 
         if self.hover_direction == 1:
             active_timer = self.hover_timer
-            ease_factor = self.easing(active_timer.progress, 1)
+            ease_factor = self.__easing(active_timer.progress, 1)
         elif self.hover_direction == -1:
             active_timer = self.unhover_timer
-            ease_factor = 1 - self.easing(active_timer.progress, -1)
+            ease_factor = 1 - self.__easing(active_timer.progress, -1)
      
         if active_timer:
             # Calculate scaled size

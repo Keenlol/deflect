@@ -78,7 +78,7 @@ class E1(Enemy):
             for angle in range(0, 360, inerval_deg):
                 rad_angle = math.radians(angle + offset_deg)
                 velocity = Vector2(math.cos(rad_angle), math.sin(rad_angle)) * pr['speed']
-                P_Ball(position=copy.deepcopy(self.position), 
+                Ball(position=copy.deepcopy(self.position), 
                        velocity=velocity, 
                        game=self.game,
                        damage=self.ATTACK_INFO['radial']['damage'],
@@ -118,7 +118,7 @@ class E1(Enemy):
             spread = self.random((-pb['spread'], pb['spread']))
             angle = math.radians(base_angle + spread)
             velocity = Vector2(math.cos(angle), math.sin(angle)) * pb['speed']
-            P_Ball(position=copy.deepcopy(self.position), 
+            Ball(position=copy.deepcopy(self.position), 
                    velocity=velocity, 
                    game=self.game,
                    damage=self.ATTACK_INFO['burst']['damage'],
@@ -145,7 +145,7 @@ class E1(Enemy):
         if to_target.length() > 0:
             direction = to_target.normalize()
             velocity = direction * pf['speed']
-            P_Ball(position=copy.deepcopy(self.position), 
+            Ball(position=copy.deepcopy(self.position), 
                    velocity=velocity, 
                    game=self.game,
                    damage=self.ATTACK_INFO['follow']['damage'],

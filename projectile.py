@@ -146,7 +146,7 @@ class Projectile(pygame.sprite.Sprite):
         self.draw()
 
 
-class P_Ball(Projectile):
+class Ball(Projectile):
     def __init__(self, 
                  position=Vector2(0, 0),
                  velocity=Vector2(0, 0),

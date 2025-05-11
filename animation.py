@@ -27,9 +27,9 @@ class Animation:
         self.animation_finished = False
         
         # Load all animations
-        self.load_animations()
+        self.__load_animations()
     
-    def load_animations(self):
+    def __load_animations(self):
         """Load all animation frames from their respective folders"""
         for state in self.animation_loops.keys():
             self.animations[state] = []

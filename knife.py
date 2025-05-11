@@ -62,6 +62,9 @@ class Spark(pygame.sprite.Sprite):
             self.kill()
 
 class Knife(pygame.sprite.Sprite):
+    DEFLECTED_SPEED_MUL = 2
+    DEFLECTION_FINALIZE_DELAY = 5.0
+
     def __init__(self, player):
         super().__init__()
         self.player = player
@@ -87,12 +90,10 @@ class Knife(pygame.sprite.Sprite):
         # Deflection attributes
         self.active = False
         self.angle = 0
-        self.DEFLECTED_SPEED_MUL = 2
         self.current_deflect_id = None
         
         # Deflection damage tracking
         self.deflection_damage = {}
-        self.DEFLECTION_FINALIZE_DELAY = 5.0
     
     def update(self):
         """Update the knife's state and position"""
