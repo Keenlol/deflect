@@ -58,13 +58,8 @@ Follow these steps to set up and run the game locally:
 
 The game window should now open and you can start playing. It can take sometime to load.
 
-## 📎 Links
-- [Full Project Proposal V4](https://docs.google.com/document/d/1NTz00DZZyBh48hizPht9d8jJEmeq7qE31ddM4IOAoks/edit?usp=sharing)
-- [Demo Video](links)
-
-
 ## ℹ️ Credits
 - **Sound Effects**: from the game [*Absolver*](https://store.steampowered.com/app/473690/Absolver/) and [*Mortal Kombat X*](https://store.steampowered.com/app/307780/Mortal_Kombat_X/). (use with modifications)
 - **Music**: [*"Colver" by Amos Roddy*](https://open.spotify.com/track/0OKm1zL4sWhwa7yi6aEKQ0?si=9d205133b47d4a62) and [*"Spire" by ToyTree*](https://open.spotify.com/track/1cIVDBzfDZ8wFYPDNxqR5d?si=1e099d260b0d4eed). (direct use)
 - **Fonts**: [*"Jua"*](https://fonts.google.com/specimen/Jua) and [*"Coiny"*](https://fonts.google.com/specimen/Coiny). (direct use)
-
+- **Libraries**: [*pygame*](https://www.pygame.org/news), [*matplotlib*](https://matplotlib.org/), [*seaborn*](https://seaborn.pydata.org/),  [*pandas*](https://pandas.pydata.org/) and [*numpy*](https://numpy.org/)
