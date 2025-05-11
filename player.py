@@ -9,6 +9,18 @@ from stats import Stats
 from sounds import Sounds
 
 class Player(pygame.sprite.Sprite):
+    GRAVITY = 0.8
+    JUMP_FORCE = -15
+    MAX_HORIZONTAL_SPEED = 8
+    MAX_FALL_SPEED = 15
+    ACCELERATION = 2
+    DECELERATION = 8
+    AIR_RESISTANCE = 1
+    GROUND_FRICTION = 0.5
+    MAX_HEALTH = 100
+    DOUBLE_JUMP_FORCE = -12
+    KNOCKBACK_FORCE = Vector2(-3, -8)
+
     def __init__(self, game, x=0, y=0):
         super().__init__()
         self.game = game
@@ -34,7 +46,7 @@ class Player(pygame.sprite.Sprite):
             "hurt": False,  # Hurt animation is non-looping
             "dead": False   # Death animation is non-looping
         }
-        self.anim = Animation(self, "sprites/player", animation_states, animation_speed=0.08)
+        self._anim = Animation(self, "sprites/player", animation_states, animation_speed=0.08)
         self.facing_right = True
         
         # Physics attributes
@@ -47,55 +59,35 @@ class Player(pygame.sprite.Sprite):
         self.space_pressed = False
         self.shift_pressed = False
         self.mouse_clicked = False  # New input state for mouse click
-        
-        # Knife
-        self.knife = Knife(self)
-        
-        # Movement constants
-        self.GRAVITY = 0.8
-        self.JUMP_FORCE = -15
-        self.MAX_HORIZONTAL_SPEED = 8
-        self.MAX_FALL_SPEED = 15
-        self.ACCELERATION = 2
-        self.DECELERATION = 8
-        self.AIR_RESISTANCE = 1
-        self.GROUND_FRICTION = 0.5
-        
+
         # Dodge attributes
         self.DODGE_SPEED = 25
-        self.DODGE_DURATION = 8 / C.FPS  # Convert frames to seconds
-        self.dodge_timer = Timer(duration=self.DODGE_DURATION, owner=self)
+        self.__dodge_timer = Timer(duration=0.14, owner=self)
         self.is_dodging = False
-        self.can_dodge = True
-        self.DODGE_COOLDOWN = 20 / C.FPS  # Convert frames to seconds
-        self.dodge_cooldown_timer = Timer(duration=self.DODGE_COOLDOWN, owner=self, paused=True)
+        self.__can_dodge = True
+        self.__dodge_cooldown_timer = Timer(duration=0.33, owner=self, paused=True)
         
         # Double jump attributes
-        self.can_double_jump = True
-        self.DOUBLE_JUMP_FORCE = -12
+        self.__can_double_jump = True
         
         # Deflect attributes
-        self.DEFLECT_COOLDOWN = 0.5  # Convert frames to seconds
-        self.deflect_cooldown_timer = Timer(duration=self.DEFLECT_COOLDOWN, owner=self, paused=True)
-        self.can_deflect = True
+        self.knife = Knife(self)
+        self.__deflect_cooldown_timer = Timer(duration=0.5, owner=self, paused=True)
+        self.__can_deflect = True
         self.is_deflecting = False
-        self.deflect_direction = True
+        self.__deflect_direction = True
         
         # Combat attributes
-        self.MAX_HEALTH = 100
-        self.self_heal_timer = Timer(duration=1.0, owner=self, paused=False, auto_reset=True)
+        self.__self_heal_timer = Timer(duration=1.0, owner=self, paused=False, auto_reset=True)
         self.health = self.MAX_HEALTH
-        self.is_invincible = False
-        self.INVINCIBLE_DURATION = 3.0  # 3 seconds (was 180 frames)
-        self.invincible_timer = Timer(duration=self.INVINCIBLE_DURATION, owner=self, paused=True)
+        self.__is_invincible = False
+        self.__invincible_timer = Timer(duration=3.0, owner=self, paused=True)
         
-        # Knockback attributes
         self.is_hurt = False
-        self.KNOCKBACK_FORCE = Vector2(-3, -8)
-        self.is_dead = False
+        self.is_alive = True
         
         # Set initial image and rect
-        self.image = self.anim.get_current_frame(self.facing_right)
+        self.image = self._anim.get_current_frame(self.facing_right)
         self.rect = self.image.get_rect(center=(x, y))
     
     @property
@@ -121,14 +113,94 @@ class Player(pygame.sprite.Sprite):
     @property
     def last_processed_bullets(self):
         return self.__tag['last_processed_bullets']
+
+    def update(self):
+        """Update the player's state"""
+        # Check for timer completions
+        if self.__self_heal_timer.just_completed and self.is_alive:
+            self.health += 1
+            self.health = min(self.health, self.MAX_HEALTH)
+
+        if self.__dodge_timer.is_completed and self.is_dodging:
+            self.is_dodging = False
+            self.velocity.y *= 0.5
+            
+            # Record dodge statistics when dodge ends (record even if damage_evaded is 0)
+            Stats().record('dodged_attack', damage_evaded=self.dodge_damage_evaded)
+            self.dodge_start_position = None
+            self.dodge_counted_enemies.clear()
+            self.last_processed_bullets.clear()
+            
+        if self.__dodge_cooldown_timer.is_completed and self.on_ground and not self.__can_dodge:
+            self.__can_dodge = True
+            
+        if self.__deflect_cooldown_timer.is_completed and not self.__can_deflect:
+            self.__can_deflect = True
+            
+        if self.__invincible_timer.is_completed and self.__is_invincible:
+            self.__is_invincible = False
+            
+        # Only handle input if not hurt/dead
+        if not self.is_hurt and self.is_alive:
+            self.__handle_input()
+            
+        self.__apply_physics()
+        self.knife.update()
+        
+        # Only check collisions if alive
+        if self.is_alive:
+            self.__check_projectile_collisions()
+            self.__check_enemy_collisions()
+            
+        self.__update_animation()
+
+    def take_damage(self, amount, source_position=None):
+        """Handle player taking damage with knockback"""
+        if not self.__is_invincible and not self.is_hurt and self.is_alive:
+            self.health -= amount
+            self.__is_invincible = True
+            self.__invincible_timer.start()
+            self.is_hurt = True
+            
+            # Apply knockback
+            if source_position:
+                knockback_to_right = False if source_position.x > self.position.x else True
+            else:
+                knockback_to_right = False if self.facing_right else True
+            self.velocity = self.KNOCKBACK_FORCE
+            self.facing_right = False
+            if knockback_to_right:
+                self.velocity = self.velocity.reflect(Vector2(1,0))
+                self.facing_right = True
+
+            # Change to hurt animation
+            self._anim.change_state("hurt")
+            
+            # Ensure we're not on the ground
+            if self.on_ground:
+                self.on_ground = False
+                self.position.y -= 1  # Slight lift to guarantee we're off ground
+            
+            # End any dodge and record evaded damage (even if damage_evaded is 0)
+            if self.is_dodging:
+                Stats().record('dodged_attack', damage_evaded=self.dodge_damage_evaded)
+                self.dodge_start_position = None
+                self.dodge_counted_enemies.clear()
+                self.last_processed_bullets.clear()
+            
+            self.is_dodging = False
+            self.__dodge_timer.stop()
+            self.game.freeze_and_shake(10, 10, 20)
+            Sounds().play_sound('player_damaged')
     
-    def start_dodge(self):
+
+    def __start_dodge(self):
         """Initialize a dodge movement in the direction of the mouse"""
-        if self.can_dodge and not self.is_dodging:
+        if self.__can_dodge and not self.is_dodging:
             self.is_dodging = True
-            self.can_dodge = False
-            self.dodge_timer.start()
-            self.dodge_cooldown_timer.start()
+            self.__can_dodge = False
+            self.__dodge_timer.start()
+            self.__dodge_cooldown_timer.start()
             self.on_ground = False
             
             # Store position at start of dodge for damage evasion tracking
@@ -154,29 +226,29 @@ class Player(pygame.sprite.Sprite):
             # if abs(self.velocity.y) > self.DODGE_SPEED * 0.3:  # Limit vertical component
             #     self.velocity.y = self.DODGE_SPEED * 0.3 * (1 if self.velocity.y > 0 else -1)
             
-            self.anim.change_state("dodge")
+            self._anim.change_state("dodge")
             Sounds().play_sound_random(['dodge1', 'dodge2'])
     
-    def handle_input(self):
+    def __handle_input(self):
         """Handle player input for movement and actions"""
         # Don't handle input if hurt or dead
-        if self.is_hurt or self.is_dead:
+        if self.is_hurt or not self.is_alive:
             return
             
         keys = pygame.key.get_pressed()
         
         # Deflecting
-        if self.mouse_clicked and not self.is_dodging and self.can_deflect:
+        if self.mouse_clicked and not self.is_dodging and self.__can_deflect:
             Sounds().play_sound_random(['slash1', 'slash2', 'slash3'])
             mouse_pos = pygame.mouse.get_pos()
             self.knife.activate(mouse_pos)
-            self.anim.change_state("deflect")
+            self._anim.change_state("deflect")
             # Set deflecting state and direction
             self.is_deflecting = True
-            self.deflect_direction = mouse_pos[0] > self.position.x
+            self.__deflect_direction = mouse_pos[0] > self.position.x
             # Start cooldown
-            self.can_deflect = False
-            self.deflect_cooldown_timer.start()
+            self.__can_deflect = False
+            self.__deflect_cooldown_timer.start()
         if self.mouse_clicked:
             self.mouse_clicked = False
         
@@ -200,21 +272,21 @@ class Player(pygame.sprite.Sprite):
             if self.on_ground:
                 self.velocity.y = self.JUMP_FORCE
                 self.on_ground = False
-                self.can_double_jump = True
+                self.__can_double_jump = True
                 self.is_dodging = False
-                self.anim.change_state("jump")
-            elif self.can_double_jump and not self.is_dodging:
+                self._anim.change_state("jump")
+            elif self.__can_double_jump and not self.is_dodging:
                 self.velocity.y = self.DOUBLE_JUMP_FORCE
-                self.can_double_jump = False
-                self.anim.change_state("jump")
+                self.__can_double_jump = False
+                self._anim.change_state("jump")
             self.space_pressed = False  # Reset the press state
         
         # Dodging
         if self.shift_pressed:
-            self.start_dodge()
+            self.__start_dodge()
             self.shift_pressed = False  # Reset the press state
     
-    def apply_physics(self):
+    def __apply_physics(self):
         """Apply physics calculations to the player"""
         # Always apply gravity unless dodging
         if not self.is_dodging:
@@ -238,7 +310,7 @@ class Player(pygame.sprite.Sprite):
             self.velocity.y = min(self.velocity.y, self.MAX_FALL_SPEED)
         
         # Update position
-        if not (self.is_dead and self.on_ground):
+        if self.is_alive or not self.on_ground:
             self.position += self.velocity
             
             # Prevent walking off screen horizontally
@@ -258,37 +330,37 @@ class Player(pygame.sprite.Sprite):
             if self.is_hurt:
                 self.is_hurt = False
                 if self.health <= 0:
-                    self.is_dead = True
-                    self.anim.change_state("dead")
-                    self.self_heal_timer.pause()
+                    self.is_alive = False
+                    self._anim.change_state("dead")
+                    self.__self_heal_timer.pause()
                 else:
-                    self.anim.change_state("idle")
-            elif self.anim.current_state == "fall":
-                self.anim.change_state("idle")
+                    self._anim.change_state("idle")
+            elif self._anim.current_state == "fall":
+                self._anim.change_state("idle")
             
         # Update rect position
         self.rect.center = self.position
     
-    def update_animation(self):
+    def __update_animation(self):
         """Update the current animation frame based on player state"""
         # Handle death animation first
-        if self.is_dead:
-            if self.anim.current_state != "dead":
-                self.anim.change_state("dead")
-            self.anim.update()
-            self.image = self.anim.get_current_frame(self.facing_right)
+        if not self.is_alive:
+            if self._anim.current_state != "dead":
+                self._anim.change_state("dead")
+            self._anim.update()
+            self.image = self._anim.get_current_frame(self.facing_right)
             return
             
         # Handle hurt animation
         if self.is_hurt:
-            if self.anim.current_state != "hurt":
-                self.anim.change_state("hurt")
-            self.anim.update()
-            self.image = self.anim.get_current_frame(self.facing_right)
+            if self._anim.current_state != "hurt":
+                self._anim.change_state("hurt")
+            self._anim.update()
+            self.image = self._anim.get_current_frame(self.facing_right)
             return
             
         # Don't change state during dodge animation unless it's finished
-        if not self.is_dodging or (self.is_dodging and self.anim.animation_finished):
+        if not self.is_dodging or (self.is_dodging and self._anim.animation_finished):
             if not self.on_ground:
                 if self.velocity.y < 0:
                     next_state = "jump"
@@ -301,72 +373,33 @@ class Player(pygame.sprite.Sprite):
                     next_state = "idle"
                     
             # Handle state transitions
-            if next_state != self.anim.current_state:
+            if next_state != self._anim.current_state:
                 # Only change state if current animation is finished or it's a looping animation
-                if self.anim.animation_loops[self.anim.current_state] or self.anim.animation_finished:
-                    self.anim.change_state(next_state)
+                if self._anim.animation_loops[self._anim.current_state] or self._anim.animation_finished:
+                    self._anim.change_state(next_state)
         
         # Update animation and image
-        self.anim.update()
+        self._anim.update()
         
         # Override facing direction during deflect
         if self.is_deflecting:
-            self.facing_right = self.deflect_direction
+            self.facing_right = self.__deflect_direction
         
-        self.image = self.anim.get_current_frame(self.facing_right)
+        self.image = self._anim.get_current_frame(self.facing_right)
         
         # Reset deflecting state when animation ends
-        if self.anim.current_state != "deflect":
+        if self._anim.current_state != "deflect":
             self.is_deflecting = False
         
         # Make player blink during invincibility
-        if self.is_invincible and int(self.invincible_timer.progress * 20) % 2:  # Blink effect
+        if self.__is_invincible and int(self.__invincible_timer.progress * 20) % 2:  # Blink effect
             self.image.set_alpha(100)
         else:
             self.image.set_alpha(255)
-    
-    def take_damage(self, amount, source_position=None):
-        """Handle player taking damage with knockback"""
-        if not self.is_invincible and not self.is_hurt and not self.is_dead:
-            self.health -= amount
-            self.is_invincible = True
-            self.invincible_timer.start()
-            self.is_hurt = True
-            
-            # Apply knockback
-            if source_position:
-                knockback_to_right = False if source_position.x > self.position.x else True
-            else:
-                knockback_to_right = False if self.facing_right else True
-            self.velocity = self.KNOCKBACK_FORCE
-            self.facing_right = False
-            if knockback_to_right:
-                self.velocity = self.velocity.reflect(Vector2(1,0))
-                self.facing_right = True
 
-            # Change to hurt animation
-            self.anim.change_state("hurt")
-            
-            # Ensure we're not on the ground
-            if self.on_ground:
-                self.on_ground = False
-                self.position.y -= 1  # Slight lift to guarantee we're off ground
-            
-            # End any dodge and record evaded damage (even if damage_evaded is 0)
-            if self.is_dodging:
-                Stats().record('dodged_attack', damage_evaded=self.dodge_damage_evaded)
-                self.dodge_start_position = None
-                self.dodge_counted_enemies.clear()
-                self.last_processed_bullets.clear()
-            
-            self.is_dodging = False
-            self.dodge_timer.stop()
-            self.game.freeze_and_shake(10, 10, 20)
-            Sounds().play_sound('player_damaged')
-    
-    def check_projectile_collisions(self):
+    def __check_projectile_collisions(self):
         """Check for collisions with enemy bullets"""
-        if self.is_invincible or self.is_dead:
+        if self.__is_invincible or not self.is_alive:
             return
         
         # Define a maximum check distance to avoid unnecessary calculations
@@ -431,9 +464,9 @@ class Player(pygame.sprite.Sprite):
                     except (AttributeError, KeyError):
                         pass
 
-    def check_enemy_collisions(self):
+    def __check_enemy_collisions(self):
         """Check for collisions with enemies"""
-        if self.is_invincible or self.is_dead:
+        if self.__is_invincible or not self.is_alive:
             return
         
         # IT WOULDN'T HAVE TO BE THIS MUCH IF THERE WERE NO STATS TRACKING
@@ -482,42 +515,3 @@ class Player(pygame.sprite.Sprite):
                                             attack_name=enemy.name + ' ' + 'Body',
                                             damage=enemy.BODY_DAMAGE)
 
-    def update(self):
-        """Update the player's state"""
-        # Check for timer completions
-        if self.self_heal_timer.just_completed and not self.is_dead:
-            self.health += 1
-            self.health = min(self.health, self.MAX_HEALTH)
-
-        if self.dodge_timer.is_completed and self.is_dodging:
-            self.is_dodging = False
-            self.velocity.y *= 0.5
-            
-            # Record dodge statistics when dodge ends (record even if damage_evaded is 0)
-            Stats().record('dodged_attack', damage_evaded=self.dodge_damage_evaded)
-            self.dodge_start_position = None
-            self.dodge_counted_enemies.clear()
-            self.last_processed_bullets.clear()
-            
-        if self.dodge_cooldown_timer.is_completed and self.on_ground and not self.can_dodge:
-            self.can_dodge = True
-            
-        if self.deflect_cooldown_timer.is_completed and not self.can_deflect:
-            self.can_deflect = True
-            
-        if self.invincible_timer.is_completed and self.is_invincible:
-            self.is_invincible = False
-            
-        # Only handle input if not hurt/dead
-        if not self.is_hurt and not self.is_dead:
-            self.handle_input()
-            
-        self.apply_physics()
-        self.knife.update()
-        
-        # Only check collisions if alive
-        if not self.is_dead:
-            self.check_projectile_collisions()
-            self.check_enemy_collisions()
-            
-        self.update_animation()
