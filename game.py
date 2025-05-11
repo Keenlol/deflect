@@ -592,7 +592,7 @@ class Game:
         self.shake_timer.duration = shake_sec
         self.shake_intensity = shake_intensity
     
-    def update_camera_shake(self, dt):
+    def update_camera_shake(self):
         """Update the camera shake effect"""
         if not self.shake_timer.is_completed and not self.shake_timer.is_paused:
             # The shake gets weaker as the timer progresses
@@ -645,7 +645,7 @@ class Game:
                 self.spawn_timer.duration = self.get_next_spawn_time()
                 self.spawn_timer.start()
             
-            self.update_camera_shake(dt)
+            self.update_camera_shake()
             self.groups['all'].update()
             
             for enemy in self.groups['enemies']:

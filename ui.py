@@ -16,22 +16,11 @@ class UI(pygame.sprite.Sprite):
         # Create base surface
         self.image = pygame.Surface((width, height), pygame.SRCALPHA)
         self.rect = self.image.get_rect(center=self.position)
-        
-        # Layer system
-        self.layers = []  # List of surfaces to be blitted in order
-        
+
         # State
         self.visible = True
         self.active = True
-    
-    def add_layer(self, surface: pygame.Surface, position: Vector2=Vector2(0, 0)):
-        """Add a new layer to be rendered"""
-        self.layers.append((surface, position))
-    
-    def clear_layers(self):
-        """Clear all layers"""
-        self.layers.clear()
-    
+
     def update(self):
         """Update UI element"""
         if not self.active:
@@ -39,10 +28,6 @@ class UI(pygame.sprite.Sprite):
             
         # Clear surface
         self.image.fill((0, 0, 0, 0))
-        
-        # Draw all layers in order
-        for surface, position in self.layers:
-            self.image.blit(surface, position)
     
     def set_position(self, position: Vector2):
         """Set UI element position (center)"""
