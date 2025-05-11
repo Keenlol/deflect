@@ -80,7 +80,6 @@ class Game:
         # Stats related attributes
         self.stats_button = None
         self.stats_data = {}
-        self.pending_stats_window = False
         
         self.setup_home_menu()
         self.play_menu_music()
