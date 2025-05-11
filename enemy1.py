@@ -31,7 +31,7 @@ class E1(Enemy):
         self.target_pos = Vector2(x, y)
         
         # Initialize timers
-        self.init_timers()
+        self._init_timers()
         
         # Attack attributes
         self.needs_new_pos = True
@@ -39,7 +39,7 @@ class E1(Enemy):
         self.shots_fired = 0
 
         # Start in waiting state
-        self.start_waiting()
+        self._start_waiting()
 
     def ease_in_out_sine(self, t):
         """Sine easing function for smooth movement"""
@@ -174,7 +174,7 @@ class E1(Enemy):
         if self.is_attacking:
             if self.current_attack(target):
                 self.is_attacking = False
-                self.start_waiting()
+                self._start_waiting()
                 self.needs_new_pos = True
             return
         
@@ -187,7 +187,7 @@ class E1(Enemy):
         if self.needs_new_pos:
             self.pick_new_position(target)
             self.start_pos = Vector2(self.position)
-            self.start_movement()
+            self._start_movement()
             self.needs_new_pos = False
             
         # Moving

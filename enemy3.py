@@ -71,7 +71,7 @@ class E3(Enemy):
         self.current_speed = 0  # Track current speed for smooth acceleration
         
         # Initialize timers
-        self.init_timers()
+        self._init_timers()
         self.aim_timer = Timer(duration=self.AIM_DURATION, owner=self, paused=True)
         self.aim_cooldown_timer = Timer(duration=self.random(self.AIM_COOLDOWN), owner=self, paused=True)
         self.aim_cooldown_timer.start()
@@ -85,8 +85,8 @@ class E3(Enemy):
         self.shots_fired = 0
         self.is_aiming = False
         
-    def update_animation(self):
-        super().update_animation()
+    def _update_animation(self):
+        super()._update_animation()
         if self.is_alive:
             # Calculate bobbing effect using timer progress
             self.bob_offset = self.BOB_AMPLITUDE * math.sin(self.bobbing_timer.progress * 2 * math.pi)

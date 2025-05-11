@@ -357,24 +357,24 @@ class Stats:
         
         # Add tabs based on available data
         if 'dodge' in self.processed_data:
-            self.create_dodge_stats_tab(notebook, self.processed_data['dodge'])
+            self.__create_dodge_stats_tab(notebook, self.processed_data['dodge'])
             
         if 'position' in self.processed_data:
-            self.create_player_position_tab(notebook, self.processed_data['position'])
+            self.__create_player_position_tab(notebook, self.processed_data['position'])
             
         if 'damage_income' in self.processed_data:
-            self.create_damage_income_tab(notebook, self.processed_data['damage_income'])
+            self.__create_damage_income_tab(notebook, self.processed_data['damage_income'])
             
         if 'enemy_lifespan' in self.processed_data:
-            self.create_enemy_lifespan_tab(notebook, self.processed_data['enemy_lifespan'])
+            self.__create_enemy_lifespan_tab(notebook, self.processed_data['enemy_lifespan'])
             
         if 'deflected' in self.processed_data:
-            self.create_damage_deflected_tab(notebook, self.processed_data['deflected'])
+            self.__create_damage_deflected_tab(notebook, self.processed_data['deflected'])
         
         # Run the Tkinter main loop
         root.mainloop()
 
-    def create_dodge_stats_tab(self, notebook, data):
+    def __create_dodge_stats_tab(self, notebook, data):
         """Create a tab showing dodge statistics table"""
         fsize = self.FONT_SIZE
         theme = self.CHART_THEME
@@ -432,7 +432,7 @@ class Stats:
                 lbl.configure(font=self.text_font)
             lbl.pack(pady=20)
 
-    def create_player_position_tab(self, notebook, df):
+    def __create_player_position_tab(self, notebook, df):
         """Create a tab showing player position heatmap"""
         fsize = self.FONT_SIZE
         theme = self.CHART_THEME
@@ -496,7 +496,7 @@ class Stats:
                 lbl.configure(font=self.text_font)
             lbl.pack(pady=20)
     
-    def create_damage_income_tab(self, notebook, df):
+    def __create_damage_income_tab(self, notebook, df):
         """Create a tab showing damage income pie chart"""
         fsize = self.FONT_SIZE
         theme = self.CHART_THEME
@@ -550,7 +550,7 @@ class Stats:
                 lbl.configure(font=self.text_font)
             lbl.pack(pady=20)
     
-    def create_enemy_lifespan_tab(self, notebook, df):
+    def __create_enemy_lifespan_tab(self, notebook, df):
         """Create a tab showing enemy lifespan boxplot"""
         fsize = self.FONT_SIZE
         theme = self.CHART_THEME
@@ -604,7 +604,7 @@ class Stats:
                 lbl.configure(font=self.text_font)
             lbl.pack(pady=20)
     
-    def create_damage_deflected_tab(self, notebook, df):
+    def __create_damage_deflected_tab(self, notebook, df):
         """Create a tab showing damage deflected histogram"""
         fsize = self.FONT_SIZE
         theme = self.CHART_THEME

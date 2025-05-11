@@ -83,7 +83,7 @@ class Enemy(pygame.sprite.Sprite):
         difference = datetime.now() - self.__tag['spawn_time']
         return difference.total_seconds()
 
-    def init_timers(self, move_duration=None, wait_duration=None, attack_duration=0):
+    def _init_timers(self, move_duration=None, wait_duration=None, attack_duration=0):
         """Initialize common timers with appropriate durations"""
         move_dur = move_duration if move_duration is not None else self.MOVE_DURATION
         wait_dur = wait_duration if wait_duration is not None else self.WAIT_DURATION
@@ -92,13 +92,13 @@ class Enemy(pygame.sprite.Sprite):
         self._wait_timer = Timer(duration=self.random(wait_dur), owner=self, paused=True)
         self._attack_timer = Timer(duration=attack_duration, owner=self, paused=True)
     
-    def start_waiting(self, duration=None):
+    def _start_waiting(self, duration=None):
         """Start waiting timer with optional custom duration"""
         wait_dur = duration if duration is not None else self.random(self.WAIT_DURATION)
         self._wait_timer.start(wait_dur)
         self._anim.change_state("idle")
     
-    def start_movement(self, duration=None):
+    def _start_movement(self, duration=None):
         """Start movement timer with optional custom duration"""
         move_dur = duration if duration is not None else self.random(self.MOVE_DURATION)
         self._move_timer.start(move_dur)
@@ -113,7 +113,7 @@ class Enemy(pygame.sprite.Sprite):
         else:
             return random.choice(values)
 
-    def update_animation(self):
+    def _update_animation(self):
         self._anim.update()
         self.image = self._anim.get_current_frame(self.facing_right)
 
@@ -139,7 +139,7 @@ class Enemy(pygame.sprite.Sprite):
         """Base movement method to be overridden by child classes"""
         pass
     
-    def apply_physics(self):
+    def __apply_physics(self):
         # Apply gravity
         if not self.on_ground:
             self.velocity.y += self.GRAVITY
@@ -157,7 +157,7 @@ class Enemy(pygame.sprite.Sprite):
         
         self.rect.center = self.position
     
-    def check_projectile_collisions(self):
+    def __check_projectile_collisions(self):
         for bullet in self.game.groups['bullets']:
             if bullet.is_deflected:
                 distance = (bullet.position - self.position).length()
@@ -183,7 +183,7 @@ class Enemy(pygame.sprite.Sprite):
         self.__knockback_velocity = direction * amount
         self.is_knocked_back = True
     
-    def update_knockback(self):
+    def __update_knockback(self):
         if self.is_knocked_back:
             self.position += self.__knockback_velocity
             self.__knockback_velocity *= self.KNOCKBACK_DECAY
@@ -194,7 +194,7 @@ class Enemy(pygame.sprite.Sprite):
     
     def update(self):
         if not self.is_alive:
-            self.update_animation()
+            self._update_animation()
             if self._anim.current_state == "death" and self._anim.animation_finished:
                 self.kill()
             return
@@ -206,10 +206,10 @@ class Enemy(pygame.sprite.Sprite):
         if self.target and not self.is_hurt:
             self.ai_logic(self.target)
         
-        self.update_knockback()
-        self.apply_physics()
-        self.check_projectile_collisions()
-        self.update_animation()
+        self.__update_knockback()
+        self.__apply_physics()
+        self.__check_projectile_collisions()
+        self._update_animation()
 
     def kill(self):
         self.game.add_score(200)

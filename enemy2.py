@@ -33,7 +33,7 @@ class E2(Enemy):
         self.direction = 1  # 1 for right, -1 for left
         
         # Initialize timers
-        self.init_timers()
+        self._init_timers()
                 
         # Weapon sprite
         self.weapon_anim = Animation(self, "sprites/enemies/e2_slash", {
@@ -49,7 +49,7 @@ class E2(Enemy):
         self.is_dashing = False
         
         # Start in waiting state
-        self.start_waiting()
+        self._start_waiting()
         
     def start_attack(self, target):
         if abs(target.position.x - self.position.x) < self.MAX_DISTANCE:
@@ -86,7 +86,7 @@ class E2(Enemy):
         self.velocity.x = 0
         self.is_attacking = False
         self.current_attack = None
-        self.start_waiting()
+        self._start_waiting()
 
     def dash_attack(self, target):
         # Maintain the original dash direction
@@ -185,7 +185,7 @@ class E2(Enemy):
             self.current_attack = None
             
             self._anim.change_state("idle")
-            self.start_waiting()
+            self._start_waiting()
             return True
             
         return False
@@ -229,7 +229,7 @@ class E2(Enemy):
         # End attack when all shards have been spawned
         if self.rain_index >= self.ATTACK_INFO['rain']['count']:
             self._anim.change_state("idle")
-            self.start_waiting()
+            self._start_waiting()
             self.is_attacking = False
             self.current_attack = None
             return True
@@ -271,7 +271,7 @@ class E2(Enemy):
                 self.direction = 1 if distance_to_player > 0 else -1
             else:
                 self.direction = self.random((-1, 1), choice=True)
-            self.start_movement()
+            self._start_movement()
         
         # Moving
         elif not self._move_timer.is_completed:

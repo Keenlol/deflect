@@ -122,7 +122,7 @@ class Projectile(pygame.sprite.Sprite):
         """Draw projectile, override by child class"""
         self.color = self.COLOR_SET['blue'] if self.is_deflected else self.COLOR_SET['red']
 
-    def apply_physics(self):
+    def __apply_physics(self):
         """Apply physics to projectile"""
         self.velocity *= self.SPEED_MULTIPLIER
         self.velocity.y += self.GRAVITY
@@ -140,7 +140,7 @@ class Projectile(pygame.sprite.Sprite):
         # if round(self.velocity.length(), 1) == 0:
         #     self.kill()
 
-        self.apply_physics()
+        self.__apply_physics()
         if self.check_bounds():
             self.kill()
         self.draw()

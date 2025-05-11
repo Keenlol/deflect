@@ -109,7 +109,7 @@ class Knife(pygame.sprite.Sprite):
             self.image = pygame.transform.rotate(self.original_image, display_angle)
             self.rect = self.image.get_rect()
             
-            self.check_projectile_collisions()
+            self.__check_projectile_collisions()
             
             if self._anim.animation_finished:
                 self.active = False
@@ -188,7 +188,7 @@ class Knife(pygame.sprite.Sprite):
             self._anim.animation_finished = False
             self._anim.current_frame = 0
 
-    def check_projectile_collisions(self):
+    def __check_projectile_collisions(self):
         """Check for collisions with bullets using circle hitbox"""
         if not self.active or self._anim.animation_finished:
             return
